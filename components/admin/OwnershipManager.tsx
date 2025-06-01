@@ -134,3 +134,4 @@ export function OwnershipManager() {
       </AlertDialog>
     </div>
   );
+}
