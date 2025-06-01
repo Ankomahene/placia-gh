@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -14,13 +15,30 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { IconPicker } from '@/components/ui/icon-picker';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from '@/components/ui/command';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
+import { usePlaceCategories } from '@/hooks/admin/use-place-categories';
 import type { PlaceSubcategory } from '@/types/place';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  icon: z.string().optional(),
+  icon: z.string().min(1, 'Icon is required'),
   description: z.string().optional(),
+  category_id: z.string().min(1, 'Category is required'),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -36,8 +54,10 @@ export function SubcategoryForm({
   subcategory,
   onSuccess,
 }: SubcategoryFormProps) {
+  const [open, setOpen] = useState(false);
   const { createSubcategory, updateSubcategory, isCreating, isUpdating } =
     usePlaceSubcategories(categoryId);
+  const { categories } = usePlaceCategories();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -45,6 +65,7 @@ export function SubcategoryForm({
       name: subcategory?.name || '',
       icon: subcategory?.icon || '',
       description: subcategory?.description || '',
+      category_id: subcategory?.category_id || categoryId,
     },
   });
 
@@ -52,7 +73,7 @@ export function SubcategoryForm({
     if (subcategory) {
       await updateSubcategory({ id: subcategory.id, ...data });
     } else {
-      await createSubcategory({ ...data, category_id: categoryId });
+      await createSubcategory({ ...data });
     }
     onSuccess?.();
     form.reset();
@@ -61,6 +82,64 @@ export function SubcategoryForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="category_id"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Category</FormLabel>
+              <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={open}
+                      className="w-full justify-between"
+                    >
+                      {field.value
+                        ? categories?.find(
+                            (category) => category.id === field.value
+                          )?.name
+                        : 'Select category'}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command className="w-full">
+                    <CommandInput placeholder="Search category..." />
+                    <CommandEmpty>No category found.</CommandEmpty>
+                    <CommandGroup className="max-h-64 overflow-auto">
+                      {categories?.map((category) => (
+                        <CommandItem
+                          key={category.id}
+                          value={category.name}
+                          onSelect={() => {
+                            form.setValue('category_id', category.id);
+                            setOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              field.value === category.id
+                                ? 'opacity-100'
+                                : 'opacity-0'
+                            )}
+                          />
+                          {category.icon} {category.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <FormField
           control={form.control}
           name="name"
@@ -80,9 +159,13 @@ export function SubcategoryForm({
           name="icon"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Icon (emoji)</FormLabel>
+              <FormLabel>Icon</FormLabel>
               <FormControl>
-                <Input placeholder="Enter an emoji" {...field} />
+                <IconPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  allowCustom
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

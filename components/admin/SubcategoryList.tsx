@@ -26,6 +26,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IconRenderer } from '@/components/ui/icon-renderer';
 import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
 import { SubcategoryForm } from './forms/SubcategoryForm';
 import { TypeList } from './TypeList';
@@ -100,7 +101,7 @@ export function SubcategoryList({ categoryId }: SubcategoryListProps) {
               <div className="flex items-center justify-between flex-1 mr-4">
                 <div className="flex items-center gap-2">
                   {subcategory.icon && (
-                    <span className="text-lg">{subcategory.icon}</span>
+                    <IconRenderer icon={subcategory.icon} className="w-5 h-5" />
                   )}
                   <div>
                     <h4 className="text-sm font-medium text-left">
@@ -128,7 +129,7 @@ export function SubcategoryList({ categoryId }: SubcategoryListProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-7 w-7"
+                    className="h-7 w-7 hover:bg-red-500/10 dark:hover:bg-red-400/10 text-red-900 dark:text-red-100"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(subcategory);
@@ -138,7 +139,6 @@ export function SubcategoryList({ categoryId }: SubcategoryListProps) {
                   </Button>
                 </div>
               </div>
-              <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
             </AccordionTrigger>
             <AccordionContent className="px-3 pb-3">
               <TypeList subcategoryId={subcategory.id} />
@@ -148,7 +148,7 @@ export function SubcategoryList({ categoryId }: SubcategoryListProps) {
       </Accordion>
 
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <SheetContent className="sm:max-w-[500px]">
+        <SheetContent className="sm:max-w-[500px] px-4 md:px-6">
           <SheetHeader>
             <SheetTitle>
               {selectedSubcategory ? 'Edit Subcategory' : 'Add Subcategory'}

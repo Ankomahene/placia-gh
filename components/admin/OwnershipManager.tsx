@@ -21,6 +21,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IconRenderer } from '@/components/ui/icon-renderer';
+import { cn } from '@/lib/utils';
+import { getElementColor } from '@/lib/utils/element-colors';
 import { useOwnerships } from '@/hooks/admin/use-ownerships';
 import { OwnershipForm } from './forms/OwnershipForm';
 import type { Ownership } from '@/types/place';
@@ -31,7 +34,8 @@ export function OwnershipManager() {
   );
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const { ownerships, isLoading, deleteOwnership, search, setSearch } = useOwnerships();
+  const { ownerships, isLoading, deleteOwnership, search, setSearch } =
+    useOwnerships();
 
   const handleEdit = (ownership: Ownership) => {
     setSelectedOwnership(ownership);
@@ -76,7 +80,7 @@ export function OwnershipManager() {
             Add Ownership
           </Button>
         </div>
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -89,14 +93,17 @@ export function OwnershipManager() {
       </div>
 
       <div className="grid gap-4">
-        {ownerships?.map((ownership) => (
+        {ownerships?.map((ownership, index) => (
           <div
             key={ownership.id}
-            className="flex items-center justify-between p-4 rounded-lg border bg-card"
+            className={cn(
+              'flex items-center justify-between p-4 rounded-lg border bg-card border-l-4',
+              getElementColor(ownership.id, index)
+            )}
           >
             <div className="flex items-center gap-3">
               {ownership.icon && (
-                <span className="text-xl">{ownership.icon}</span>
+                <IconRenderer icon={ownership.icon} className="w-6 h-6" />
               )}
               <div>
                 <h3 className="font-medium">{ownership.type}</h3>
@@ -119,6 +126,7 @@ export function OwnershipManager() {
                 variant="ghost"
                 size="icon"
                 onClick={() => handleDelete(ownership)}
+                className="hover:bg-red-500/10 dark:hover:bg-red-400/10 text-red-900 dark:text-red-100"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -128,7 +136,7 @@ export function OwnershipManager() {
       </div>
 
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <SheetContent className="sm:max-w-[500px]">
+        <SheetContent className="sm:max-w-[500px] px-4 md:px-6">
           <SheetHeader>
             <SheetTitle>
               {selectedOwnership ? 'Edit Ownership' : 'Add Ownership'}

@@ -32,9 +32,13 @@ export function usePlaceSubcategories(categoryId?: string) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, ...updates }: { id: string } & Partial<PlaceSubcategory>) =>
+    mutationFn: ({
+      id,
+      ...updates
+    }: { id: string } & Partial<PlaceSubcategory>) =>
       updateSubcategory(id, updates),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      // Invalidate both old and new category queries
       queryClient.invalidateQueries({ queryKey: ['subcategories'] });
       toast.success('Subcategory updated successfully');
     },

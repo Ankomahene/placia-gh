@@ -14,12 +14,13 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { IconPicker } from '@/components/ui/icon-picker';
 import { usePlaceCategories } from '@/hooks/admin/use-place-categories';
 import type { PlaceCategory } from '@/types/place';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  icon: z.string().optional(),
+  icon: z.string().min(1, 'Icon is required'),
   description: z.string().optional(),
 });
 
@@ -75,9 +76,13 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
           name="icon"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Icon (emoji)</FormLabel>
+              <FormLabel>Icon</FormLabel>
               <FormControl>
-                <Input placeholder="Enter an emoji" {...field} />
+                <IconPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  allowCustom
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

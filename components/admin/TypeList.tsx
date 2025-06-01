@@ -20,6 +20,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IconRenderer } from '@/components/ui/icon-renderer';
 import { usePlaceTypes } from '@/hooks/admin/use-place-types';
 import { TypeForm } from './forms/TypeForm';
 import type { PlaceType } from '@/types/place';
@@ -86,7 +87,9 @@ export function TypeList({ subcategoryId }: TypeListProps) {
             className="flex items-center justify-between p-2 rounded-md border bg-muted/30"
           >
             <div className="flex items-center gap-2">
-              {type.icon && <span className="text-base">{type.icon}</span>}
+              {type.icon && (
+                <IconRenderer icon={type.icon} className="w-4 h-4" />
+              )}
               <div>
                 <h5 className="text-sm font-medium">{type.name}</h5>
                 {type.description && (
@@ -108,7 +111,7 @@ export function TypeList({ subcategoryId }: TypeListProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-6 w-6"
+                className="h-6 w-6 hover:bg-red-500/10 dark:hover:bg-red-400/10 text-red-900 dark:text-red-100"
                 onClick={() => handleDelete(type)}
               >
                 <Trash2 className="h-3 w-3" />
@@ -119,7 +122,7 @@ export function TypeList({ subcategoryId }: TypeListProps) {
       </div>
 
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <SheetContent className="sm:max-w-[500px]">
+        <SheetContent className="sm:max-w-[500px] px-4 md:px-6">
           <SheetHeader>
             <SheetTitle>{selectedType ? 'Edit Type' : 'Add Type'}</SheetTitle>
           </SheetHeader>

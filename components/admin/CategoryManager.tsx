@@ -27,6 +27,9 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
+import { IconRenderer } from '@/components/ui/icon-renderer';
+import { cn } from '@/lib/utils';
+import { getElementColor } from '@/lib/utils/element-colors';
 import { usePlaceCategories } from '@/hooks/admin/use-place-categories';
 import { CategoryForm } from './forms/CategoryForm';
 import { SubcategoryList } from './SubcategoryList';
@@ -37,7 +40,8 @@ export function CategoryManager() {
     useState<PlaceCategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const { categories, isLoading, deleteCategory, search, setSearch } = usePlaceCategories();
+  const { categories, isLoading, deleteCategory, search, setSearch } =
+    usePlaceCategories();
 
   const handleEdit = (category: PlaceCategory) => {
     setSelectedCategory(category);
@@ -82,7 +86,7 @@ export function CategoryManager() {
             Add Category
           </Button>
         </div>
-        
+
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -95,17 +99,20 @@ export function CategoryManager() {
       </div>
 
       <Accordion type="multiple" className="space-y-4">
-        {categories?.map((category) => (
+        {categories?.map((category, index) => (
           <AccordionItem
             key={category.id}
             value={category.id}
-            className="border rounded-lg shadow-sm"
+            className={cn(
+              'border rounded-lg shadow-sm border-l-4',
+              getElementColor(category.id, index)
+            )}
           >
             <AccordionTrigger className="px-4 hover:no-underline hover:bg-muted/50 [&[data-state=open]>svg]:rotate-180">
               <div className="flex items-center justify-between flex-1 mr-4">
                 <div className="flex items-center gap-3">
                   {category.icon && (
-                    <span className="text-xl">{category.icon}</span>
+                    <IconRenderer icon={category.icon} className="w-6 h-6" />
                   )}
                   <div>
                     <h3 className="font-medium text-left">{category.name}</h3>
@@ -130,6 +137,7 @@ export function CategoryManager() {
                   <Button
                     variant="ghost"
                     size="icon"
+                    className="hover:bg-red-500/10 dark:hover:bg-red-400/10 text-red-900 dark:text-red-100"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDelete(category);
@@ -139,7 +147,6 @@ export function CategoryManager() {
                   </Button>
                 </div>
               </div>
-              <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-4">
               <SubcategoryList categoryId={category.id} />
@@ -149,7 +156,7 @@ export function CategoryManager() {
       </Accordion>
 
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <SheetContent className="sm:max-w-[500px]">
+        <SheetContent className="sm:max-w-[500px] px-4 md:px-6">
           <SheetHeader>
             <SheetTitle>
               {selectedCategory ? 'Edit Category' : 'Add Category'}
