@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +31,7 @@ export function OwnershipManager() {
   );
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const { ownerships, isLoading, deleteOwnership } = useOwnerships();
+  const { ownerships, isLoading, deleteOwnership, search, setSearch } = useOwnerships();
 
   const handleEdit = (ownership: Ownership) => {
     setSelectedOwnership(ownership);
@@ -62,17 +63,29 @@ export function OwnershipManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Ownerships</h2>
-        <Button
-          onClick={() => {
-            setSelectedOwnership(null);
-            setIsFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Ownership
-        </Button>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Ownerships</h2>
+          <Button
+            onClick={() => {
+              setSelectedOwnership(null);
+              setIsFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Ownership
+          </Button>
+        </div>
+        
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search ownerships..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
       </div>
 
       <div className="grid gap-4">

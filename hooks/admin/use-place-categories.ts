@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useState } from 'react';
 import {
   getCategories,
   createCategory,
@@ -8,16 +10,18 @@ import {
 } from '@/lib/services/admin/place';
 import type { PlaceCategory } from '@/types/place';
 
-export function usePlaceCategories() {
+export function usePlaceCategories(initialSearch = '') {
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState(initialSearch);
+  const debouncedSearch = useDebounce(search, 300);
 
   const {
     data: categories,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['categories'],
-    queryFn: getCategories,
+    queryKey: ['categories', debouncedSearch],
+    queryFn: () => getCategories(debouncedSearch),
   });
 
   const createMutation = useMutation({
@@ -63,6 +67,8 @@ export function usePlaceCategories() {
     deleteCategory: deleteMutation.mutate,
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
-    isDeleting: deleteMutation.isPending,
+    isDeleting: deleteMutation.isPending, 
+    search,
+    setSearch,
   };
 }

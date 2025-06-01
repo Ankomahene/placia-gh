@@ -13,12 +13,17 @@ export function generateSlug(name: string) {
 }
 
 // Categories
-export async function getCategories() {
+export async function getCategories(search?: string) {
   const supabase = createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('categories')
-    .select('*')
-    .order('name');
+    .select('*');
+    
+  if (search) {
+    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+  }
+  
+  const { data, error } = await query.order('name');
   if (error) throw error;
   return data as PlaceCategory[];
 }
@@ -63,12 +68,18 @@ export async function deleteCategory(id: string) {
 }
 
 // Subcategories
-export async function getSubcategories(categoryId?: string) {
+export async function getSubcategories(categoryId?: string, search?: string) {
   const supabase = createClient();
   let query = supabase.from('subcategories').select('*').order('name');
+  
   if (categoryId) {
     query = query.eq('category_id', categoryId);
   }
+  
+  if (search) {
+    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+  }
+  
   const { data, error } = await query;
   if (error) throw error;
   return data as PlaceSubcategory[];
@@ -117,12 +128,18 @@ export async function deleteSubcategory(id: string) {
 }
 
 // Types
-export async function getTypes(subcategoryId?: string) {
+export async function getTypes(subcategoryId?: string, search?: string) {
   const supabase = createClient();
   let query = supabase.from('types').select('*').order('name');
+  
   if (subcategoryId) {
     query = query.eq('subcategory_id', subcategoryId);
   }
+  
+  if (search) {
+    query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+  }
+  
   const { data, error } = await query;
   if (error) throw error;
   return data as PlaceType[];

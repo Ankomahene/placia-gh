@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, ChevronDown, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Accordion,
   AccordionContent,
@@ -36,7 +37,7 @@ export function CategoryManager() {
     useState<PlaceCategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const { categories, isLoading, deleteCategory } = usePlaceCategories();
+  const { categories, isLoading, deleteCategory, search, setSearch } = usePlaceCategories();
 
   const handleEdit = (category: PlaceCategory) => {
     setSelectedCategory(category);
@@ -68,17 +69,29 @@ export function CategoryManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-semibold">Categories</h2>
-        <Button
-          onClick={() => {
-            setSelectedCategory(null);
-            setIsFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Category
-        </Button>
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Categories</h2>
+          <Button
+            onClick={() => {
+              setSelectedCategory(null);
+              setIsFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Category
+          </Button>
+        </div>
+        
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search categories..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
       </div>
 
       <Accordion type="multiple" className="space-y-4">
