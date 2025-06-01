@@ -56,7 +56,7 @@ export async function updateSession(request: NextRequest) {
 
   // For authenticated users, fetch their profile for role-based redirects
   const { data: profile } = await supabase
-    .from('profiles')
+    .from('users')
     .select('role, first_login')
     .eq('id', user.id)
     .single();
