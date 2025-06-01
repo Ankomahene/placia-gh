@@ -185,12 +185,17 @@ export async function deleteType(id: string) {
 }
 
 // Ownerships
-export async function getOwnerships() {
+export async function getOwnerships(search?: string) {
   const supabase = createClient();
-  const { data, error } = await supabase
+  let query = supabase
     .from('ownerships')
-    .select('*')
-    .order('type');
+    .select('*');
+    
+  if (search) {
+    query = query.or(`type.ilike.%${search}%,description.ilike.%${search}%`);
+  }
+  
+  const { data, error } = await query.order('type');
   if (error) throw error;
   return data as Ownership[];
 }

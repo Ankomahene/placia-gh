@@ -1,5 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { useDebounce } from '@/hooks/use-debounce';
+import { useState } from 'react';
 import {
   getOwnerships,
   createOwnership,
@@ -8,13 +10,16 @@ import {
 } from '@/lib/services/admin/place';
 import type { Ownership } from '@/types/place';
 
-export function useOwnerships() {
+export function useOwnerships(initialSearch = '') {
   const queryClient = useQueryClient();
+  const [search, setSearch] = useState(initialSearch);
+  const debouncedSearch = useDebounce(search, 300);
 
   const {
     data: ownerships,
     isLoading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ['ownerships'],
     queryFn: getOwnerships,
@@ -64,5 +69,7 @@ export function useOwnerships() {
     isCreating: createMutation.isPending,
     isUpdating: updateMutation.isPending,
     isDeleting: deleteMutation.isPending,
+    search,
+    setSearch,
   };
 }
