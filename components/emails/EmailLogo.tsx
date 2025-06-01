@@ -16,15 +16,14 @@ const sizeMap = {
 
 export const EmailLogo = ({ size = 'md' }: EmailLogoProps) => {
   // Use a light theme logo for emails by default
-  const logoSrc = `
-${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/vendora-assets//vendora-logo.png`;
+  const logoSrc = `https://jjazpfwfzzgyluuuslit.supabase.co/storage/v1/object/public/assets/logo-fav.png`;
 
   const dimensions = sizeMap[size];
 
   return (
     <Img
       src={logoSrc}
-      alt="Vendora Logo"
+      alt="PlaciaGH Logo"
       width={dimensions.width}
       height={dimensions.height}
     />

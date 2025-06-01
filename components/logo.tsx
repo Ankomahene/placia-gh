@@ -30,10 +30,10 @@ export const Logo = ({ size = 'md' }: LogoProps) => {
       <Link href="/">
         <Image
           src={logoSrc}
-          alt="Vendora Logo"
+          alt="PlaciaGH Logo"
           width={dimensions.width}
           height={dimensions.height}
-          priority 
+          priority
         />
       </Link>
     </div>
