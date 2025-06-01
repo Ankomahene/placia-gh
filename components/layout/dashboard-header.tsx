@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Logo } from '@/components/logo';
@@ -20,6 +20,7 @@ interface DashboardHeaderProps {
 export function DashboardHeader({ isAdmin = false }: DashboardHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -36,6 +37,7 @@ export function DashboardHeader({ isAdmin = false }: DashboardHeaderProps) {
       toast.error('Failed to sign out');
       return;
     }
+    router.push('/');
   };
 
   const navigation = isAdmin
