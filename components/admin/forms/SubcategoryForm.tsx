@@ -112,3 +112,4 @@ export function SubcategoryForm({ categoryId, subcategory, onSuccess }: Subcateg
       </form>
     </Form>
   );
+}

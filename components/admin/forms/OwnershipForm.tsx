@@ -111,3 +111,4 @@ export function OwnershipForm({ ownership, onSuccess }: OwnershipFormProps) {
       </form>
     </Form>
   );
+}

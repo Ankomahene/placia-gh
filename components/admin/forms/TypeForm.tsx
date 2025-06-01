@@ -112,3 +112,4 @@ export function TypeForm({ subcategoryId, type, onSuccess }: TypeFormProps) {
       </form>
     </Form>
   );
+}
