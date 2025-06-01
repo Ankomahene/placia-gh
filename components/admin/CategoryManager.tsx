@@ -19,7 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePlaceCategories } from '@/hooks/admin/use-place-categories';
 import { CategoryForm } from './forms/CategoryForm';
@@ -27,7 +32,8 @@ import { SubcategoryList } from './SubcategoryList';
 import type { PlaceCategory } from '@/types/place';
 
 export function CategoryManager() {
-  const [selectedCategory, setSelectedCategory] = useState<PlaceCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<PlaceCategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { categories, isLoading, deleteCategory } = usePlaceCategories();
@@ -64,7 +70,12 @@ export function CategoryManager() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">Categories</h2>
-        <Button onClick={() => { setSelectedCategory(null); setIsFormOpen(true); }}>
+        <Button
+          onClick={() => {
+            setSelectedCategory(null);
+            setIsFormOpen(true);
+          }}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Category
         </Button>
@@ -140,18 +151,24 @@ export function CategoryManager() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Category</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this category? This action cannot be
-              undone and will also delete all associated subcategories and types.
+              Are you sure you want to delete this category? This action cannot
+              be undone and will also delete all associated subcategories and
+              types.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

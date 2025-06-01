@@ -32,7 +32,8 @@ interface TypeFormProps {
 }
 
 export function TypeForm({ subcategoryId, type, onSuccess }: TypeFormProps) {
-  const { createType, updateType, isCreating, isUpdating } = usePlaceTypes(subcategoryId);
+  const { createType, updateType, isCreating, isUpdating } =
+    usePlaceTypes(subcategoryId);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

@@ -18,7 +18,7 @@ import { useOwnerships } from '@/hooks/admin/use-ownerships';
 import type { Ownership } from '@/types/place';
 
 const formSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
+  type: z.string().min(2, 'Type must be at least 2 characters'),
   icon: z.string().optional(),
   description: z.string().optional(),
 });
@@ -31,12 +31,13 @@ interface OwnershipFormProps {
 }
 
 export function OwnershipForm({ ownership, onSuccess }: OwnershipFormProps) {
-  const { createOwnership, updateOwnership, isCreating, isUpdating } = useOwnerships();
+  const { createOwnership, updateOwnership, isCreating, isUpdating } =
+    useOwnerships();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: ownership?.name || '',
+      type: ownership?.type || '',
       icon: ownership?.icon || '',
       description: ownership?.description || '',
     },
@@ -57,12 +58,12 @@ export function OwnershipForm({ ownership, onSuccess }: OwnershipFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="name"
+          name="type"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Type</FormLabel>
               <FormControl>
-                <Input placeholder="Enter ownership name" {...field} />
+                <Input placeholder="Enter ownership type" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

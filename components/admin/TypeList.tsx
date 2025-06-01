@@ -13,7 +13,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePlaceTypes } from '@/hooks/admin/use-place-types';
 import { TypeForm } from './forms/TypeForm';
@@ -116,9 +121,7 @@ export function TypeList({ subcategoryId }: TypeListProps) {
       <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
         <SheetContent className="sm:max-w-[500px]">
           <SheetHeader>
-            <SheetTitle>
-              {selectedType ? 'Edit Type' : 'Add Type'}
-            </SheetTitle>
+            <SheetTitle>{selectedType ? 'Edit Type' : 'Add Type'}</SheetTitle>
           </SheetHeader>
           <div className="mt-8">
             <TypeForm
@@ -130,17 +133,23 @@ export function TypeList({ subcategoryId }: TypeListProps) {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Type</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this type? This action cannot be undone.
+              Are you sure you want to delete this type? This action cannot be
+              undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

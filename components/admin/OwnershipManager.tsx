@@ -13,14 +13,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOwnerships } from '@/hooks/admin/use-ownerships';
 import { OwnershipForm } from './forms/OwnershipForm';
 import type { Ownership } from '@/types/place';
 
 export function OwnershipManager() {
-  const [selectedOwnership, setSelectedOwnership] = useState<Ownership | null>(null);
+  const [selectedOwnership, setSelectedOwnership] = useState<Ownership | null>(
+    null
+  );
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const { ownerships, isLoading, deleteOwnership } = useOwnerships();
@@ -57,7 +64,12 @@ export function OwnershipManager() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">Ownerships</h2>
-        <Button onClick={() => { setSelectedOwnership(null); setIsFormOpen(true); }}>
+        <Button
+          onClick={() => {
+            setSelectedOwnership(null);
+            setIsFormOpen(true);
+          }}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Ownership
         </Button>
@@ -74,7 +86,7 @@ export function OwnershipManager() {
                 <span className="text-xl">{ownership.icon}</span>
               )}
               <div>
-                <h3 className="font-medium">{ownership.name}</h3>
+                <h3 className="font-medium">{ownership.type}</h3>
                 {ownership.description && (
                   <p className="text-sm text-muted-foreground">
                     {ownership.description}
@@ -118,17 +130,23 @@ export function OwnershipManager() {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Ownership</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this ownership type? This action cannot be undone.
+              Are you sure you want to delete this ownership type? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

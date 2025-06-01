@@ -31,7 +31,8 @@ interface CategoryFormProps {
 }
 
 export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
-  const { createCategory, updateCategory, isCreating, isUpdating } = usePlaceCategories();
+  const { createCategory, updateCategory, isCreating, isUpdating } =
+    usePlaceCategories();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

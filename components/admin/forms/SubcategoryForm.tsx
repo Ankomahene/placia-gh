@@ -31,8 +31,13 @@ interface SubcategoryFormProps {
   onSuccess?: () => void;
 }
 
-export function SubcategoryForm({ categoryId, subcategory, onSuccess }: SubcategoryFormProps) {
-  const { createSubcategory, updateSubcategory, isCreating, isUpdating } = usePlaceSubcategories(categoryId);
+export function SubcategoryForm({
+  categoryId,
+  subcategory,
+  onSuccess,
+}: SubcategoryFormProps) {
+  const { createSubcategory, updateSubcategory, isCreating, isUpdating } =
+    usePlaceSubcategories(categoryId);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),

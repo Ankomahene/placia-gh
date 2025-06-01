@@ -1,5 +1,10 @@
 import { createClient } from '@/lib/supabase/client';
-import { PlaceCategory, PlaceSubcategory, PlaceType, Ownership } from '@/types/place';
+import {
+  PlaceCategory,
+  PlaceSubcategory,
+  PlaceType,
+  Ownership,
+} from '@/types/place';
 import slugify from 'slugify';
 
 // Helper function to generate slug
@@ -18,7 +23,11 @@ export async function getCategories() {
   return data as PlaceCategory[];
 }
 
-export async function createCategory({ name, icon, description }: Partial<PlaceCategory>) {
+export async function createCategory({
+  name,
+  icon,
+  description,
+}: Partial<PlaceCategory>) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('categories')
@@ -29,7 +38,10 @@ export async function createCategory({ name, icon, description }: Partial<PlaceC
   return data as PlaceCategory;
 }
 
-export async function updateCategory(id: string, updates: Partial<PlaceCategory>) {
+export async function updateCategory(
+  id: string,
+  updates: Partial<PlaceCategory>
+) {
   const supabase = createClient();
   if (updates.name) {
     updates.slug = generateSlug(updates.name);
@@ -62,18 +74,28 @@ export async function getSubcategories(categoryId?: string) {
   return data as PlaceSubcategory[];
 }
 
-export async function createSubcategory({ name, icon, description, category_id }: Partial<PlaceSubcategory>) {
+export async function createSubcategory({
+  name,
+  icon,
+  description,
+  category_id,
+}: Partial<PlaceSubcategory>) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('subcategories')
-    .insert([{ name, icon, description, category_id, slug: generateSlug(name!) }])
+    .insert([
+      { name, icon, description, category_id, slug: generateSlug(name!) },
+    ])
     .select()
     .single();
   if (error) throw error;
   return data as PlaceSubcategory;
 }
 
-export async function updateSubcategory(id: string, updates: Partial<PlaceSubcategory>) {
+export async function updateSubcategory(
+  id: string,
+  updates: Partial<PlaceSubcategory>
+) {
   const supabase = createClient();
   if (updates.name) {
     updates.slug = generateSlug(updates.name);
@@ -106,11 +128,18 @@ export async function getTypes(subcategoryId?: string) {
   return data as PlaceType[];
 }
 
-export async function createType({ name, icon, description, subcategory_id }: Partial<PlaceType>) {
+export async function createType({
+  name,
+  icon,
+  description,
+  subcategory_id,
+}: Partial<PlaceType>) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('types')
-    .insert([{ name, icon, description, subcategory_id, slug: generateSlug(name!) }])
+    .insert([
+      { name, icon, description, subcategory_id, slug: generateSlug(name!) },
+    ])
     .select()
     .single();
   if (error) throw error;
@@ -144,16 +173,20 @@ export async function getOwnerships() {
   const { data, error } = await supabase
     .from('ownerships')
     .select('*')
-    .order('name');
+    .order('type');
   if (error) throw error;
   return data as Ownership[];
 }
 
-export async function createOwnership({ name, icon, description }: Partial<Ownership>) {
+export async function createOwnership({
+  type,
+  icon,
+  description,
+}: Partial<Ownership>) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('ownerships')
-    .insert([{ name, icon, description, slug: generateSlug(name!) }])
+    .insert([{ type, icon, description, slug: generateSlug(type!) }])
     .select()
     .single();
   if (error) throw error;
@@ -162,8 +195,8 @@ export async function createOwnership({ name, icon, description }: Partial<Owner
 
 export async function updateOwnership(id: string, updates: Partial<Ownership>) {
   const supabase = createClient();
-  if (updates.name) {
-    updates.slug = generateSlug(updates.name);
+  if (updates.type) {
+    updates.slug = generateSlug(updates.type);
   }
   const { data, error } = await supabase
     .from('ownerships')

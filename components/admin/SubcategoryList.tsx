@@ -19,7 +19,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
 import { SubcategoryForm } from './forms/SubcategoryForm';
@@ -31,10 +36,12 @@ interface SubcategoryListProps {
 }
 
 export function SubcategoryList({ categoryId }: SubcategoryListProps) {
-  const [selectedSubcategory, setSelectedSubcategory] = useState<PlaceSubcategory | null>(null);
+  const [selectedSubcategory, setSelectedSubcategory] =
+    useState<PlaceSubcategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const { subcategories, isLoading, deleteSubcategory } = usePlaceSubcategories(categoryId);
+  const { subcategories, isLoading, deleteSubcategory } =
+    usePlaceSubcategories(categoryId);
 
   const handleEdit = (subcategory: PlaceSubcategory) => {
     setSelectedSubcategory(subcategory);
@@ -67,7 +74,9 @@ export function SubcategoryList({ categoryId }: SubcategoryListProps) {
   return (
     <div className="space-y-4 mt-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-sm font-medium text-muted-foreground">Subcategories</h3>
+        <h3 className="text-sm font-medium text-muted-foreground">
+          Subcategories
+        </h3>
         <Button
           size="sm"
           onClick={() => {
@@ -155,18 +164,23 @@ export function SubcategoryList({ categoryId }: SubcategoryListProps) {
         </SheetContent>
       </Sheet>
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Subcategory</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this subcategory? This action cannot be
-              undone and will also delete all associated types.
+              Are you sure you want to delete this subcategory? This action
+              cannot be undone and will also delete all associated types.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
