@@ -34,19 +34,19 @@ export const PasswordResetConfirmationEmail = ({
           <Section style={section}>
             <Text style={text}>Hi {userEmail.split('@')[0]},</Text>
             <Text style={text}>
-              Your password has been successfully reset. You can now log in and continue
-              exploring amazing places across Ghana.
+              Your password has been successfully reset. You can now log in and
+              continue exploring amazing places across Ghana.
             </Text>
             <Button style={button} href={loginUrl}>
               Log In
             </Button>
             <Text style={text}>
-              If you didn't request this password change, please contact
+              If you didn&apos;t request this password change, please contact
               our support team immediately at security@placiagh.com.
             </Text>
             <Text style={text}>
               Best regards,
-              <br />ven
+              <br />
               The PlaciaGH Team
             </Text>
           </Section>

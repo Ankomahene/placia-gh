@@ -62,8 +62,8 @@ export default function ForgotPasswordForm() {
 
       <CardContent>
         <p className="text-center text-muted-foreground mb-6">
-          Enter your email address and we'll send you instructions to reset your
-          password.
+          Enter your email address and we&apos;ll send you instructions to reset
+          your password.
         </p>
 
         <Form {...form}>

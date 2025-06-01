@@ -46,7 +46,9 @@ export const VerificationEmail = ({
             <Text style={text}>{instruction}</Text>
             <Text style={codeContainer}>{otp}</Text>
             <Text style={text}>
-              If you didn't request this verification, please ignore this email or contact our support team at support@placiagh.com for assistance.
+              If you didn&apos;t request this verification, please ignore this
+              email or contact our support team at support@placiagh.com for
+              assistance.
             </Text>
             <Text style={text}>
               Get ready to discover the best places Ghana has to offer!

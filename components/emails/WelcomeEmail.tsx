@@ -36,19 +36,21 @@ export const WelcomeEmail = ({
           <Section style={section}>
             <Text style={text}>Hi {userEmail.split('@')[0]},</Text>
             <Text style={text}>
-              Thank you for joining PlaciaGH, your ultimate guide to discovering amazing places in Ghana.
-              We're excited to help you explore the best locations our country has to offer!
+              Thank you for joining PlaciaGH, your ultimate guide to discovering
+              amazing places in Ghana. We&apos;re excited to help you explore
+              the best locations our country has to offer!
             </Text>
             <Text style={text}>
-              You can now start exploring local restaurants, hotels, attractions, and more.
-              Use our AI-powered search to find exactly what you're looking for in your area.
+              You can now start exploring local restaurants, hotels,
+              attractions, and more. Use our AI-powered search to find exactly
+              what you&apos;re looking for in your area.
             </Text>
             <Button style={button} href={dashboardUrl}>
               Visit your dashboard
             </Button>
             <Text style={text}>
-              Looking for recommendations? Our local experts are here to help you
-              discover the perfect spots. Just reply to this email!
+              Looking for recommendations? Our local experts are here to help
+              you discover the perfect spots. Just reply to this email!
             </Text>
             <Text style={text}>
               Best regards,

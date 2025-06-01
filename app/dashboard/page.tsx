@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function DashboardPage() {
   return (
@@ -8,7 +8,7 @@ export default function DashboardPage() {
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Welcome back! Here's an overview of your activity.
+          Welcome back! Here&apos;s an overview of your activity.
         </p>
       </div>
 
@@ -21,9 +21,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">24</div>
-            <p className="text-xs text-muted-foreground">
-              +2 from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
         </Card>
 
@@ -35,9 +33,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">
-              +3 new this month
-            </p>
+            <p className="text-xs text-muted-foreground">+3 new this month</p>
           </CardContent>
         </Card>
 
@@ -49,9 +45,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">
-              +1 this week
-            </p>
+            <p className="text-xs text-muted-foreground">+1 this week</p>
           </CardContent>
         </Card>
 
@@ -63,9 +57,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">16</div>
-            <p className="text-xs text-muted-foreground">
-              +4 this month
-            </p>
+            <p className="text-xs text-muted-foreground">+4 this month</p>
           </CardContent>
         </Card>
       </div>
