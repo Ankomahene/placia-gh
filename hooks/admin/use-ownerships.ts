@@ -21,8 +21,8 @@ export function useOwnerships(initialSearch = '') {
     error,
     refetch,
   } = useQuery({
-    queryKey: ['ownerships'],
-    queryFn: getOwnerships,
+    queryKey: ['ownerships', debouncedSearch],
+    queryFn: () => getOwnerships(debouncedSearch),
   });
 
   const createMutation = useMutation({
