@@ -31,7 +31,11 @@ interface GroupingFormProps {
   isSubmitting?: boolean;
 }
 
-export function GroupingForm({ grouping, onSubmit, isSubmitting }: GroupingFormProps) {
+export function GroupingForm({
+  grouping,
+  onSubmit,
+  isSubmitting,
+}: GroupingFormProps) {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,7 +47,7 @@ export function GroupingForm({ grouping, onSubmit, isSubmitting }: GroupingFormP
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-8">
         <FormField
           control={form.control}
           name="name"
@@ -65,7 +69,11 @@ export function GroupingForm({ grouping, onSubmit, isSubmitting }: GroupingFormP
             <FormItem>
               <FormLabel>Icon</FormLabel>
               <FormControl>
-                <IconPicker value={field.value} onChange={field.onChange} allowCustom />
+                <IconPicker
+                  value={field.value}
+                  onChange={field.onChange}
+                  allowCustom
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

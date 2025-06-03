@@ -31,8 +31,6 @@ export async function GET(request: Request) {
         .eq('id', session?.user.id)
         .single();
 
-      console.log('profile', profile);
-
       // Redirect based on user role
       if (profile?.role === 'admin') {
         return NextResponse.redirect(new URL('/admin', request.url));

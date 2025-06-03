@@ -5,10 +5,7 @@ import type { PlaceSubcategory } from '@/types/place';
 
 async function getGroupingSubcategories(groupingId?: string) {
   const supabase = createClient();
-  let query = supabase
-    .from('subcategories')
-    .select('*')
-    .order('name');
+  let query = supabase.from('subcategories').select('*').order('name');
 
   if (groupingId) {
     query = query.eq('grouping_id', groupingId);
@@ -19,7 +16,10 @@ async function getGroupingSubcategories(groupingId?: string) {
   return data as PlaceSubcategory[];
 }
 
-async function updateSubcategoryGrouping(id: string, groupingId: string | null) {
+async function updateSubcategoryGrouping(
+  id: string,
+  groupingId: string | null
+) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('subcategories')
@@ -45,10 +45,16 @@ export function useGroupingSubcategories(groupingId?: string) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, groupingId }: { id: string; groupingId: string | null }) =>
-      updateSubcategoryGrouping(id, groupingId),
+    mutationFn: ({
+      id,
+      groupingId,
+    }: {
+      id: string;
+      groupingId: string | null;
+    }) => updateSubcategoryGrouping(id, groupingId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['grouping_subcategories'] });
+      queryClient.invalidateQueries({ queryKey: ['place_groupings'] });
       toast.success('Subcategory updated successfully');
     },
     onError: (error: Error) => {
@@ -61,6 +67,7 @@ export function useGroupingSubcategories(groupingId?: string) {
     isLoading,
     error,
     updateSubcategoryGrouping: updateMutation.mutate,
+    updateSubcategoryGroupingAsync: updateMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
   };
 }

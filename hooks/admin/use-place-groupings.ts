@@ -7,13 +7,16 @@ async function getGroupings() {
   const supabase = createClient();
   const { data, error } = await supabase
     .from('place_groupings')
-    .select(`
+    .select(
+      `
       *,
       place_grouping_schema (
         *,
         field:place_fields (*)
-      )
-    `)
+      ),
+      subcategories:subcategories (*)
+    `
+    )
     .order('name');
 
   if (error) throw error;
@@ -29,6 +32,7 @@ async function getGroupings() {
         .filter((s: any) => !s.required)
         .map((s: any) => s.field),
     },
+    subcategories: grouping.subcategories || [],
   })) as PlaceGrouping[];
 }
 

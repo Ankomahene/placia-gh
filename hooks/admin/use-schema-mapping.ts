@@ -1,6 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { updateSchemaMapping, removeSchemaMapping } from '@/lib/services/admin/schema';
+import {
+  updateSchemaMapping,
+  removeSchemaMapping,
+} from '@/lib/services/admin/schema';
 
 export function useSchemaMapping() {
   const queryClient = useQueryClient();
@@ -43,7 +46,9 @@ export function useSchemaMapping() {
 
   return {
     updateMapping: updateMutation.mutate,
+    updateMappingAsync: updateMutation.mutateAsync,
     removeMapping: removeMutation.mutate,
+    removeMappingAsync: removeMutation.mutateAsync,
     isUpdating: updateMutation.isPending,
     isRemoving: removeMutation.isPending,
   };

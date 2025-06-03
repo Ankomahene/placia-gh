@@ -26,7 +26,14 @@ import type { PlaceField } from '@/types/place';
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   label: z.string().min(2, 'Label must be at least 2 characters'),
-  field_type: z.enum(['string', 'number', 'boolean', 'array', 'object', 'date']),
+  field_type: z.enum([
+    'string',
+    'number',
+    'boolean',
+    'array',
+    'object',
+    'date',
+  ]),
   is_array: z.boolean(),
   is_object: z.boolean(),
 });
@@ -53,7 +60,7 @@ export function FieldForm({ field, onSubmit, isSubmitting }: FieldFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 px-8">
         <FormField
           control={form.control}
           name="name"

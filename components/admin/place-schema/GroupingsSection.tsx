@@ -53,7 +53,9 @@ export function GroupingsSection({
   const [search, setSearch] = useState('');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editingGrouping, setEditingGrouping] = useState<PlaceGrouping | null>(null);
+  const [editingGrouping, setEditingGrouping] = useState<PlaceGrouping | null>(
+    null
+  );
 
   const filteredGroupings = groupings.filter((grouping) =>
     grouping.name.toLowerCase().includes(search.toLowerCase())
@@ -107,12 +109,14 @@ export function GroupingsSection({
             )}
             onClick={() => onSelect(grouping)}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3" title={grouping.name}>
               {grouping.icon && (
                 <IconRenderer icon={grouping.icon} className="h-5 w-5" />
               )}
-              <div>
-                <h3 className="font-medium">{grouping.name}</h3>
+              <div className="flex-1 max-w-[200px]">
+                <h3 className="text-sm font-medium text-gray-600 truncate">
+                  {grouping.name}
+                </h3>
                 {grouping.description && (
                   <p className="text-sm text-muted-foreground">
                     {grouping.description}
@@ -120,7 +124,7 @@ export function GroupingsSection({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center w-[60px]">
               <Button
                 variant="ghost"
                 size="icon"

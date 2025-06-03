@@ -1,14 +1,3 @@
-import { useState } from 'react';
-import { Plus, Pencil, Trash2, Search } from 'lucide-react';
-import { useDraggable } from '@dnd-kit/core';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,14 +8,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { IconRenderer } from '@/components/ui/icon-renderer';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
 import { cn } from '@/lib/utils';
-import { SubcategoryForm } from '../place-manager/forms/SubcategoryForm';
 import type { PlaceSubcategory } from '@/types/place';
+import { useDraggable } from '@dnd-kit/core';
+import { GripVerticalIcon, Grip, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { SubcategoryForm } from '../place-manager/forms/SubcategoryForm';
 
-function DraggableSubcategory({ subcategory }: { subcategory: PlaceSubcategory }) {
+function DraggableSubcategory({
+  subcategory,
+  onEdit,
+  onDelete,
+}: {
+  subcategory: PlaceSubcategory;
+  onEdit: (subcategory: PlaceSubcategory) => void;
+  onDelete: (subcategory: PlaceSubcategory) => void;
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: subcategory.id,
     data: {
@@ -38,25 +44,47 @@ function DraggableSubcategory({ subcategory }: { subcategory: PlaceSubcategory }
   return (
     <div
       ref={setNodeRef}
-      {...listeners}
       {...attributes}
       className={cn(
-        'flex items-center justify-between p-3 rounded-lg border cursor-move transition-colors hover:bg-muted/50',
+        'flex items-center justify-between p-3 rounded-lg border  transition-colors hover:bg-muted/50',
         isDragging && 'opacity-50'
       )}
     >
-      <div className="flex items-center gap-3">
+      <div {...listeners} className="flex items-center gap-2 cursor-move">
+        <div className="flex items-center gap-3">
+          <GripVerticalIcon className="w-4 h-4" />
+        </div>
         {subcategory.icon && (
           <IconRenderer icon={subcategory.icon} className="w-5 h-5" />
         )}
         <div>
-          <h3 className="font-medium">{subcategory.name}</h3>
+          <h3 className="text-sm font-medium line-clamp-1 ">
+            {subcategory.name}
+          </h3>
           {subcategory.description && (
             <p className="text-sm text-muted-foreground">
               {subcategory.description}
             </p>
           )}
         </div>
+      </div>
+      <div className="flex items-center w-[60px] ">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onEdit(subcategory)}
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+          onClick={() => onDelete(subcategory)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
       </div>
     </div>
   );
@@ -77,8 +105,9 @@ export function SubcategoriesSection({
 }: SubcategoriesSectionProps) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [editingSubcategory, setEditingSubcategory] = useState<PlaceSubcategory | null>(null);
-  const { subcategories, isLoading } = usePlaceSubcategories(groupingId);
+  const [editingSubcategory, setEditingSubcategory] =
+    useState<PlaceSubcategory | null>(null);
+  const { subcategories, isLoading } = usePlaceSubcategories();
 
   const handleEdit = (subcategory: PlaceSubcategory) => {
     setEditingSubcategory(subcategory);
@@ -90,13 +119,13 @@ export function SubcategoriesSection({
     setIsDeleteDialogOpen(true);
   };
 
-  if (!groupingId) {
-    return (
-      <div className="text-center text-muted-foreground p-4">
-        Select a grouping to manage subcategories
-      </div>
-    );
-  }
+  // if (!groupingId) {
+  //   return (
+  //     <div className="text-center text-muted-foreground p-4">
+  //       Select a grouping to manage subcategories
+  //     </div>
+  //   );
+  // }
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -120,42 +149,12 @@ export function SubcategoriesSection({
 
       <div className="space-y-2">
         {subcategories?.map((subcategory) => (
-          <div
+          <DraggableSubcategory
             key={subcategory.id}
-            className="flex items-center justify-between p-3 rounded-lg border bg-card"
-          >
-            <div className="flex items-center gap-3">
-              {subcategory.icon && (
-                <IconRenderer icon={subcategory.icon} className="w-5 h-5" />
-              )}
-              <div>
-                <h3 className="font-medium">{subcategory.name}</h3>
-                {subcategory.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {subcategory.description}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => handleEdit(subcategory)}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => handleDelete(subcategory)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+            subcategory={subcategory}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
         ))}
       </div>
 
@@ -166,9 +165,8 @@ export function SubcategoriesSection({
               {editingSubcategory ? 'Edit Subcategory' : 'Add Subcategory'}
             </SheetTitle>
           </SheetHeader>
-          <div className="mt-8">
+          <div className="mt-8 px-8">
             <SubcategoryForm
-              categoryId={groupingId}
               subcategory={editingSubcategory}
               onSuccess={() => setIsFormOpen(false)}
             />
@@ -184,8 +182,8 @@ export function SubcategoriesSection({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Subcategory</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this subcategory? This action cannot
-              be undone.
+              Are you sure you want to delete this subcategory? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

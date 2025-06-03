@@ -44,19 +44,17 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 interface SubcategoryFormProps {
-  categoryId: string;
   subcategory?: PlaceSubcategory | null;
   onSuccess?: () => void;
 }
 
 export function SubcategoryForm({
-  categoryId,
   subcategory,
   onSuccess,
 }: SubcategoryFormProps) {
   const [open, setOpen] = useState(false);
   const { createSubcategory, updateSubcategory, isCreating, isUpdating } =
-    usePlaceSubcategories(categoryId);
+    usePlaceSubcategories();
   const { categories } = usePlaceCategories();
 
   const form = useForm<FormData>({
@@ -65,7 +63,7 @@ export function SubcategoryForm({
       name: subcategory?.name || '',
       icon: subcategory?.icon || '',
       description: subcategory?.description || '',
-      category_id: subcategory?.category_id || categoryId,
+      category_id: subcategory?.category_id || '',
     },
   });
 
