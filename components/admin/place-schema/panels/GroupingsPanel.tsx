@@ -317,9 +317,9 @@ export function GroupingsPanel({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Grouping</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{editingGrouping?.name}"? This
-              will also remove all associated schema mappings. This action
-              cannot be undone.
+              Are you sure you want to delete &quot;{editingGrouping?.name}
+              &quot;? This will also remove all associated schema mappings. This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

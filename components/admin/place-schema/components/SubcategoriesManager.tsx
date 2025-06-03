@@ -241,9 +241,9 @@ export function SubcategoriesManager({ search }: SubcategoriesManagerProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Subcategory</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{editingSubcategory?.name}"? This
-              will also remove it from all groupings. This action cannot be
-              undone.
+              Are you sure you want to delete &quot;{editingSubcategory?.name}
+              &quot;? This will also remove it from all groupings. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

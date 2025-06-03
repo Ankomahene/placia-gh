@@ -290,8 +290,9 @@ export function FieldsManager({ search }: FieldsManagerProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Field</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{editingField?.label}"? This will
-              also remove it from all schemas. This action cannot be undone.
+              Are you sure you want to delete &quot;{editingField?.label}
+              &quot;? This will also remove it from all schemas. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -46,16 +46,18 @@ type FormData = z.infer<typeof formSchema>;
 interface SubcategoryFormProps {
   subcategory?: PlaceSubcategory | null;
   onSuccess?: () => void;
+  categoryId?: string;
 }
 
 export function SubcategoryForm({
   subcategory,
   onSuccess,
+  categoryId,
 }: SubcategoryFormProps) {
   const [open, setOpen] = useState(false);
   const { createSubcategory, updateSubcategory, isCreating, isUpdating } =
     usePlaceSubcategories();
-  const { categories } = usePlaceCategories();
+  const { categories } = usePlaceCategories(categoryId);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
