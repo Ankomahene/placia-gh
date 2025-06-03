@@ -8,12 +8,15 @@ import {
 } from '@dnd-kit/core';
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GroupingsSection } from '@/components/admin/place-schema/GroupingsSection';
 import { FieldsSection } from '@/components/admin/place-schema/FieldsSection';
+import { SubcategoriesSection } from '@/components/admin/place-schema/SubcategoriesSection';
 import { SchemaBuilder } from '@/components/admin/place-schema/SchemaBuilder';
 import { usePlaceGroupings } from '@/hooks/admin/use-place-groupings';
 import { usePlaceFields } from '@/hooks/admin/use-place-fields';
 import { useSchemaMapping } from '@/hooks/admin/use-schema-mapping';
+import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
 import type { PlaceGrouping, PlaceField } from '@/types/place';
 
 export default function PlaceSchemaClient() {
@@ -22,6 +25,7 @@ export default function PlaceSchemaClient() {
   const [draggedField, setDraggedField] = useState<PlaceField | null>(null);
   const [activeTab, setActiveTab] = useState<'fields' | 'subcategories'>('fields');
   const { updateMapping, removeMapping } = useSchemaMapping();
+  const { createSubcategory, updateSubcategory, deleteSubcategory } = usePlaceSubcategories();
   const {
     groupings,
     isLoading: isLoadingGroupings,
@@ -88,6 +92,33 @@ export default function PlaceSchemaClient() {
   const handleDeleteField = (id: string) =>
     new Promise<void>((resolve, reject) => {
       deleteField(id, {
+        onSuccess: () => resolve(),
+        onError: reject,
+      });
+    });
+
+  const handleCreateSubcategory = (data: any) =>
+    new Promise<void>((resolve, reject) => {
+      createSubcategory(data, {
+        onSuccess: () => resolve(),
+        onError: reject,
+      });
+    });
+
+  const handleUpdateSubcategory = (id: string, data: any) =>
+    new Promise<void>((resolve, reject) => {
+      updateSubcategory(
+        { id, ...data },
+        {
+          onSuccess: () => resolve(),
+          onError: reject,
+        }
+      );
+    });
+
+  const handleDeleteSubcategory = (id: string) =>
+    new Promise<void>((resolve, reject) => {
+      deleteSubcategory(id, {
         onSuccess: () => resolve(),
         onError: reject,
       });
