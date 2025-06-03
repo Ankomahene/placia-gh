@@ -38,6 +38,7 @@ export interface PlaceSubcategory {
   description: string;
   created_at: Date;
   updated_at: Date;
+  grouping_id: string;
 }
 
 export interface PlaceType {

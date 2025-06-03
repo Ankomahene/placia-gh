@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
+import { useDraggable } from '@dnd-kit/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,6 +25,42 @@ import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
 import { cn } from '@/lib/utils';
 import { SubcategoryForm } from '../place-manager/forms/SubcategoryForm';
 import type { PlaceSubcategory } from '@/types/place';
+
+function DraggableSubcategory({ subcategory }: { subcategory: PlaceSubcategory }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+    id: subcategory.id,
+    data: {
+      type: 'subcategory',
+      subcategory,
+    },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={cn(
+        'flex items-center justify-between p-3 rounded-lg border cursor-move transition-colors hover:bg-muted/50',
+        isDragging && 'opacity-50'
+      )}
+    >
+      <div className="flex items-center gap-3">
+        {subcategory.icon && (
+          <IconRenderer icon={subcategory.icon} className="w-5 h-5" />
+        )}
+        <div>
+          <h3 className="font-medium">{subcategory.name}</h3>
+          {subcategory.description && (
+            <p className="text-sm text-muted-foreground">
+              {subcategory.description}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface SubcategoriesSectionProps {
   groupingId?: string;
