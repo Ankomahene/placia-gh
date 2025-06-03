@@ -1,3 +1,24 @@
+export interface Country {
+  id: string;
+  name: string;
+  numeric_code: string;
+  phonecode: string;
+  capital: string;
+  currency: string;
+  currency_name: string;
+  currency_symbol: string;
+  region: string;
+  region_id: string;
+  subregion: string;
+  subregion_id: string;
+  nationality: string;
+  longitude: number;
+  latitude: number;
+  emoji: string;
+  emojiU: string;
+  created_at: Date;
+  updated_at: Date;
+}
 export interface PlaceCategory {
   id: string;
   name: string;
@@ -40,6 +61,46 @@ export interface Ownership {
   updated_at: Date;
 }
 
+export interface PlaceGrouping {
+  id: string;
+  name: string;
+  icon?: string;
+  description?: string;
+  created_at: string; // ISO string
+  updated_at: string;
+}
+
+export interface PlaceField {
+  id: string;
+  name: string; // e.g. "contacts"
+  label: string; // e.g. "Contact Numbers"
+  field_type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'date';
+  is_array: boolean;
+  is_object: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PlaceGroupingSchema {
+  id: string;
+  grouping_id: string; // FK to PlaceGrouping
+  field_id: string; // FK to PlaceField
+  required: boolean;
+  created_at: string;
+  updated_at: string;
+
+  // Optional expanded references for easier frontend use
+  field?: PlaceField;
+}
+
+export interface ExpandedPlaceGrouping extends PlaceGrouping {
+  types: PlaceType[];
+  schema: {
+    required: PlaceField[];
+    optional: PlaceField[];
+  };
+}
+
 export interface Place {
   id: string;
   name: string;
@@ -50,12 +111,13 @@ export interface Place {
   email?: string;
   icon?: string;
   logo?: string;
-  main_image: string;
-  gallery: string[];
+  main_image?: string;
+  gallery?: string[];
 
-  country: { lng: number; lat: number; name: string; code?: string };
-  region?: { lng: number; lat: number; name: string };
-  city?: { lng: number; lat: number; name: string };
+  country_id: string;
+  region_id: string;
+  city_id: string;
+  town_id?: string;
   location: { lng: number; lat: number; name: string; street_address: string };
 
   website?: string;
@@ -63,10 +125,10 @@ export interface Place {
 
   category_id: string; // FK to place_categories.id
   subcategory_id: string; // FK to place_subcategories.id
-  type_id: string | null; // optional, FK to place_types.id
-  ownership_id: string | null; // optional, FK to ownerships.id
+  type_id?: string | null; // optional, FK to place_types.id
+  ownership_id?: string | null; // optional, FK to ownerships.id
 
-  rating: { rate: number; count: number };
+  rating?: { rate: number; count: number };
   open_hours?: {
     day: string;
     from: string;
@@ -74,12 +136,15 @@ export interface Place {
   }[];
   features?: { label: string; icon: string }[];
   services?: { label: string; icon: string }[];
-  tags: string[];
+  tags?: string[];
+  accessibility?: { label: string; icon: string }[];
 
   created_at: Date;
   updated_at: Date;
 
-  other_details: object;
+  other_details?: object;
+  source?: string;
+  source_link?: string;
 }
 
 export interface UserUploadedPhotosForPlace {
