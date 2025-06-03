@@ -3,16 +3,36 @@
 import { DndContext, DragEndEvent, DragOverlay } from '@dnd-kit/core';
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { toast } from 'sonner';
 import { GroupingsSection } from '@/components/admin/schema/GroupingsSection';
 import { FieldsSection } from '@/components/admin/schema/FieldsSection';
 import { SchemaBuilder } from '@/components/admin/schema/SchemaBuilder';
 import { usePlaceGroupings } from '@/hooks/admin/use-place-groupings';
+import { usePlaceFields } from '@/hooks/admin/use-place-fields';
 import type { PlaceGrouping, PlaceField } from '@/types/place';
 
 export default function PlaceSchemaPage() {
   const [selectedGrouping, setSelectedGrouping] = useState<PlaceGrouping | null>(null);
   const [draggedField, setDraggedField] = useState<PlaceField | null>(null);
-  const { groupings, isLoading } = usePlaceGroupings();
+  const {
+    groupings,
+    isLoading: isLoadingGroupings,
+    createGrouping,
+    updateGrouping,
+    deleteGrouping,
+    isCreating: isCreatingGrouping,
+    isUpdating: isUpdatingGrouping,
+    isDeleting: isDeletingGrouping,
+  } = usePlaceGroupings();
+
+  const {
+    createField,
+    updateField,
+    deleteField,
+    isCreating: isCreatingField,
+    isUpdating: isUpdatingField,
+    isDeleting: isDeletingField,
+  } = usePlaceFields();
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -39,9 +59,15 @@ export default function PlaceSchemaPage() {
         <Card className="lg:col-span-3 p-4">
           <GroupingsSection 
             groupings={groupings}
-            isLoading={isLoading}
+            isLoading={isLoadingGroupings}
             selectedGrouping={selectedGrouping}
             onSelect={setSelectedGrouping}
+            onCreateGrouping={createGrouping}
+            onUpdateGrouping={updateGrouping}
+            onDeleteGrouping={deleteGrouping}
+            isCreating={isCreatingGrouping}
+            isUpdating={isUpdatingGrouping}
+            isDeleting={isDeletingGrouping}
           />
         </Card>
 
@@ -64,7 +90,11 @@ export default function PlaceSchemaPage() {
         </Card>
 
         <Card className="lg:col-span-3 p-4">
-          <FieldsSection />
+          <FieldsSection
+            onCreateField={createField}
+            onUpdateField={updateField}
+            onDeleteField={deleteField}
+          />
         </Card>
       </div>
     </div>

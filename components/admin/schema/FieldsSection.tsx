@@ -4,10 +4,27 @@ import { useState } from 'react';
 import { Plus, Pencil, Trash2, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { usePlaceFields } from '@/hooks/admin/use-place-fields';
 import { useDraggable } from '@dnd-kit/core';
 import { cn } from '@/lib/utils';
+import { FieldForm } from './forms/FieldForm';
 import type { PlaceField } from '@/types/place';
 
 function DraggableField({ field }: { field: PlaceField }) {
@@ -57,8 +74,37 @@ function DraggableField({ field }: { field: PlaceField }) {
   );
 }
 
-export function FieldsSection() {
-  const { fields, isLoading, search, setSearch } = usePlaceFields();
+export function FieldsSection({
+  onCreateField,
+  onUpdateField,
+  onDeleteField,
+}: {
+  onCreateField: (data: any) => Promise<void>;
+  onUpdateField: (id: string, data: any) => Promise<void>;
+  onDeleteField: (id: string) => Promise<void>;
+}) {
+  const {
+    fields,
+    isLoading,
+    search,
+    setSearch,
+    isCreating,
+    isUpdating,
+    isDeleting,
+  } = usePlaceFields();
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [editingField, setEditingField] = useState<PlaceField | null>(null);
+
+  const handleEdit = (field: PlaceField) => {
+    setEditingField(field);
+    setIsFormOpen(true);
+  };
+
+  const handleDelete = (field: PlaceField) => {
+    setEditingField(field);
+    setIsDeleteDialogOpen(true);
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -68,7 +114,13 @@ export function FieldsSection() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Fields</h2>
-        <Button size="sm">
+        <Button
+          size="sm"
+          onClick={() => {
+            setEditingField(null);
+            setIsFormOpen(true);
+          }}
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Field
         </Button>
@@ -89,6 +141,59 @@ export function FieldsSection() {
           <DraggableField key={field.id} field={field} />
         ))}
       </div>
+
+      <Sheet open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <SheetContent className="sm:max-w-[500px] px-4 md:px-6">
+          <SheetHeader>
+            <SheetTitle>
+              {editingField ? 'Edit Field' : 'Add Field'}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-8">
+            <FieldForm
+              field={editingField}
+              onSubmit={async (data) => {
+                if (editingField) {
+                  await onUpdateField(editingField.id, data);
+                } else {
+                  await onCreateField(data);
+                }
+                setIsFormOpen(false);
+              }}
+              isSubmitting={isCreating || isUpdating}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Field</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this field? This action cannot
+              be undone and will also remove it from all grouping schemas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (editingField) {
+                  await onDeleteField(editingField.id);
+                  setIsDeleteDialogOpen(false);
+                }
+              }}
+              disabled={isDeleting}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
