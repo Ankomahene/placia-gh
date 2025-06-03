@@ -9,6 +9,7 @@ import {
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useGroupingSubcategories } from '@/hooks/admin/use-grouping-subcategories';
 import { GroupingsSection } from '@/components/admin/place-schema/GroupingsSection';
 import { FieldsSection } from '@/components/admin/place-schema/FieldsSection';
 import { SubcategoriesSection } from '@/components/admin/place-schema/SubcategoriesSection';
@@ -23,9 +24,10 @@ export default function PlaceSchemaClient() {
   const [selectedGrouping, setSelectedGrouping] =
     useState<PlaceGrouping | null>(null);
   const [draggedField, setDraggedField] = useState<PlaceField | null>(null);
+  const [draggedSubcategory, setDraggedSubcategory] = useState<PlaceSubcategory | null>(null);
   const [activeTab, setActiveTab] = useState<'fields' | 'subcategories'>('fields');
   const { updateMapping, removeMapping } = useSchemaMapping();
-  const { createSubcategory, updateSubcategory, deleteSubcategory } = usePlaceSubcategories();
+  const { updateSubcategoryGrouping } = useGroupingSubcategories();
   const {
     groupings,
     isLoading: isLoadingGroupings,
@@ -127,6 +129,8 @@ export default function PlaceSchemaClient() {
   const handleDragStart = (event: DragStartEvent) => {
     if (event.active.data.current?.type === 'field') {
       setDraggedField(event.active.data.current.field);
+    } else if (event.active.data.current?.type === 'subcategory') {
+      setDraggedSubcategory(event.active.data.current.subcategory);
     }
   };
 
@@ -147,8 +151,18 @@ export default function PlaceSchemaClient() {
         fieldId: field.id,
         required: isRequired,
       });
+    } else if (
+      active.data?.current?.type === 'subcategory' &&
+      over.data?.current?.type === 'grouping'
+    ) {
+      const subcategory = active.data.current.subcategory;
+      updateSubcategoryGrouping({
+        id: subcategory.id,
+        groupingId: selectedGrouping.id,
+      });
     }
     setDraggedField(null);
+    setDraggedSubcategory(null);
   };
 
   return (
