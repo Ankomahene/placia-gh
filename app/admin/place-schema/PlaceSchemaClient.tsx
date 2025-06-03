@@ -18,12 +18,12 @@ import { SchemaBuilder } from '@/components/admin/place-schema/SchemaBuilder';
 import { usePlaceGroupings } from '@/hooks/admin/use-place-groupings';
 import { usePlaceFields } from '@/hooks/admin/use-place-fields';
 import { useSchemaMapping } from '@/hooks/admin/use-schema-mapping';
-import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
 import type {
   PlaceGrouping,
   PlaceField,
   PlaceSubcategory,
 } from '@/types/place';
+import { toast } from 'sonner';
 
 export default function PlaceSchemaClient() {
   const [selectedGrouping, setSelectedGrouping] =
@@ -35,7 +35,8 @@ export default function PlaceSchemaClient() {
     'fields'
   );
   const { updateMapping, removeMapping } = useSchemaMapping();
-  const { createSubcategory, updateSubcategory, deleteSubcategory } = usePlaceSubcategories();
+  const { createSubcategory, updateSubcategory, deleteSubcategory } =
+    usePlaceSubcategories();
   const { updateSubcategoryGrouping } = useGroupingSubcategories();
   const {
     groupings,
