@@ -20,6 +20,7 @@ export default function PlaceSchemaClient() {
   const [selectedGrouping, setSelectedGrouping] =
     useState<PlaceGrouping | null>(null);
   const [draggedField, setDraggedField] = useState<PlaceField | null>(null);
+  const [activeTab, setActiveTab] = useState<'fields' | 'subcategories'>('fields');
   const { updateMapping, removeMapping } = useSchemaMapping();
   const {
     groupings,
@@ -165,11 +166,27 @@ export default function PlaceSchemaClient() {
           </DndContext>
         </Card>
         <Card className="lg:col-span-3 p-4 overflow-y-auto max-h-[calc(100vh-250px)]">
+          <Tabs value={activeTab} onValueChange={(value: 'fields' | 'subcategories') => setActiveTab(value)}>
+            <TabsList className="w-full mb-4">
+              <TabsTrigger value="fields" className="flex-1">Fields</TabsTrigger>
+              <TabsTrigger value="subcategories" className="flex-1">Subcategories</TabsTrigger>
+            </TabsList>
+            <TabsContent value="fields">
           <FieldsSection
             onCreateField={handleCreateField}
             onUpdateField={handleUpdateField}
             onDeleteField={handleDeleteField}
           />
+            </TabsContent>
+            <TabsContent value="subcategories">
+              <SubcategoriesSection
+                groupingId={selectedGrouping?.id}
+                onCreateSubcategory={handleCreateSubcategory}
+                onUpdateSubcategory={handleUpdateSubcategory}
+                onDeleteSubcategory={handleDeleteSubcategory}
+              />
+            </TabsContent>
+          </Tabs>
         </Card>
       </div>
     </div>

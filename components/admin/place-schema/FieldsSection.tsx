@@ -58,13 +58,25 @@ function DraggableField({ field }: { field: PlaceField }) {
           {field.is_array && '[]'}
         </Badge>
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleEdit(field);
+            }}
+          >
             <Pencil className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 hover:bg-destructive/10 hover:text-destructive"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(field);
+            }}
           >
             <Trash2 className="h-3 w-3" />
           </Button>
@@ -104,6 +116,14 @@ export function FieldsSection({
   const handleDelete = (field: PlaceField) => {
     setEditingField(field);
     setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (editingField) {
+      await onDeleteField(editingField.id);
+      setIsDeleteDialogOpen(false);
+      setEditingField(null);
+    }
   };
 
   if (isLoading) {

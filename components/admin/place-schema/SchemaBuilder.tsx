@@ -44,9 +44,13 @@ function FieldSection({
       ref={setNodeRef}
       className={cn(
         'p-4 rounded-lg border-2 border-dashed transition-colors min-h-[200px]',
-        isOver ? 'border-primary/50 bg-primary/5' : 'border-muted'
+        isOver ? 'border-primary/50 bg-primary/5' : 'border-muted',
+        'relative'
       )}
     >
+      {isOver && (
+        <div className="absolute inset-0 bg-primary/5 border-2 border-primary/50 rounded-lg pointer-events-none" />
+      )}
       <h3 className="font-medium mb-4 flex items-center gap-2">
         {title}
         <Badge variant="secondary">{fields.length}</Badge>
