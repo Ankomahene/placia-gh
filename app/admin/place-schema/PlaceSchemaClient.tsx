@@ -9,6 +9,7 @@ import {
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
 import { useGroupingSubcategories } from '@/hooks/admin/use-grouping-subcategories';
 import { GroupingsSection } from '@/components/admin/place-schema/GroupingsSection';
 import { FieldsSection } from '@/components/admin/place-schema/FieldsSection';
@@ -34,6 +35,7 @@ export default function PlaceSchemaClient() {
     'fields'
   );
   const { updateMapping, removeMapping } = useSchemaMapping();
+  const { createSubcategory, updateSubcategory, deleteSubcategory } = usePlaceSubcategories();
   const { updateSubcategoryGrouping } = useGroupingSubcategories();
   const {
     groupings,
@@ -109,8 +111,14 @@ export default function PlaceSchemaClient() {
   const handleCreateSubcategory = (data: any) =>
     new Promise<void>((resolve, reject) => {
       createSubcategory(data, {
-        onSuccess: () => resolve(),
-        onError: reject,
+        onSuccess: () => {
+          toast.success('Subcategory created successfully');
+          resolve();
+        },
+        onError: (error) => {
+          toast.error(error.message);
+          reject(error);
+        },
       });
     });
 
@@ -119,8 +127,14 @@ export default function PlaceSchemaClient() {
       updateSubcategory(
         { id, ...data },
         {
-          onSuccess: () => resolve(),
-          onError: reject,
+          onSuccess: () => {
+            toast.success('Subcategory updated successfully');
+            resolve();
+          },
+          onError: (error) => {
+            toast.error(error.message);
+            reject(error);
+          },
         }
       );
     });
@@ -128,8 +142,14 @@ export default function PlaceSchemaClient() {
   const handleDeleteSubcategory = (id: string) =>
     new Promise<void>((resolve, reject) => {
       deleteSubcategory(id, {
-        onSuccess: () => resolve(),
-        onError: reject,
+        onSuccess: () => {
+          toast.success('Subcategory deleted successfully');
+          resolve();
+        },
+        onError: (error) => {
+          toast.error(error.message);
+          reject(error);
+        },
       });
     });
 
