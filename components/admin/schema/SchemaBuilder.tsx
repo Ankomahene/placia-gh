@@ -2,22 +2,26 @@
 
 import { useDroppable } from '@dnd-kit/core';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PlaceGrouping } from '@/types/place';
 
 interface SchemaBuilderProps {
   grouping: PlaceGrouping | null;
-  onFieldMove: (fieldId: string, required: boolean) => void;
+  onRemoveField: (fieldId: string) => void;
 }
 
 function FieldSection({
   title,
   fields,
   type,
+  onRemove,
 }: {
   title: string;
   fields: any[];
   type: 'required' | 'optional';
+  onRemove: (fieldId: string) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `${type}-droppable`,
@@ -44,16 +48,26 @@ function FieldSection({
         {fields.map((field) => (
           <div
             key={field.id}
-            className="flex items-center justify-between p-2 rounded bg-muted/50"
+            className="flex items-center justify-between p-2 rounded bg-muted/50 group"
           >
             <div>
               <p className="font-medium text-sm">{field.label}</p>
               <p className="text-xs text-muted-foreground">{field.name}</p>
             </div>
-            <Badge variant="secondary" className="text-xs">
-              {field.field_type}
-              {field.is_array && '[]'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {field.field_type}
+                {field.is_array && '[]'}
+              </Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={() => onRemove(field.id)}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
         ))}
       </div>
@@ -61,7 +75,7 @@ function FieldSection({
   );
 }
 
-export function SchemaBuilder({ grouping, onFieldMove }: SchemaBuilderProps) {
+export function SchemaBuilder({ grouping, onRemoveField }: SchemaBuilderProps) {
   if (!grouping) {
     return (
       <div className="flex items-center justify-center h-[400px] text-muted-foreground">
@@ -84,11 +98,13 @@ export function SchemaBuilder({ grouping, onFieldMove }: SchemaBuilderProps) {
           title="Required Fields"
           fields={grouping.schema?.required || []}
           type="required"
+          onRemove={onRemoveField}
         />
         <FieldSection
           title="Optional Fields"
           fields={grouping.schema?.optional || []}
           type="optional"
+          onRemove={onRemoveField}
         />
       </div>
     </div>

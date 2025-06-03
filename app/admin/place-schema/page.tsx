@@ -1,6 +1,6 @@
 'use client';
 
-import { DndContext, DragEndEvent, DragOverlay } from '@dnd-kit/core';
+import { DndContext, DragEndEvent, DragOverlay, DragStartEvent } from '@dnd-kit/core';
 import { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -9,11 +9,13 @@ import { FieldsSection } from '@/components/admin/schema/FieldsSection';
 import { SchemaBuilder } from '@/components/admin/schema/SchemaBuilder';
 import { usePlaceGroupings } from '@/hooks/admin/use-place-groupings';
 import { usePlaceFields } from '@/hooks/admin/use-place-fields';
+import { useSchemaMapping } from '@/hooks/admin/use-schema-mapping';
 import type { PlaceGrouping, PlaceField } from '@/types/place';
 
 export default function PlaceSchemaPage() {
   const [selectedGrouping, setSelectedGrouping] = useState<PlaceGrouping | null>(null);
   const [draggedField, setDraggedField] = useState<PlaceField | null>(null);
+  const { updateMapping, removeMapping } = useSchemaMapping();
   const {
     groupings,
     isLoading: isLoadingGroupings,
@@ -34,13 +36,29 @@ export default function PlaceSchemaPage() {
     isDeleting: isDeletingField,
   } = usePlaceFields();
 
+  const handleDragStart = (event: DragStartEvent) => {
+    if (event.active.data.current?.type === 'field') {
+      setDraggedField(event.active.data.current.field);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (!over) return;
+    if (!over || !selectedGrouping) {
+      setDraggedField(null);
+      return;
+    }
 
     // Handle dropping fields into required/optional sections
     if (active.data?.current?.type === 'field' && over.data?.current?.type === 'droppable') {
-      // Update schema here
+      const field = active.data.current.field;
+      const isRequired = over.data.current.section === 'required';
+      
+      updateMapping({
+        groupingId: selectedGrouping.id,
+        fieldId: field.id,
+        required: isRequired,
+      });
     }
 
     setDraggedField(null);
@@ -72,11 +90,19 @@ export default function PlaceSchemaPage() {
         </Card>
 
         <Card className="lg:col-span-6 p-4">
-          <DndContext onDragEnd={handleDragEnd}>
+          <DndContext 
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
             <SchemaBuilder 
               grouping={selectedGrouping}
-              onFieldMove={(fieldId, required) => {
-                // Handle field movement between sections
+              onRemoveField={(fieldId) => {
+                if (selectedGrouping) {
+                  removeMapping({
+                    groupingId: selectedGrouping.id,
+                    fieldId,
+                  });
+                }
               }}
             />
             <DragOverlay>
