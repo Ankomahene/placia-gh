@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { CategoryManager } from '@/components/admin/CategoryManager';
-import { OwnershipManager } from '@/components/admin/OwnershipManager';
+import { CategoryManager } from '@/components/admin/place-manager/CategoryManager';
+import { OwnershipManager } from '@/components/admin/place-manager/OwnershipManager';
 
 export default function PlaceManagerPage() {
   const [activeTab, setActiveTab] = useState('categories');

@@ -8,7 +8,14 @@ import { cn } from '@/lib/utils';
 import type { PlaceGrouping } from '@/types/place';
 
 interface SchemaBuilderProps {
-  grouping: PlaceGrouping | null;
+  grouping:
+    | (PlaceGrouping & {
+        schema?: {
+          required: any[];
+          optional: any[];
+        };
+      })
+    | null;
   onRemoveField: (fieldId: string) => void;
 }
 

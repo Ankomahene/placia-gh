@@ -45,6 +45,7 @@ export function DashboardHeader({ isAdmin = false }: DashboardHeaderProps) {
         { name: 'Dashboard', href: '/admin' },
         { name: 'Users', href: '/admin/users' },
         { name: 'Place Manager', href: '/admin/place-manager' },
+        { name: 'Place Schema', href: '/admin/place-schema' },
         { name: 'Settings', href: '/admin/settings' },
       ]
     : [
