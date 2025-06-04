@@ -1,4 +1,5 @@
 export { SearchDrawer } from './search-drawer';
+export { SearchClientWrapper } from './search-client-wrapper';
 export { useSearch } from './hooks/use-search';
 export { SearchFilters } from './filters/search-filters';
 export { MapView } from './views/map-view';
