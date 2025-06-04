@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ThemePaletteProvider } from '@/components/theme-palette';
 import { Toaster } from 'sonner';
 import { QueryProvider } from './providers/query-provider';
 
@@ -27,8 +28,10 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
-            <Toaster />
+            <ThemePaletteProvider>
+              {children}
+              <Toaster />
+            </ThemePaletteProvider>
           </ThemeProvider>
         </QueryProvider>
       </body>
