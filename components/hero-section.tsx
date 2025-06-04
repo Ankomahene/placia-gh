@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Mic, Search, MapPin, Sparkles, Bot, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { MapPreview } from './map-preview';
+import React from 'react';
 
 const exampleSearches = [
   'Affordable schools in my area',
@@ -24,8 +25,44 @@ const floatingElements = [
   { icon: '⛪', label: 'Churches', delay: '8s' },
 ];
 
-export default function HeroSection() {
-  const [searchInput, setSearchInput] = useState('');
+interface HeroSectionProps {
+  onSearch?: (query: string) => void;
+  searchInput?: string;
+  onSearchInputChange?: (input: string) => void;
+}
+
+export default function HeroSection({
+  onSearch,
+  searchInput: externalSearchInput = '',
+  onSearchInputChange,
+}: HeroSectionProps) {
+  const [searchInput, setSearchInput] = useState(externalSearchInput);
+
+  // Sync external search input changes
+  useEffect(() => {
+    setSearchInput(externalSearchInput);
+  }, [externalSearchInput]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    onSearchInputChange?.(value);
+  };
+
+  const handleSearch = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (searchInput.trim() && onSearch) {
+      onSearch(searchInput.trim());
+    }
+  };
+
+  const handleExampleClick = (query: string) => {
+    setSearchInput(query);
+    onSearchInputChange?.(query);
+    if (onSearch) {
+      onSearch(query);
+    }
+  };
 
   return (
     <section className="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden min-h-screen flex items-center">
@@ -102,17 +139,18 @@ export default function HeroSection() {
           {/* Enhanced Search Interface */}
           <div className="relative max-w-3xl mx-auto mb-8">
             <Card className="p-2 shadow-2xl border-primary/20 bg-card/95 backdrop-blur-sm">
-              <div className="flex gap-2">
+              <form onSubmit={handleSearch} className="flex gap-2">
                 <div className="relative flex-grow">
                   <Input
                     type="text"
                     placeholder="e.g., 'Find me a good jollof restaurant near Accra Mall'"
                     className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary/50"
                     value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
+                    onChange={handleInputChange}
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex gap-2">
                     <Button
+                      type="button"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full"
@@ -123,14 +161,16 @@ export default function HeroSection() {
                   </div>
                 </div>
                 <Button
+                  type="submit"
                   size="lg"
                   className="rounded-lg px-8 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
+                  disabled={!searchInput.trim()}
                 >
                   <Search className="h-5 w-5 mr-2" />
                   Search
                   <Zap className="h-4 w-4 ml-2" />
                 </Button>
-              </div>
+              </form>
             </Card>
 
             {/* Example searches with improved styling */}
@@ -143,7 +183,7 @@ export default function HeroSection() {
                   key={index}
                   variant="outline"
                   className="border-primary/20 bg-primary/5 px-4 py-2 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 hover:scale-105"
-                  onClick={() => setSearchInput(search)}
+                  onClick={() => handleExampleClick(search)}
                 >
                   {search}
                 </Badge>
