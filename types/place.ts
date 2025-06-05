@@ -19,6 +19,38 @@ export interface Country {
   created_at: Date;
   updated_at: Date;
 }
+
+export interface Region {
+  id: string;
+  name: string;
+  country_id: string;
+  longitude: number;
+  latitude: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface City {
+  id: string;
+  name: string;
+  region_id: string;
+  longitude: number;
+  latitude: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface Town {
+  id: string;
+  name: string;
+  city_id: string; // FK to cities.id
+  alternatenames: string; //comma separated list of alternate names
+  longitude: number;
+  latitude: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
 export interface PlaceCategory {
   id: string;
   name: string;
@@ -54,6 +86,7 @@ export interface PlaceType {
 
 export interface Ownership {
   id: string;
+  subcategory_id: string; // FK to place_subcategories.id
   type: string; // e.g., Public, Private, International
   slug: string;
   icon: string;
@@ -107,7 +140,7 @@ export interface Place {
   name: string;
   slug: string;
   tagline?: string;
-  description?: string;
+  description: string;
   contacts?: string[];
   email?: string;
   icon?: string;
@@ -115,19 +148,19 @@ export interface Place {
   main_image?: string;
   gallery?: string[];
 
-  country_id: string;
-  region_id: string;
-  city_id: string;
-  town_id?: string;
+  country_id: string; // Foreign Key to countries.id (int8)
+  region_id: string; // Foreign Key to regions.id (int8)
+  city_id: string; // Foreign Key to cities.id (int8)
+  town_id?: string; // Foreign Key to towns.id (uuid)
   location: { lng: number; lat: number; name: string; street_address: string };
 
   website?: string;
   socials?: { platform_name?: string; link: string }[];
 
-  category_id: string; // FK to place_categories.id
-  subcategory_id: string; // FK to place_subcategories.id
-  type_id?: string | null; // optional, FK to place_types.id
-  ownership_id?: string | null; // optional, FK to ownerships.id
+  category_id: string; // Foreign Key to categories.id
+  subcategory_id: string; // Foreign Key to subcategories.id
+  type_id?: string | null; // optional, Foreign Key to types.id
+  ownership_id?: string | null; // optional, Foreign Key to ownerships.id
 
   rating?: { rate: number; count: number };
   open_hours?: {
@@ -146,6 +179,9 @@ export interface Place {
   other_details?: object;
   source?: string;
   source_link?: string;
+
+  added_by: string;
+  status: 'pending' | 'approved' | 'rejected' | 'archived' | 'draft';
 }
 
 export interface UserUploadedPhotosForPlace {
