@@ -1,6 +1,11 @@
 "use client";
 
-import { DashboardHeader } from "@/components/layout/dashboard-header";
+import dynamic from "next/dynamic";
+
+const DynamicDashboardHeader = dynamic(
+  () => import("@/components/layout/dashboard-header").then(mod => ({ default: mod.DashboardHeader })),
+  { ssr: false }
+);
 
 export default function AdminLayout({
   children,
@@ -9,7 +14,7 @@ export default function AdminLayout({
 }) {
   return (
     <div className="min-h-screen bg-background">
-      <DashboardHeader isAdmin />
+      <DynamicDashboardHeader isAdmin />
       <main className="container mx-auto px-4 pt-24 pb-12">
         {children}
       </main>

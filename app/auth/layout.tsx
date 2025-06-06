@@ -2,7 +2,6 @@
 
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
-import Link from "next/link";
 
 export default function AuthLayout({
   children,
@@ -12,9 +11,9 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="h-14 px-4 border-b flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Logo size="sm" />
-        </Link>
+        </div>
         <ThemeToggle />
       </header>
       
