@@ -403,11 +403,46 @@ export const generateMockPlaces = (
     'Elmina Castle',
   ];
 
+  // Sample images for different categories
+  const sampleImages = {
+    restaurants: [
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop',
+    ],
+    hotels: [
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&h=300&fit=crop',
+    ],
+    attractions: [
+      'https://images.unsplash.com/photo-1539650116574-75c0c6d73146?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+    ],
+    shopping: [
+      'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1555529669-2269763671c5?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1543087903-1ac2ec7aa8c5?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1528698827591-e19ccd7bc23d?w=400&h=300&fit=crop',
+    ],
+  };
+
   for (let i = 0; i < count; i++) {
     const id = (startId + i).toString();
     const name = baseNames[i % baseNames.length];
     const category =
       mockCategories[Math.floor(Math.random() * mockCategories.length)];
+
+    // Get category-appropriate image
+    const categoryImages =
+      sampleImages[category.slug as keyof typeof sampleImages] ||
+      sampleImages.restaurants;
+    const randomImage =
+      categoryImages[Math.floor(Math.random() * categoryImages.length)];
 
     places.push({
       id,
@@ -418,6 +453,7 @@ export const generateMockPlaces = (
       contacts: [`+233-302-${Math.floor(Math.random() * 900000) + 100000}`],
       email: `info@${name.toLowerCase().replace(/[^a-z]/g, '')}.com`,
       icon: category.icon,
+      main_image: randomImage,
       country_id: 'gh',
       region_id: 'greater-accra',
       city_id: 'accra',

@@ -84,26 +84,55 @@ export function MapView({
     if (placeId) {
       scrollCardIntoView(placeId);
     }
+    onPlaceHover(placeId); // Also update the hover state
   };
 
-  // Convert places to map markers
-  const mapMarkers = places.map(place => ({
-    id: place.id,
-    position: [place.location.lat, place.location.lng] as [number, number],
-    name: place.name,
-    isOpen: true, // You can add this property to your Place type if needed
-    rating: place.rating?.rate,
-    category: place.category_id,
-    image: place.main_image,
-    address: place.location.name || place.location.street_address
-  }));
+  // Handle regular card hover
+  const handleCardHover = (placeId: string | null) => {
+    onPlaceHover(placeId);
+    // Trigger map fly to marker when hovering card
+    if (placeId) {
+      setFlyToMarkerId(placeId);
+      // Clear the flyTo after animation
+      setTimeout(() => setFlyToMarkerId(null), 2000);
+    }
+  };
+
+  // Track which place is being hovered for map flying
+  const [flyToMarkerId, setFlyToMarkerId] = useState<string | null>(null);
+
+  // Convert places to map markers with stable data
+  const mapMarkers = places.map((place) => {
+    // Generate stable data based on place ID
+    const seed = place.id.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    const isOpen = seed % 3 !== 0; // ~67% open rate
+    const distance = ((seed % 47) / 10 + 0.2).toFixed(1); // 0.2-4.9 km range
+
+    return {
+      id: place.id,
+      position: [place.location.lat, place.location.lng] as [number, number],
+      name: place.name,
+      isOpen,
+      rating: place.rating?.rate,
+      category: place.category_id,
+      image: place.main_image,
+      address: place.location.name || place.location.street_address,
+      distance: `${distance} km`,
+    };
+  });
 
   if (places.length === 0 && !isLoading) {
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center">
           <div className="h-16 w-16 text-muted-foreground mx-auto mb-4">
-            <svg viewBox="0 0 24 24\" fill="none\" stroke="currentColor\" strokeWidth="2\" className="w-full h-full">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              className="w-full h-full"
+            >
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
@@ -133,8 +162,9 @@ export function MapView({
             markers={mapMarkers}
             hoveredMarkerId={hoveredPlaceId}
             selectedMarkerId={selectedPlaceId}
-            onMarkerHover={onPlaceHover}
+            onMarkerHover={handleMapPinHover}
             onMarkerClick={onPlaceSelect}
+            flyToMarkerId={flyToMarkerId}
           />
         </motion.div>
       </div>
@@ -176,11 +206,17 @@ export function MapView({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.03 }}
                     className={`
-                      border rounded-lg overflow-hidden transition-all duration-200
-                      ${hoveredPlaceId === place.id || selectedPlaceId === place.id 
-                        ? 'border-primary shadow-md' 
-                        : 'border-border hover:border-primary/50'}
+                      border rounded-lg overflow-hidden transition-all duration-200 cursor-pointer
+                      ${
+                        hoveredPlaceId === place.id ||
+                        selectedPlaceId === place.id
+                          ? 'border-primary shadow-md'
+                          : 'border-border hover:border-primary/50'
+                      }
                     `}
+                    onMouseEnter={() => handleCardHover(place.id)}
+                    onMouseLeave={() => handleCardHover(null)}
+                    onClick={() => onPlaceSelect(place.id)}
                   >
                     <div className="flex">
                       {/* Place Image */}
@@ -194,32 +230,76 @@ export function MapView({
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-8 h-8 text-primary/40">
+                            <svg
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              className="w-8 h-8 text-primary/40"
+                            >
                               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                               <circle cx="12" cy="10" r="3"></circle>
                             </svg>
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Place Info */}
                       <div className="p-3 flex-1">
-                        <h3 className="font-medium text-sm line-clamp-1">{place.name}</h3>
+                        <div className="flex items-start justify-between">
+                          <h3 className="font-medium text-sm line-clamp-1 flex-1">
+                            {place.name}
+                          </h3>
+                          <div className="ml-2 flex items-center gap-1">
+                            <div
+                              className={`w-2 h-2 rounded-full ${
+                                mapMarkers.find((m) => m.id === place.id)
+                                  ?.isOpen
+                                  ? 'bg-green-500'
+                                  : 'bg-red-500'
+                              }`}
+                            />
+                            <span
+                              className={`text-xs font-medium ${
+                                mapMarkers.find((m) => m.id === place.id)
+                                  ?.isOpen
+                                  ? 'text-green-600'
+                                  : 'text-red-600'
+                              }`}
+                            >
+                              {mapMarkers.find((m) => m.id === place.id)?.isOpen
+                                ? 'Open'
+                                : 'Closed'}
+                            </span>
+                          </div>
+                        </div>
+
                         <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
                           {place.location.name || place.location.street_address}
                         </p>
-                        
-                        {place.rating && (
-                          <div className="flex items-center gap-1 mt-2">
-                            <div className="text-yellow-500">★</div>
-                            <span className="text-xs font-medium">{place.rating.rate}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ({place.rating.count})
-                            </span>
+
+                        <div className="flex items-center justify-between mt-2">
+                          {place.rating && (
+                            <div className="flex items-center gap-1">
+                              <div className="text-yellow-500">★</div>
+                              <span className="text-xs font-medium">
+                                {place.rating.rate}
+                              </span>
+                              <span className="text-xs text-muted-foreground">
+                                ({place.rating.count})
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="text-xs text-muted-foreground font-medium">
+                            {
+                              mapMarkers.find((m) => m.id === place.id)
+                                ?.distance
+                            }
                           </div>
-                        )}
-                        
-                        <div 
+                        </div>
+
+                        <div
                           className="mt-2 text-xs cursor-pointer text-primary hover:underline"
                           onClick={() => onPlaceSelect(place.id)}
                         >
