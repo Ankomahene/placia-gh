@@ -1,6 +1,9 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Overview } from '@/components/dashboard/overview';
+import { RecentActivity } from '@/components/dashboard/recent-activity';
+import { PopularPlaces } from '@/components/dashboard/popular-places';
 
 export default function DashboardPage() {
   return (
@@ -61,6 +64,35 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <Overview />
+          </CardContent>
+        </Card>
+        
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RecentActivity />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Popular Places Near You</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PopularPlaces />
+        </CardContent>
+      </Card>
     </div>
   );
 }
