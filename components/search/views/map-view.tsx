@@ -103,7 +103,7 @@ export function MapView({
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center">
           <div className="h-16 w-16 text-muted-foreground mx-auto mb-4">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full">
+            <svg viewBox="0 0 24 24\" fill="none\" stroke="currentColor\" strokeWidth="2\" className="w-full h-full">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
               <circle cx="12" cy="10" r="3"></circle>
             </svg>
