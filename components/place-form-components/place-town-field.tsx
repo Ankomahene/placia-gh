@@ -14,8 +14,9 @@ interface PlaceTownFieldProps {
   error?: string;
   className?: string;
   label?: string;
-  cityId: string;
   defaultTownId?: string;
+  matchedTown?: { id?: string; name?: string };
+  onMatchedTownSelect?: (townId: string) => void;
 }
 
 export function PlaceTownField({
@@ -24,8 +25,9 @@ export function PlaceTownField({
   error,
   className,
   label = 'Town/District',
-  cityId,
   defaultTownId,
+  matchedTown,
+  onMatchedTownSelect,
 }: PlaceTownFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,22 +40,20 @@ export function PlaceTownField({
     useTownSearch(searchQuery);
   const { data: selectedTown } = useTownById(value);
 
-  const isDisabled = !cityId;
-
   // Set default value if provided and no current value
   useEffect(() => {
-    if (defaultTownId && !value && cityId) {
+    if (defaultTownId && !value) {
       onChange(defaultTownId);
     }
-  }, [defaultTownId, value, cityId, onChange]);
+  }, [defaultTownId, value]);
 
   // Clear value when city changes
   useEffect(() => {
-    if (value && !cityId) {
+    if (value) {
       onChange('');
       setInputValue('');
     }
-  }, [cityId, value, onChange]);
+  }, [value]);
 
   // Update input value when selected town changes
   useEffect(() => {
@@ -108,7 +108,7 @@ export function PlaceTownField({
   };
 
   const handleInputFocus = () => {
-    if (!isDisabled && inputValue.length >= 2) {
+    if (inputValue.length >= 2) {
       setSearchQuery(inputValue);
       setIsOpen(true);
     }
@@ -129,10 +129,7 @@ export function PlaceTownField({
             value={inputValue}
             onChange={(e) => handleInputChange(e.target.value)}
             onFocus={handleInputFocus}
-            placeholder={
-              isDisabled ? 'Select a city first' : 'Search for a town...'
-            }
-            disabled={isDisabled}
+            placeholder={'Search for a town...'}
             className={cn(
               'pl-10 pr-20',
               error && 'border-red-500',
@@ -141,7 +138,7 @@ export function PlaceTownField({
           />
 
           <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
-            {value && !isDisabled && (
+            {value && (
               <Button
                 type="button"
                 variant="ghost"
@@ -162,7 +159,7 @@ export function PlaceTownField({
         </div>
 
         {/* Custom Dropdown */}
-        {isOpen && !isDisabled && (
+        {isOpen && (
           <div className="absolute z-50 w-full mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
             {isSearching ? (
               <div className="p-3 text-sm text-muted-foreground text-center">
@@ -206,6 +203,13 @@ export function PlaceTownField({
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {matchedTown?.id && (!value || value !== matchedTown.id) && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Check className="h-3 w-3 text-green-600" />
+          Suggested town based on selected location: {matchedTown.name}
+        </div>
+      )}
 
       {selectedTown && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">

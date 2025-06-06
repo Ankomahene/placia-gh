@@ -54,7 +54,7 @@ export function SearchDrawer({
 
   // Sync with external search input (from hero section)
   useEffect(() => {
-    if (externalSearchInput !== undefined && !hasUserSearched) {
+    if (externalSearchInput != null && !hasUserSearched) {
       setSearchInput(externalSearchInput);
     }
   }, [externalSearchInput, hasUserSearched]);

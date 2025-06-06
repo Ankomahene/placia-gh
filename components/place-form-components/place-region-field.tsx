@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useRegions, useRegionById } from '@/hooks/use-countries-regions';
+import { Badge } from '../ui/badge';
 
 interface PlaceRegionFieldProps {
   value: string;
@@ -20,6 +21,8 @@ interface PlaceRegionFieldProps {
   label?: string;
   countryId: string;
   defaultRegionId?: string;
+  matchedRegion?: { id?: string; name?: string };
+  onMatchedRegionSelect?: (regionId: string) => void;
 }
 
 export function PlaceRegionField({
@@ -30,6 +33,8 @@ export function PlaceRegionField({
   label = 'Region/State',
   countryId,
   defaultRegionId,
+  matchedRegion,
+  onMatchedRegionSelect,
 }: PlaceRegionFieldProps) {
   const {
     data: regions,
@@ -63,7 +68,7 @@ export function PlaceRegionField({
         <span className="text-red-500 ml-1">*</span>
       </Label>
       <Select value={value} onValueChange={onChange} disabled={isDisabled}>
-        <SelectTrigger className={cn(error && 'border-red-500')}>
+        <SelectTrigger className={cn(error && 'border-red-500', 'w-full')}>
           <SelectValue>
             {isLoading
               ? 'Loading regions...'
@@ -85,6 +90,26 @@ export function PlaceRegionField({
       {error && <p className="text-sm text-red-500">{error}</p>}
       {regionsError && (
         <p className="text-sm text-red-500">Failed to load regions</p>
+      )}
+
+      {matchedRegion?.id && (!value || value !== matchedRegion.id) && (
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            Suggested region based on selected location:{' '}
+          </p>
+          <Badge
+            variant="outline"
+            className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+            title="Select this region"
+            onClick={() => {
+              if (matchedRegion.id) {
+                onChange(matchedRegion.id);
+              }
+            }}
+          >
+            {matchedRegion.name}
+          </Badge>
+        </div>
       )}
     </div>
   );

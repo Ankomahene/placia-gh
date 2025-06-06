@@ -76,6 +76,18 @@ export async function getCityById(id: string) {
 }
 
 // Towns
+export async function getTowns(cityId: string) {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('towns')
+    .select('*')
+    .eq('city_id', cityId)
+    .order('name');
+
+  if (error) throw error;
+  return data as Town[];
+}
+
 export async function searchTowns(query: string) {
   const supabase = createClient();
   const { data, error } = await supabase

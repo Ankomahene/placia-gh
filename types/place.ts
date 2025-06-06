@@ -26,6 +26,9 @@ export interface Region {
   country_id: string;
   longitude: number;
   latitude: number;
+  is_unmatched?: boolean;
+  source_address?: string;
+  original_search_term?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -36,6 +39,9 @@ export interface City {
   region_id: string;
   longitude: number;
   latitude: number;
+  is_unmatched?: boolean;
+  source_address?: string;
+  original_search_term?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -47,6 +53,9 @@ export interface Town {
   alternatenames: string; //comma separated list of alternate names
   longitude: number;
   latitude: number;
+  is_unmatched?: boolean;
+  source_address?: string;
+  original_search_term?: string;
   created_at: Date;
   updated_at: Date;
 }

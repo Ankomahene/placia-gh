@@ -97,29 +97,17 @@ export function PlaceCountryField({
           >
             <div className="flex items-center gap-2 flex-1 min-w-0">
               {selectedCountry ? (
-                <>
-                  <span className="text-lg">{selectedCountry.emoji}</span>
-                  <span className="truncate">{selectedCountry.name}</span>
-                </>
+                <span className="truncate">{selectedCountry.name}</span>
               ) : (
                 <span>{placeholder}</span>
               )}
             </div>
             <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-              {value && (
-                <X
-                  className="h-4 w-4 opacity-50 hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleClear();
-                  }}
-                />
-              )}
               <ChevronsUpDown className="h-4 w-4 opacity-50" />
             </div>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[400px] p-0">
+        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
           <Command>
             <CommandInput placeholder="Search countries..." />
             <CommandList>
@@ -136,13 +124,8 @@ export function PlaceCountryField({
                       className="cursor-pointer"
                     >
                       <div className="flex items-center gap-3 flex-1">
-                        <span className="text-lg">{country.emoji}</span>
                         <div className="flex-1">
                           <div className="font-medium">{country.name}</div>
-                          <div className="text-sm text-muted-foreground">
-                            {country.capital} • {country.currency_symbol}
-                            {country.currency}
-                          </div>
                         </div>
                       </div>
                       <Check

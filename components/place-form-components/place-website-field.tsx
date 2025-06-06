@@ -50,7 +50,7 @@ export function PlaceWebsiteField({
   };
 
   const openWebsite = () => {
-    if (value && isValidUrl(value)) {
+    if (value && isValidUrl(value) && typeof window !== 'undefined') {
       window.open(value, '_blank', 'noopener,noreferrer');
     }
   };

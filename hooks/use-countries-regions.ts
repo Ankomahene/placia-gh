@@ -28,6 +28,15 @@ export const useRegions = (countryId: string) => {
     enabled: !!countryId,
     staleTime: 1000 * 60 * 30, // 30 minutes
     gcTime: 1000 * 60 * 60 * 12, // 12 hours
+    select: (data) => {
+      // Sort by is_unmatched (matched items first), then by name
+      return data?.sort((a, b) => {
+        if (a.is_unmatched !== b.is_unmatched) {
+          return a.is_unmatched ? 1 : -1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    },
   });
 };
 
@@ -38,6 +47,15 @@ export const useCities = (regionId: string) => {
     enabled: !!regionId,
     staleTime: 1000 * 60 * 30, // 30 minutes
     gcTime: 1000 * 60 * 60 * 12, // 12 hours
+    select: (data) => {
+      // Sort by is_unmatched (matched items first), then by name
+      return data?.sort((a, b) => {
+        if (a.is_unmatched !== b.is_unmatched) {
+          return a.is_unmatched ? 1 : -1;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    },
   });
 };
 

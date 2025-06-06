@@ -1,41 +1,52 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Save } from 'lucide-react';
-import { StepIndicator } from './step-indicator';
-import { CategorySelectionStep } from './category-selection-step';
 import {
-  PlaceNameField,
-  PlaceTaglineField,
-  PlaceDescriptionField,
+  PlaceAccessibilityField,
+  PlaceCityField,
   PlaceContactsField,
+  PlaceCountryField,
+  PlaceDescriptionField,
   PlaceEmailField,
+  PlaceFeaturesField,
+  PlaceGalleryField,
   PlaceIconField,
   PlaceImageField,
-  PlaceGalleryField,
   PlaceLocationField,
-  PlaceWebsiteField,
-  PlaceSocialsField,
+  PlaceNameField,
   PlaceOpenHoursField,
-  PlaceFeaturesField,
-  PlaceServicesField,
-  PlaceAccessibilityField,
-  PlaceTagsField,
   PlaceOtherDetailsField,
+  PlaceRegionField,
+  PlaceServicesField,
+  PlaceSocialsField,
   PlaceSourceField,
   PlaceSourceLinkField,
-  PlaceCountryField,
-  PlaceRegionField,
-  PlaceCityField,
+  PlaceTaglineField,
+  PlaceTagsField,
   PlaceTownField,
+  PlaceWebsiteField,
 } from '@/components/place-form-components';
-import { Place } from '@/types/place';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { featureFlags } from '@/feature-flags';
+import { useUser } from '@/hooks/use-user';
+import { MatchedLocation } from '@/lib/services/location-matching';
 import { createClient } from '@/lib/supabase/client';
-import { toast } from 'sonner';
+import { Place } from '@/types/place';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Save,
+  CheckCircle,
+  Home,
+  Plus,
+  LayoutDashboard,
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import slugify from 'slugify';
+import { toast } from 'sonner';
+import { CategorySelectionStep } from './category-selection-step';
+import { StepIndicator } from './step-indicator';
 
 const steps = [
   {
@@ -68,13 +79,24 @@ const steps = [
 interface AddPlaceFormProps {
   onSuccess?: (placeId: string) => void;
   onCancel?: () => void;
+  enableSourceFields?: boolean;
+  isAnonymous?: boolean;
 }
 
-export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
+export function AddPlaceForm({
+  onSuccess,
+  onCancel,
+  enableSourceFields = false,
+  isAnonymous = false,
+}: AddPlaceFormProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userId, setUserId] = useState<string>('anonymous');
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [submittedPlaceId, setSubmittedPlaceId] = useState<string | null>(null);
+  const [matchedLocation, setMatchedLocation] =
+    useState<MatchedLocation | null>(null);
+  const { user } = useUser();
 
   const [formData, setFormData] = useState<Partial<Place>>({
     name: '',
@@ -111,20 +133,11 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Get current user
   useEffect(() => {
-    const getCurrentUser = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        setFormData((prev) => ({ ...prev, added_by: user.id }));
-      }
-    };
-    getCurrentUser();
-  }, []);
+    if (user) {
+      setFormData((prev) => ({ ...prev, added_by: user.id }));
+    }
+  }, [user]);
 
   const updateField = <K extends keyof Place>(field: K, value: Place[K]) => {
     setFormData((prev) => ({
@@ -242,8 +255,11 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
         slug:
           formData.slug ||
           slugify(formData.name || '', { lower: true, strict: true }),
-        added_by: userId,
+        added_by: user?.id || 'anonymous',
         status: 'pending' as const,
+        town_id: formData.town_id || null,
+        ownership_id: formData.ownership_id || null,
+        type_id: formData.type_id || null,
       };
 
       const { data, error } = await supabase
@@ -258,16 +274,40 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
         'Place submitted successfully! It will be reviewed and approved soon.'
       );
 
+      // Set success state and store place ID
+      setIsSuccess(true);
+      setSubmittedPlaceId(placeData.name || '');
+
       if (onSuccess) {
         onSuccess(data.id);
-      } else {
-        router.push('/dashboard/places'); // Adjust route as needed
       }
     } catch (error) {
       console.error('Error submitting place:', error);
       toast.error('Failed to submit place. Please try again.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleLocationMatch = (matched: MatchedLocation) => {
+    setMatchedLocation(matched);
+    if (matched.country_id && matched.country_id !== formData.country_id) {
+      updateField('country_id', matched.country_id);
+      updateField('region_id', ''); // Reset dependent fields
+      updateField('city_id', '');
+      updateField('town_id', '');
+    }
+    if (matched.region_id && matched.region_id !== formData.region_id) {
+      updateField('region_id', matched.region_id);
+      updateField('city_id', ''); // Reset dependent fields
+      updateField('town_id', '');
+    }
+    if (matched.city_id && matched.city_id !== formData.city_id) {
+      updateField('city_id', matched.city_id);
+      updateField('town_id', ''); // Reset dependent field
+    }
+    if (matched.town_id) {
+      updateField('town_id', matched.town_id);
     }
   };
 
@@ -326,17 +366,19 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
                   required
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <PlaceEmailField
-                    value={formData.email}
-                    onChange={(value) => updateField('email', value)}
-                  />
+                {!isAnonymous && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <PlaceEmailField
+                      value={formData.email}
+                      onChange={(value) => updateField('email', value)}
+                    />
 
-                  <PlaceWebsiteField
-                    value={formData.website}
-                    onChange={(value) => updateField('website', value)}
-                  />
-                </div>
+                    <PlaceWebsiteField
+                      value={formData.website}
+                      onChange={(value) => updateField('website', value)}
+                    />
+                  </div>
+                )}
 
                 <PlaceContactsField
                   value={formData.contacts}
@@ -355,6 +397,14 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
                 <CardTitle>Location Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                <PlaceLocationField
+                  value={formData.location}
+                  onChange={(value) => updateField('location', value)}
+                  onLocationMatch={handleLocationMatch}
+                  error={errors.location}
+                  required
+                />
+
                 <PlaceCountryField
                   value={formData.country_id || ''}
                   onChange={(value) => {
@@ -366,16 +416,25 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
                   error={errors.country_id}
                 />
 
-                <PlaceRegionField
-                  value={formData.region_id || ''}
-                  onChange={(value) => {
-                    updateField('region_id', value);
-                    updateField('city_id', '');
-                    updateField('town_id', '');
-                  }}
-                  countryId={formData.country_id || ''}
-                  error={errors.region_id}
-                />
+                <div className="space-y-2">
+                  <PlaceRegionField
+                    value={formData.region_id || ''}
+                    onChange={(value) => {
+                      updateField('region_id', value);
+                      updateField('city_id', '');
+                      updateField('town_id', '');
+                    }}
+                    countryId={formData.country_id || ''}
+                    error={errors.region_id}
+                    matchedRegion={{
+                      id: matchedLocation?.region_id,
+                      name: matchedLocation?.components.region,
+                    }}
+                    onMatchedRegionSelect={(regionId) => {
+                      updateField('region_id', regionId);
+                    }}
+                  />
+                </div>
 
                 <PlaceCityField
                   value={formData.city_id || ''}
@@ -385,26 +444,28 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
                   }}
                   regionId={formData.region_id || ''}
                   error={errors.city_id}
+                  matchedCity={{
+                    id: matchedLocation?.city_id,
+                    name: matchedLocation?.components.city,
+                  }}
+                  onMatchedCitySelect={(cityId) => {
+                    updateField('city_id', cityId);
+                  }}
                 />
 
-                <PlaceTownField
-                  value={formData.town_id}
-                  onChange={(value) => updateField('town_id', value)}
-                  cityId={formData.city_id || ''}
-                />
-
-                <PlaceLocationField
-                  value={
-                    formData.location || {
-                      lng: 0,
-                      lat: 0,
-                      name: '',
-                      street_address: '',
-                    }
-                  }
-                  onChange={(value) => updateField('location', value)}
-                  error={errors.location}
-                />
+                {featureFlags.townSelection && (
+                  <PlaceTownField
+                    value={formData.town_id}
+                    onChange={(value) => updateField('town_id', value)}
+                    matchedTown={{
+                      id: matchedLocation?.town_id,
+                      name: matchedLocation?.components.town,
+                    }}
+                    onMatchedTownSelect={(townId) => {
+                      updateField('town_id', townId);
+                    }}
+                  />
+                )}
               </CardContent>
             </Card>
           </div>
@@ -457,21 +518,26 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
                 <CardTitle>Visual Content</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <PlaceIconField
-                  value={formData.icon}
-                  onChange={(value) => updateField('icon', value)}
-                />
+                {featureFlags.iconSelection && (
+                  <PlaceIconField
+                    value={formData.icon}
+                    onChange={(value) => updateField('icon', value)}
+                  />
+                )}
+
+                {!isAnonymous && (
+                  <PlaceImageField
+                    value={formData.logo}
+                    onChange={(value) => updateField('logo', value)}
+                    label="Logo"
+                    variant="logo"
+                  />
+                )}
 
                 <PlaceImageField
                   value={formData.main_image}
                   onChange={(value) => updateField('main_image', value)}
                   label="Main Image"
-                />
-
-                <PlaceImageField
-                  value={formData.logo}
-                  onChange={(value) => updateField('logo', value)}
-                  label="Logo"
                 />
 
                 <PlaceGalleryField
@@ -483,13 +549,19 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Social Media & Additional Info</CardTitle>
+                <CardTitle>
+                  {isAnonymous
+                    ? 'Additional Info'
+                    : 'Social Media & Additional Info'}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <PlaceSocialsField
-                  value={formData.socials}
-                  onChange={(value) => updateField('socials', value)}
-                />
+                {!isAnonymous && (
+                  <PlaceSocialsField
+                    value={formData.socials}
+                    onChange={(value) => updateField('socials', value)}
+                  />
+                )}
 
                 <PlaceTagsField
                   value={formData.tags}
@@ -501,17 +573,19 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
                   onChange={(value) => updateField('other_details', value)}
                 />
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <PlaceSourceField
-                    value={formData.source}
-                    onChange={(value) => updateField('source', value)}
-                  />
+                {enableSourceFields && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <PlaceSourceField
+                      value={formData.source}
+                      onChange={(value) => updateField('source', value)}
+                    />
 
-                  <PlaceSourceLinkField
-                    value={formData.source_link}
-                    onChange={(value) => updateField('source_link', value)}
-                  />
-                </div>
+                    <PlaceSourceLinkField
+                      value={formData.source_link}
+                      onChange={(value) => updateField('source_link', value)}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -521,6 +595,133 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
         return null;
     }
   };
+
+  const handleAddNewPlace = () => {
+    // Reset form to initial state
+    setIsSuccess(false);
+    setSubmittedPlaceId(null);
+    setCurrentStep(1);
+    setFormData({
+      name: '',
+      tagline: '',
+      description: '',
+      contacts: [],
+      email: '',
+      icon: '',
+      logo: '',
+      main_image: '',
+      gallery: [],
+      country_id: '',
+      region_id: '',
+      city_id: '',
+      town_id: '',
+      location: { lng: 0, lat: 0, name: '', street_address: '' },
+      website: '',
+      socials: [],
+      category_id: '',
+      subcategory_id: '',
+      type_id: '',
+      ownership_id: '',
+      open_hours: [],
+      features: [],
+      services: [],
+      tags: [],
+      accessibility: [],
+      other_details: {},
+      source: '',
+      source_link: '',
+      status: 'pending',
+      added_by: user?.id || 'anonymous',
+    });
+    setErrors({});
+    setMatchedLocation(null);
+  };
+
+  const handleGoHome = () => {
+    router.push('/');
+  };
+
+  const handleGoDashboard = () => {
+    router.push('/dashboard');
+  };
+
+  // Show success screen if submission was successful
+  if (isSuccess) {
+    return (
+      <div className="container mx-auto py-8 px-4 max-w-2xl">
+        <div className="text-center">
+          <Card className="border-green-200 bg-green-50">
+            <CardContent className="pt-6">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-green-100 mb-4">
+                <CheckCircle className="h-8 w-8 text-green-600" />
+              </div>
+
+              <h1 className="text-2xl font-bold text-green-900 mb-2">
+                Place Added Successfully!
+              </h1>
+
+              <p className="text-green-700 mb-6">
+                Your place has been submitted and is now pending review. We'll
+                notify you once it's approved and live on the platform.
+              </p>
+
+              {submittedPlaceId && (
+                <div className="bg-white rounded-lg p-4 mb-6 border border-green-200">
+                  <p className="text-sm text-gray-600 mb-1">Place ID:</p>
+                  <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+                    {submittedPlaceId}
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <Button
+                  onClick={handleAddNewPlace}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                  size="lg"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Another Place
+                </Button>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    onClick={handleGoHome}
+                    variant="outline"
+                    className="border-green-300 text-green-700 hover:bg-green-50"
+                  >
+                    <Home className="w-4 h-4 mr-2" />
+                    Go Home
+                  </Button>
+
+                  {user && (
+                    <Button
+                      onClick={handleGoDashboard}
+                      variant="outline"
+                      className="border-green-300 text-green-700 hover:bg-green-50"
+                    >
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      My Dashboard
+                    </Button>
+                  )}
+                </div>
+
+                {onCancel && (
+                  <Button
+                    onClick={onCancel}
+                    variant="ghost"
+                    className="w-full text-gray-500 hover:text-gray-700"
+                  >
+                    Close
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
@@ -554,11 +755,7 @@ export function AddPlaceForm({ onSuccess, onCancel }: AddPlaceFormProps) {
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="bg-green-600 hover:bg-green-700"
-            >
+            <Button onClick={handleSubmit} disabled={isSubmitting}>
               <Save className="w-4 h-4 mr-2" />
               {isSubmitting ? 'Submitting...' : 'Submit Place'}
             </Button>

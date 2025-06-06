@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useCities, useCityById } from '@/hooks/use-countries-regions';
+import { Badge } from '../ui/badge';
 
 interface PlaceCityFieldProps {
   value: string;
@@ -20,6 +21,8 @@ interface PlaceCityFieldProps {
   label?: string;
   regionId: string;
   defaultCityId?: string;
+  matchedCity?: { id?: string; name?: string };
+  onMatchedCitySelect?: (cityId: string) => void;
 }
 
 export function PlaceCityField({
@@ -30,6 +33,8 @@ export function PlaceCityField({
   label = 'City',
   regionId,
   defaultCityId,
+  matchedCity,
+  onMatchedCitySelect,
 }: PlaceCityFieldProps) {
   const {
     data: cities = [],
@@ -38,6 +43,8 @@ export function PlaceCityField({
   } = useCities(regionId);
   const { data: selectedCity } = useCityById(value);
   const isDisabled = !regionId || isLoading;
+
+  console.log('city_id', value);
 
   // Set default value if provided and no current value
   useEffect(() => {
@@ -63,7 +70,7 @@ export function PlaceCityField({
         <span className="text-red-500 ml-1">*</span>
       </Label>
       <Select value={value} onValueChange={onChange} disabled={isDisabled}>
-        <SelectTrigger className={cn(error && 'border-red-500')}>
+        <SelectTrigger className={cn(error && 'border-red-500', 'w-full')}>
           <SelectValue>
             {isLoading
               ? 'Loading cities...'
@@ -85,6 +92,26 @@ export function PlaceCityField({
       {error && <p className="text-sm text-red-500">{error}</p>}
       {queryError && (
         <p className="text-sm text-red-500">Failed to load cities</p>
+      )}
+
+      {matchedCity?.id && regionId && (!value || value !== matchedCity.id) && (
+        <div className="flex items-center gap-2">
+          <p className="text-xs text-muted-foreground">
+            Suggested city based on selected location:{' '}
+            <Badge
+              variant="outline"
+              className="cursor-pointer hover:bg-accent hover:text-accent-foreground"
+              title="Select this city"
+              onClick={() => {
+                if (matchedCity.id) {
+                  onChange(matchedCity.id);
+                }
+              }}
+            >
+              {matchedCity.name}
+            </Badge>
+          </p>
+        </div>
       )}
     </div>
   );
