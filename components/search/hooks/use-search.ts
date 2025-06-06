@@ -230,7 +230,7 @@ export function useSearch() {
     if (query && query !== searchState.query) {
       search(query, false);
     }
-  }, []);
+  }, [searchParams, search, searchState.query]);
 
   return {
     searchState,

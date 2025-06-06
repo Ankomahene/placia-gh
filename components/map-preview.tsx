@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Star, MapPin, Clock, Phone } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 // Lazy load the map component with optimized loading
 const DynamicMap = dynamic(() => import('@/components/map/dynamic-map'), {
@@ -97,9 +98,11 @@ const PlaceHoverCard = ({ place, onClose }: HoverCardProps) => (
     <CardContent className="p-4">
       <div className="flex gap-3">
         <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
-          <img
+          <Image
             src={place.image}
             alt={place.name}
+            width={64}
+            height={64}
             className="w-full h-full object-cover"
             loading="lazy"
           />

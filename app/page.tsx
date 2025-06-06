@@ -1,11 +1,9 @@
-import React from 'react';
-import Header from '@/components/layout/header';
-import HeroSection from '@/components/hero-section';
 import FeaturedPlaces from '@/components/featured-places';
-import TrendingPlaces from '@/components/trending-places';
-import PopularCategories from '@/components/popular-categories';
 import Footer from '@/components/layout/footer';
+import Header from '@/components/layout/header';
+import PopularCategories from '@/components/popular-categories';
 import { SearchClientWrapper } from '@/components/search/search-client-wrapper';
+import TrendingPlaces from '@/components/trending-places';
 
 export default function Home() {
   return (

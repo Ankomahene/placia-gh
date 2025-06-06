@@ -661,8 +661,9 @@ export function AddPlaceForm({
               </h1>
 
               <p className="text-green-700 mb-6">
-                Your place has been submitted and is now pending review. We'll
-                notify you once it's approved and live on the platform.
+                Your place has been submitted and is now pending review.
+                We&apos;ll notify you once it&apos;s approved and live on the
+                platform.
               </p>
 
               {submittedPlaceId && (

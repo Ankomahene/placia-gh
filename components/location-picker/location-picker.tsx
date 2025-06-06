@@ -168,6 +168,7 @@ export function LocationPicker({
       setCurrentLocation({ lat: userLat, lng: userLng });
       processLocation(userLat, userLng);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLat, userLng, currentLocation, value]);
 
   return (
@@ -290,7 +291,7 @@ export function LocationPicker({
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-xs">
-                    Some location components couldn't be matched to your
+                    Some location components couldn&apos;t be matched to your
                     database. You may need to manually select them in the form.
                   </AlertDescription>
                 </Alert>

@@ -1,11 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { LayoutGrid, List } from 'lucide-react';
 import { FavoritesGrid } from '@/components/favorites/favorites-grid';
 import { FavoritesList } from '@/components/favorites/favorites-list';
+import { Button } from '@/components/ui/button';
+import { LayoutGrid, List } from 'lucide-react';
+import { useState } from 'react';
 
 export default function FavoritesPage() {
   const [view, setView] = useState<'grid' | 'list'>('grid');

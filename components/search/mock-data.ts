@@ -161,6 +161,8 @@ export const mockPlaces: Place[] = [
     ],
     created_at: new Date(),
     updated_at: new Date(),
+    added_by: 'admin',
+    status: 'approved',
   },
   {
     id: '2',
@@ -208,6 +210,8 @@ export const mockPlaces: Place[] = [
     tags: ['local-cuisine', 'traditional', 'family-friendly', 'group-dining'],
     created_at: new Date(),
     updated_at: new Date(),
+    added_by: 'admin',
+    status: 'approved',
   },
   {
     id: '3',
@@ -257,6 +261,8 @@ export const mockPlaces: Place[] = [
     accessibility: [{ label: 'Wheelchair Access', icon: 'Accessibility' }],
     created_at: new Date(),
     updated_at: new Date(),
+    added_by: 'admin',
+    status: 'approved',
   },
   {
     id: '4',
@@ -308,6 +314,8 @@ export const mockPlaces: Place[] = [
     ],
     created_at: new Date(),
     updated_at: new Date(),
+    added_by: 'admin',
+    status: 'approved',
   },
   {
     id: '5',
@@ -353,6 +361,8 @@ export const mockPlaces: Place[] = [
     tags: ['nightlife', 'cocktails', 'rooftop', 'luxury', 'views'],
     created_at: new Date(),
     updated_at: new Date(),
+    added_by: 'admin',
+    status: 'approved',
   },
 ];
 
@@ -440,6 +450,8 @@ export const generateMockPlaces = (
       tags: ['popular', 'recommended'],
       created_at: new Date(),
       updated_at: new Date(),
+      added_by: 'system',
+      status: 'approved',
     });
   }
 

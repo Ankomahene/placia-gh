@@ -106,7 +106,13 @@ export function CategorySelectionStep({
         onTypeChange('');
       }
     }
-  }, [selectedCategoryId, subcategories]);
+  }, [
+    selectedCategoryId,
+    selectedSubcategoryId,
+    subcategories,
+    onSubcategoryChange,
+    onTypeChange,
+  ]);
 
   // Reset type when subcategory changes
   useEffect(() => {
@@ -116,7 +122,7 @@ export function CategorySelectionStep({
         onTypeChange('');
       }
     }
-  }, [selectedSubcategoryId, types]);
+  }, [selectedSubcategoryId, selectedTypeId, types, onTypeChange]);
 
   // Reset ownership when subcategory changes
   useEffect(() => {
@@ -128,7 +134,12 @@ export function CategorySelectionStep({
         onOwnershipChange('');
       }
     }
-  }, [selectedSubcategoryId, ownerships]);
+  }, [
+    selectedSubcategoryId,
+    selectedOwnershipId,
+    ownerships,
+    onOwnershipChange,
+  ]);
 
   const selectedCategory = categories?.find((c) => c.id === selectedCategoryId);
   const selectedSubcategory = subcategories?.find(

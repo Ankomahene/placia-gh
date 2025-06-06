@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Upload, X, Loader2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface PlaceImageFieldProps {
   value?: string;
@@ -304,9 +305,11 @@ export function PlaceImageField({
               getPreviewContainerClasses()
             )}
           >
-            <img
+            <Image
               src={value}
               alt="Preview"
+              width={800}
+              height={800}
               className={getPreviewClasses()}
               onError={() => {
                 console.error('Failed to load image:', value);

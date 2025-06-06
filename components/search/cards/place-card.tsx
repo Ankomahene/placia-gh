@@ -7,6 +7,7 @@ import { Place } from '@/types/place';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 interface PlaceCardProps {
   place: Place;
@@ -119,9 +120,11 @@ export function PlaceCard({
               {/* Image */}
               <div className="flex-shrink-0 w-32 h-24 bg-muted rounded-lg overflow-hidden">
                 {place.main_image ? (
-                  <img
+                  <Image
                     src={place.main_image}
                     alt={place.name}
+                    width={128}
+                    height={96}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
@@ -200,9 +203,11 @@ export function PlaceCard({
         {/* Image */}
         <div className="relative h-48 bg-muted overflow-hidden">
           {place.main_image ? (
-            <img
+            <Image
               src={place.main_image}
               alt={place.name}
+              width={400}
+              height={192}
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           ) : (

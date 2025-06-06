@@ -186,7 +186,7 @@ export function PlaceOpenHoursField({
 
               {isSelected && dayHours.length === 0 && (
                 <div className="ml-6 text-sm text-muted-foreground">
-                  Click "Add Hours" to set opening times for {day}
+                  Click &quot;Add Hours&quot; to set opening times for {day}
                 </div>
               )}
             </div>

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Plus, Upload, X, Loader2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface PlaceGalleryFieldProps {
   value?: string[];
@@ -336,9 +337,11 @@ export function PlaceGalleryField({
                     </span>
                   </div>
                 ) : (
-                  <img
+                  <Image
                     src={image.url}
                     alt={`Gallery image ${index + 1}`}
+                    width={400}
+                    height={400}
                     className="w-full h-full object-cover"
                     onError={() => {
                       console.error('Failed to load image:', image.url);

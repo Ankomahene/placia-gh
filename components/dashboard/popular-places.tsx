@@ -1,85 +1,109 @@
 'use client';
 
+import { useRef } from 'react';
 import Image from 'next/image';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft, ArrowRight, Star } from 'lucide-react';
+import { recentlyViewedPlaces } from '@/lib/mock-data';
+import { cn } from '@/lib/utils';
 
-const places = [
-  {
-    id: '1',
-    name: 'Buka Restaurant',
-    image: 'https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg',
-    rating: 4.7,
-    reviews: 128,
-    category: 'Restaurant',
-    distance: '1.2 km',
-  },
-  {
-    id: '2',
-    name: 'Labadi Beach Hotel',
-    image: 'https://images.pexels.com/photos/258154/pexels-photo-258154.jpeg',
-    rating: 4.9,
-    reviews: 256,
-    category: 'Hotel',
-    distance: '3.8 km',
-  },
-  {
-    id: '3',
-    name: 'Accra Mall',
-    image: 'https://images.pexels.com/photos/1050244/pexels-photo-1050244.jpeg',
-    rating: 4.5,
-    reviews: 512,
-    category: 'Shopping',
-    distance: '5.1 km',
-  },
-  {
-    id: '4',
-    name: 'Kwame Nkrumah Memorial Park',
-    image: 'https://images.pexels.com/photos/4350631/pexels-photo-4350631.jpeg',
-    rating: 4.8,
-    reviews: 384,
-    category: 'Attraction',
-    distance: '2.8 km',
-  },
-];
+export function RecentlyViewedPlaces() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-export function PopularPlaces() {
+  const scroll = (direction: 'left' | 'right') => {
+    if (!scrollContainerRef.current) return;
+
+    const container = scrollContainerRef.current;
+    const scrollAmount = 320; // Approximate card width + gap
+
+    if (direction === 'left') {
+      container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    } else {
+      container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <ScrollArea>
-      <div className="flex space-x-4 pb-4">
-        {places.map((place) => (
-          <div
-            key={place.id}
-            className="relative w-[300px] shrink-0 overflow-hidden rounded-xl border"
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h3 className="text-lg font-semibold">Recently Viewed Places</h3>
+          <p className="text-sm text-muted-foreground">
+            Places you&apos;ve viewed recently
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => scroll('left')}
+            className="rounded-full h-8 w-8"
           >
-            <div className="aspect-[4/3] relative">
-              <Image
-                src={place.image}
-                alt={place.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-            <div className="p-4">
-              <h3 className="font-semibold">{place.name}</h3>
-              <div className="mt-1 flex items-center gap-2 text-sm">
-                <div className="flex items-center">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="ml-1 font-medium">{place.rating}</span>
+            <ArrowLeft className="h-4 w-4" />
+            <span className="sr-only">Scroll left</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => scroll('right')}
+            className="rounded-full h-8 w-8"
+          >
+            <ArrowRight className="h-4 w-4" />
+            <span className="sr-only">Scroll right</span>
+          </Button>
+        </div>
+      </div>
+
+      <div
+        ref={scrollContainerRef}
+        className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {recentlyViewedPlaces.map((place) => (
+          <div key={place.id} className="min-w-[300px] max-w-[300px]">
+            <div className="relative overflow-hidden rounded-xl border bg-card hover:shadow-lg transition-shadow cursor-pointer">
+              <div className="aspect-[4/3] relative">
+                <Image
+                  src={place.image}
+                  alt={place.name}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute top-3 right-3">
+                  <div
+                    className={cn(
+                      'px-2 py-1 rounded-full text-xs font-medium',
+                      place.isOpen
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-red-100 text-red-800'
+                    )}
+                  >
+                    {place.isOpen ? 'Open' : 'Closed'}
+                  </div>
                 </div>
-                <span className="text-muted-foreground">
-                  ({place.reviews} reviews)
-                </span>
               </div>
-              <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
-                <span>{place.category}</span>
-                <span>{place.distance}</span>
+              <div className="p-4">
+                <h4 className="font-semibold text-lg mb-1">{place.name}</h4>
+                <p className="text-sm text-muted-foreground mb-2">
+                  {place.address}
+                </p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                    <span className="text-sm font-medium">{place.rating}</span>
+                    <span className="text-sm text-muted-foreground">
+                      • {place.category}
+                    </span>
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {place.distance}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
-      <ScrollBar orientation="horizontal" />
-    </ScrollArea>
+    </div>
   );
 }

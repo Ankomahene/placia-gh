@@ -17,6 +17,7 @@ interface PlaceTownFieldProps {
   defaultTownId?: string;
   matchedTown?: { id?: string; name?: string };
   onMatchedTownSelect?: (townId: string) => void;
+  cityId?: string;
 }
 
 export function PlaceTownField({
@@ -28,6 +29,7 @@ export function PlaceTownField({
   defaultTownId,
   matchedTown,
   onMatchedTownSelect,
+  cityId,
 }: PlaceTownFieldProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -45,7 +47,7 @@ export function PlaceTownField({
     if (defaultTownId && !value) {
       onChange(defaultTownId);
     }
-  }, [defaultTownId, value]);
+  }, [defaultTownId, value, onChange]);
 
   // Clear value when city changes
   useEffect(() => {
@@ -53,7 +55,7 @@ export function PlaceTownField({
       onChange('');
       setInputValue('');
     }
-  }, [value]);
+  }, [value, onChange]);
 
   // Update input value when selected town changes
   useEffect(() => {
