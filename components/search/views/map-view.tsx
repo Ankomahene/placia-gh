@@ -3,27 +3,27 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { MapPin, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { Place } from '@/types/place';
 import { PlaceCard } from '../cards/place-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Image from 'next/image';
 
 // Dynamically import map components to avoid SSR issues
-const MapContainer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.MapContainer),
-  { ssr: false }
+const DynamicSearchMap = dynamic(
+  () => import('./search-map-client').then((mod) => mod.SearchMapClient),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full bg-muted/30 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-primary/70" />
+          <p className="text-sm text-muted-foreground">Loading map...</p>
+        </div>
+      </div>
+    ),
+  }
 );
-const TileLayer = dynamic(
-  () => import('react-leaflet').then((mod) => mod.TileLayer),
-  { ssr: false }
-);
-const Marker = dynamic(
-  () => import('react-leaflet').then((mod) => mod.Marker),
-  { ssr: false }
-);
-const Popup = dynamic(() => import('react-leaflet').then((mod) => mod.Popup), {
-  ssr: false,
-});
 
 interface MapViewProps {
   places: Place[];
@@ -32,130 +32,6 @@ interface MapViewProps {
   onPlaceHover: (placeId: string | null) => void;
   onPlaceSelect: (placeId: string) => void;
   isLoading: boolean;
-}
-
-// Mock map component for demo (since we don't have real map setup)
-function MockMap({
-  places,
-  hoveredPlaceId,
-  selectedPlaceId,
-  onPlaceHover,
-  onPlaceSelect,
-  onMapPinHover,
-}: {
-  places: Place[];
-  hoveredPlaceId: string | null;
-  selectedPlaceId: string | null;
-  onPlaceHover: (placeId: string | null) => void;
-  onPlaceSelect: (placeId: string) => void;
-  onMapPinHover: (placeId: string | null) => void;
-}) {
-  return (
-    <div className="relative w-full h-full bg-gradient-to-br from-blue-50 to-green-50 dark:from-blue-950/20 dark:to-green-950/20 rounded-lg overflow-hidden">
-      {/* Map Background */}
-      <div className="absolute inset-0 opacity-20">
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-          <defs>
-            <pattern
-              id="grid"
-              width="10"
-              height="10"
-              patternUnits="userSpaceOnUse"
-            >
-              <path
-                d="M 10 0 L 0 0 0 10"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="0.5"
-              />
-            </pattern>
-          </defs>
-          <rect width="100" height="100" fill="url(#grid)" />
-        </svg>
-      </div>
-
-      {/* Mock Map Markers */}
-      <div className="absolute inset-0 p-8">
-        {places.map((place, index) => {
-          const x = 15 + (index % 5) * 18;
-          const y = 20 + Math.floor(index / 5) * 25;
-          const isHovered = hoveredPlaceId === place.id;
-          const isSelected = selectedPlaceId === place.id;
-
-          return (
-            <motion.div
-              key={place.id}
-              className="absolute cursor-pointer"
-              style={{ left: `${x}%`, top: `${y}%` }}
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{
-                opacity: 1,
-                scale: isHovered || isSelected ? 1.2 : 1,
-              }}
-              transition={{ duration: 0.2, delay: index * 0.05 }}
-              onMouseEnter={() => {
-                onPlaceHover(place.id);
-                onMapPinHover(place.id);
-              }}
-              onMouseLeave={() => {
-                onPlaceHover(null);
-                onMapPinHover(null);
-              }}
-              onClick={() => onPlaceSelect(place.id)}
-            >
-              <div
-                className={`
-                relative w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg transition-all duration-200
-                ${
-                  isSelected
-                    ? 'bg-primary ring-4 ring-primary/30'
-                    : isHovered
-                      ? 'bg-primary/80 ring-2 ring-primary/50'
-                      : 'bg-primary/70'
-                }
-              `}
-              >
-                <MapPin className="h-4 w-4" />
-              </div>
-
-              {/* Popup on hover */}
-              {isHovered && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-background border border-border rounded-lg shadow-lg p-3 min-w-48 z-10"
-                >
-                  <div className="text-sm font-medium mb-1">{place.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {place.location.name}
-                  </div>
-                  {place.rating && (
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-yellow-500">★</span>
-                      <span className="text-xs">
-                        {place.rating.rate} ({place.rating.count})
-                      </span>
-                    </div>
-                  )}
-                  {/* Arrow */}
-                  <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-border"></div>
-                </motion.div>
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
-
-      {/* Map Legend */}
-      <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm border border-border rounded-lg p-3">
-        <div className="text-xs font-medium mb-2">Ghana Map View</div>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className="w-3 h-3 bg-primary rounded-full"></div>
-          <span>{places.length} places found</span>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export function MapView({
@@ -210,16 +86,28 @@ export function MapView({
     }
   };
 
-  // Handle regular card hover
-  const handleCardHover = (placeId: string | null) => {
-    onPlaceHover(placeId);
-  };
+  // Convert places to map markers
+  const mapMarkers = places.map(place => ({
+    id: place.id,
+    position: [place.location.lat, place.location.lng] as [number, number],
+    name: place.name,
+    isOpen: true, // You can add this property to your Place type if needed
+    rating: place.rating?.rate,
+    category: place.category_id,
+    image: place.main_image,
+    address: place.location.name || place.location.street_address
+  }));
 
   if (places.length === 0 && !isLoading) {
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center">
-          <MapPin className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+          <div className="h-16 w-16 text-muted-foreground mx-auto mb-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-full h-full">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+              <circle cx="12" cy="10" r="3"></circle>
+            </svg>
+          </div>
           <h3 className="text-lg font-semibold mb-2">
             No places to show on map
           </h3>
@@ -239,15 +127,14 @@ export function MapView({
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
-          className="w-full h-full"
+          className="w-full h-full rounded-xl overflow-hidden border border-border"
         >
-          <MockMap
-            places={places}
-            hoveredPlaceId={hoveredPlaceId}
-            selectedPlaceId={selectedPlaceId}
-            onPlaceHover={onPlaceHover}
-            onPlaceSelect={onPlaceSelect}
-            onMapPinHover={handleMapPinHover}
+          <DynamicSearchMap
+            markers={mapMarkers}
+            hoveredMarkerId={hoveredPlaceId}
+            selectedMarkerId={selectedPlaceId}
+            onMarkerHover={onPlaceHover}
+            onMarkerClick={onPlaceSelect}
           />
         </motion.div>
       </div>
@@ -288,15 +175,58 @@ export function MapView({
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.03 }}
+                    className={`
+                      border rounded-lg overflow-hidden transition-all duration-200
+                      ${hoveredPlaceId === place.id || selectedPlaceId === place.id 
+                        ? 'border-primary shadow-md' 
+                        : 'border-border hover:border-primary/50'}
+                    `}
                   >
-                    <PlaceCard
-                      place={place}
-                      isHovered={hoveredPlaceId === place.id}
-                      isSelected={selectedPlaceId === place.id}
-                      onHover={handleCardHover}
-                      onSelect={onPlaceSelect}
-                      variant="compact"
-                    />
+                    <div className="flex">
+                      {/* Place Image */}
+                      <div className="w-24 h-24 relative flex-shrink-0 bg-muted">
+                        {place.main_image ? (
+                          <Image
+                            src={place.main_image}
+                            alt={place.name}
+                            fill
+                            className="object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-primary/10">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-8 h-8 text-primary/40">
+                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                              <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Place Info */}
+                      <div className="p-3 flex-1">
+                        <h3 className="font-medium text-sm line-clamp-1">{place.name}</h3>
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                          {place.location.name || place.location.street_address}
+                        </p>
+                        
+                        {place.rating && (
+                          <div className="flex items-center gap-1 mt-2">
+                            <div className="text-yellow-500">★</div>
+                            <span className="text-xs font-medium">{place.rating.rate}</span>
+                            <span className="text-xs text-muted-foreground">
+                              ({place.rating.count})
+                            </span>
+                          </div>
+                        )}
+                        
+                        <div 
+                          className="mt-2 text-xs cursor-pointer text-primary hover:underline"
+                          onClick={() => onPlaceSelect(place.id)}
+                        >
+                          View details
+                        </div>
+                      </div>
+                    </div>
                   </motion.div>
                 ))
               )}
