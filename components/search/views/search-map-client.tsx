@@ -69,44 +69,50 @@ function MapController({
   flyToMarkerId?: string | null;
 }) {
   const map = useMap();
+  const hasInitialized = useRef(false);
+  const markerIds = useRef<string>('');
 
+  // Handle flying to a specific marker when clicked
   useEffect(() => {
     if (flyToMarkerId) {
       const marker = markers.find((m) => m.id === flyToMarkerId);
       if (marker) {
-        // Check if marker is currently in view
-        const bounds = map.getBounds();
-        const markerLatLng = L.latLng(marker.position);
-
-        if (!bounds.contains(markerLatLng)) {
-          // Fly to marker if it's not in view
-          map.flyTo(marker.position, Math.max(map.getZoom(), 14), {
-            duration: 1.5,
-            easeLinearity: 0.5,
-          });
-        }
+        // Fly to marker with higher zoom level for better detail view
+        map.flyTo(marker.position, 16, {
+          duration: 1.5,
+          easeLinearity: 0.5,
+        });
       }
     }
   }, [flyToMarkerId, markers, map]);
 
+  // Initial map setup - fit all markers in view ONLY when markers actually change
   useEffect(() => {
     if (markers.length > 0) {
-      // Create bounds from all markers
-      const bounds = L.latLngBounds(markers.map((marker) => marker.position));
+      // Create a stable identifier for the current markers
+      const currentMarkerIds = markers
+        .map((m) => m.id)
+        .sort()
+        .join(',');
 
-      // If we have a selected marker, center on it with higher zoom
-      if (selectedMarkerId) {
-        const selectedMarker = markers.find((m) => m.id === selectedMarkerId);
-        if (selectedMarker) {
-          map.setView(selectedMarker.position, 15);
-          return;
-        }
+      // Only fit bounds if this is the first time or if the actual markers have changed (not just re-rendered)
+      if (!hasInitialized.current || markerIds.current !== currentMarkerIds) {
+        // Create bounds from all markers
+        const bounds = L.latLngBounds(markers.map((marker) => marker.position));
+
+        // Fit all markers in view initially for better UX
+        // Add padding to ensure markers are not too close to edges
+        map.fitBounds(bounds, {
+          padding: [30, 30],
+          maxZoom: 15, // Prevent zooming in too much when there are few markers
+        });
+
+        hasInitialized.current = true;
+        markerIds.current = currentMarkerIds;
       }
-
-      // Otherwise fit all markers in view
-      map.fitBounds(bounds, { padding: [20, 20] });
     }
-  }, [markers, selectedMarkerId, map]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [markers]); // Remove map dependency to prevent re-runs when map changes
 
   return null;
 }
@@ -480,7 +486,13 @@ export function SearchMapClient({
             }}
             zIndexOffset={isSelected ? 1000 : isHovered ? 900 : 0}
           >
-            <Popup closeButton={false} autoClose={false} closeOnClick={false}>
+            <Popup
+              closeButton={false}
+              autoClose={true}
+              closeOnClick={false}
+              autoPan={false}
+              keepInView={false}
+            >
               <div className="custom-popup">
                 <div
                   className="custom-popup-image"

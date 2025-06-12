@@ -2,11 +2,17 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SearchState, SearchFilters, ViewMode } from '../types';
+import { SearchState, SearchFilters, ViewMode, SearchResult } from '../types';
 import { mockPlaces, generateMockPlaces } from '../mock-data';
 import { Place } from '@/types/place';
+import {
+  placesToSearchResults,
+  googlePlacesToSearchResults,
+} from '../utils/search-utils';
+import { FormattedGooglePlaceSearchResult } from '@/types/search';
+import { getLocationCoordinates } from '@/lib/services/get-location-coordinates';
 
-const RESULTS_PER_PAGE = 12;
+const RESULTS_PER_PAGE = 50;
 
 export function useSearch() {
   const router = useRouter();
@@ -24,78 +30,134 @@ export function useSearch() {
       categories: [],
       subcategories: [],
       features: [],
+      sources: ['local', 'google'], // Default to both sources
     },
     hoveredPlaceId: null,
     selectedPlaceId: null,
   });
 
-  // Mock search function
+  // Fetch Google search results
+  const fetchGoogleResults = useCallback(
+    async (
+      query: string,
+      userLocation?: { lat: number; lng: number }
+    ): Promise<FormattedGooglePlaceSearchResult[]> => {
+      try {
+        const response = await fetch('/api/search/google-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, userLocation }),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          return result.data.places || [];
+        }
+        return [];
+      } catch (error) {
+        console.error('Error fetching Google results:', error);
+        return [];
+      }
+    },
+    []
+  );
+
+  // Combined search function (local + Google)
   const performSearch = useCallback(
     async (
       query: string,
       filters: SearchFilters,
-      page: number = 1
+      page: number = 1,
+      userLocation?: { lat: number; lng: number }
     ): Promise<{
-      results: Place[];
+      results: SearchResult[];
       totalResults: number;
       hasMore: boolean;
     }> => {
       // Simulate API delay
       await new Promise((resolve) => setTimeout(resolve, 800));
 
-      let allResults = [...mockPlaces];
+      let allResults: SearchResult[] = [];
 
-      // Add generated results for pagination testing
-      if (query) {
-        allResults = [...allResults, ...generateMockPlaces(50)];
-      }
+      // Fetch local results if enabled
+      if (!filters.sources || filters.sources.includes('local')) {
+        let localPlaces = [...mockPlaces];
 
-      // Filter by query
-      if (query) {
-        allResults = allResults.filter(
-          (place) =>
-            place.name.toLowerCase().includes(query.toLowerCase()) ||
-            place.description?.toLowerCase().includes(query.toLowerCase()) ||
-            place.tags?.some((tag) =>
-              tag.toLowerCase().includes(query.toLowerCase())
-            )
-        );
-      }
+        // Add generated results for pagination testing
+        if (query) {
+          localPlaces = [...localPlaces, ...generateMockPlaces(20)];
+        }
 
-      // Filter by categories
-      if (filters.categories.length > 0) {
-        allResults = allResults.filter((place) =>
-          filters.categories.includes(place.category_id)
-        );
-      }
-
-      // Filter by subcategories
-      if (filters.subcategories.length > 0) {
-        allResults = allResults.filter((place) =>
-          filters.subcategories.includes(place.subcategory_id)
-        );
-      }
-
-      // Filter by rating
-      if (filters.rating) {
-        allResults = allResults.filter(
-          (place) => place.rating && place.rating.rate >= filters.rating!
-        );
-      }
-
-      // Filter by features
-      if (filters.features && filters.features.length > 0) {
-        allResults = allResults.filter((place) =>
-          filters.features!.some(
-            (feature) =>
-              place.features?.some((pf) =>
-                pf.label.toLowerCase().includes(feature.toLowerCase())
-              ) ||
-              place.services?.some((ps) =>
-                ps.label.toLowerCase().includes(feature.toLowerCase())
+        // Filter local places by query
+        if (query) {
+          localPlaces = localPlaces.filter(
+            (place) =>
+              place.name.toLowerCase().includes(query.toLowerCase()) ||
+              place.description?.toLowerCase().includes(query.toLowerCase()) ||
+              place.tags?.some((tag) =>
+                tag.toLowerCase().includes(query.toLowerCase())
               )
-          )
-        );
+          );
+        }
+
+        // Filter by categories
+        if (filters.categories.length > 0) {
+          localPlaces = localPlaces.filter((place) =>
+            filters.categories.includes(place.category_id)
+          );
+        }
+
+        // Filter by subcategories
+        if (filters.subcategories.length > 0) {
+          localPlaces = localPlaces.filter((place) =>
+            filters.subcategories.includes(place.subcategory_id)
+          );
+        }
+
+        // Filter by rating
+        if (filters.rating) {
+          localPlaces = localPlaces.filter(
+            (place) => place.rating && place.rating.rate >= filters.rating!
+          );
+        }
+
+        // Filter by features
+        if (filters.features && filters.features.length > 0) {
+          localPlaces = localPlaces.filter((place) =>
+            filters.features!.some(
+              (feature) =>
+                place.features?.some((pf) =>
+                  pf.label.toLowerCase().includes(feature.toLowerCase())
+                ) ||
+                place.services?.some((ps) =>
+                  ps.label.toLowerCase().includes(feature.toLowerCase())
+                )
+            )
+          );
+        }
+
+        // Convert to SearchResult format
+        allResults = [...allResults, ...placesToSearchResults(localPlaces)];
+      }
+
+      // Fetch Google results if enabled and we have a query
+      if (query && (!filters.sources || filters.sources.includes('google'))) {
+        try {
+          const googlePlaces = await fetchGoogleResults(query, userLocation);
+          const googleResults = googlePlacesToSearchResults(googlePlaces);
+
+          // Apply rating filter to Google results if specified
+          const filteredGoogleResults = filters.rating
+            ? googleResults.filter(
+                (result) =>
+                  result.rating && result.rating.rate >= filters.rating!
+              )
+            : googleResults;
+
+          allResults = [...filteredGoogleResults, ...allResults];
+        } catch (error) {
+          console.error('Error fetching Google results in search:', error);
+        }
       }
 
       const totalResults = allResults.length;
@@ -106,11 +168,16 @@ export function useSearch() {
 
       return { results, totalResults, hasMore };
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
   const search = useCallback(
-    async (query: string, updateUrl: boolean = true) => {
+    async (
+      query: string,
+      updateUrl: boolean = true,
+      userLocation?: { lat: number; lng: number }
+    ) => {
       setSearchState((prev) => ({ ...prev, isSearching: true, query }));
 
       if (updateUrl) {
@@ -127,7 +194,8 @@ export function useSearch() {
         const { results, totalResults, hasMore } = await performSearch(
           query,
           searchState.filters,
-          1
+          1,
+          userLocation
         );
 
         setSearchState((prev) => ({

@@ -5,7 +5,6 @@ export { SearchFilters } from './filters/search-filters';
 export { MapView } from './views/map-view';
 export { CardView } from './views/card-view';
 export { ListView } from './views/list-view';
-export { PlaceCard } from './cards/place-card';
 export { SearchLoadingSpinner } from './components/search-loading-spinner';
 export type {
   SearchState,

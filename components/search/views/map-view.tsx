@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
-import { Loader2 } from 'lucide-react';
-import { Place } from '@/types/place';
-import { PlaceCard } from '../cards/place-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
+import { SearchResult } from '../types';
+import { motion } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import { SafeImage } from '@/components/ui/safe-image';
+import { useRef, useState } from 'react';
 
 // Dynamically import map components to avoid SSR issues
 const DynamicSearchMap = dynamic(
@@ -26,7 +26,7 @@ const DynamicSearchMap = dynamic(
 );
 
 interface MapViewProps {
-  places: Place[];
+  places: SearchResult[];
   hoveredPlaceId: string | null;
   selectedPlaceId: string | null;
   onPlaceHover: (placeId: string | null) => void;
@@ -44,6 +44,8 @@ export function MapView({
 }: MapViewProps) {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  // Track which place is being clicked for map flying
+  const [flyToMarkerId, setFlyToMarkerId] = useState<string | null>(null);
 
   // Function to scroll a card into view
   const scrollCardIntoView = (placeId: string) => {
@@ -79,27 +81,29 @@ export function MapView({
     }
   };
 
-  // Handle map pin hover with auto-scroll
   const handleMapPinHover = (placeId: string | null) => {
-    if (placeId) {
-      scrollCardIntoView(placeId);
-    }
-    onPlaceHover(placeId); // Also update the hover state
+    // if (selectedPlaceId !== placeId) {
+    //   onPlaceSelect('');
+    // }
+    onPlaceHover(placeId); // Only update the hover state
   };
 
-  // Handle regular card hover
   const handleCardHover = (placeId: string | null) => {
+    // if (selectedPlaceId !== placeId) {
+    //   onPlaceSelect('');
+    // }
     onPlaceHover(placeId);
-    // Trigger map fly to marker when hovering card
-    if (placeId) {
-      setFlyToMarkerId(placeId);
-      // Clear the flyTo after animation
-      setTimeout(() => setFlyToMarkerId(null), 2000);
-    }
   };
 
-  // Track which place is being hovered for map flying
-  const [flyToMarkerId, setFlyToMarkerId] = useState<string | null>(null);
+  // Handle card click - fly to the selected place
+  const handleCardClick = (placeId: string) => {
+    onPlaceSelect(placeId);
+    // Trigger map fly to marker when clicking card
+    // scrollCardIntoView(placeId);
+    setFlyToMarkerId(placeId);
+    // Clear the flyTo after animation
+    setTimeout(() => setFlyToMarkerId(null), 2000);
+  };
 
   // Convert places to map markers with stable data
   const mapMarkers = places.map((place) => {
@@ -114,9 +118,13 @@ export function MapView({
       name: place.name,
       isOpen,
       rating: place.rating?.rate,
-      category: place.category_id,
-      image: place.main_image,
-      address: place.location.name || place.location.street_address,
+      category: place.category,
+      image: place.image,
+      address:
+        place.location.name ||
+        (place.source === 'local'
+          ? place.place?.location.street_address
+          : place.googlePlace?.formattedAddress),
       distance: `${distance} km`,
     };
   });
@@ -163,7 +171,7 @@ export function MapView({
             hoveredMarkerId={hoveredPlaceId}
             selectedMarkerId={selectedPlaceId}
             onMarkerHover={handleMapPinHover}
-            onMarkerClick={onPlaceSelect}
+            onMarkerClick={handleCardClick}
             flyToMarkerId={flyToMarkerId}
           />
         </motion.div>
@@ -216,14 +224,14 @@ export function MapView({
                     `}
                     onMouseEnter={() => handleCardHover(place.id)}
                     onMouseLeave={() => handleCardHover(null)}
-                    onClick={() => onPlaceSelect(place.id)}
+                    onClick={() => handleCardClick(place.id)}
                   >
                     <div className="flex">
                       {/* Place Image */}
                       <div className="w-24 h-24 relative flex-shrink-0 bg-muted">
-                        {place.main_image ? (
-                          <Image
-                            src={place.main_image}
+                        {place.image ? (
+                          <SafeImage
+                            src={place.image}
                             alt={place.name}
                             fill
                             className="object-cover"
@@ -247,9 +255,28 @@ export function MapView({
                       {/* Place Info */}
                       <div className="p-3 flex-1">
                         <div className="flex items-start justify-between">
-                          <h3 className="font-medium text-sm line-clamp-1 flex-1">
-                            {place.name}
-                          </h3>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="font-medium text-sm line-clamp-1">
+                                {place.name}
+                              </h3>
+                              {place.source === 'google' ? (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200 px-1 py-0"
+                                >
+                                  G
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs bg-green-50 text-green-700 border-green-200 px-1 py-0"
+                                >
+                                  L
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
                           <div className="ml-2 flex items-center gap-1">
                             <div
                               className={`w-2 h-2 rounded-full ${
@@ -275,7 +302,7 @@ export function MapView({
                         </div>
 
                         <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                          {place.location.name || place.location.street_address}
+                          {place.location.name}
                         </p>
 
                         <div className="flex items-center justify-between mt-2">
@@ -301,7 +328,7 @@ export function MapView({
 
                         <div
                           className="mt-2 text-xs cursor-pointer text-primary hover:underline"
-                          onClick={() => onPlaceSelect(place.id)}
+                          onClick={() => handleCardClick(place.id)}
                         >
                           View details
                         </div>

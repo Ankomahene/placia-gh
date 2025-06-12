@@ -1,6 +1,31 @@
 import { Place, PlaceCategory, PlaceSubcategory } from '@/types/place';
+import { FormattedGooglePlaceSearchResult } from '@/types/search';
 
 export type ViewMode = 'map' | 'card' | 'list';
+export type SearchResultSource = 'local' | 'google';
+
+// Unified search result type that can be either local or Google
+export interface SearchResult {
+  source: SearchResultSource;
+  place?: Place; // Local place data
+  googlePlace?: FormattedGooglePlaceSearchResult; // Google place data
+  // Common fields derived from either source
+  id: string;
+  name: string;
+  location: {
+    lat: number;
+    lng: number;
+    name?: string;
+  };
+  rating?: {
+    rate: number;
+    count: number;
+  };
+  image?: string;
+  description?: string;
+  category?: string;
+  tags?: string[];
+}
 
 export interface SearchFilters {
   categories: string[];
@@ -10,12 +35,13 @@ export interface SearchFilters {
   distance?: number;
   openNow?: boolean;
   features?: string[];
+  sources?: SearchResultSource[]; // Filter by result source
 }
 
 export interface SearchState {
   query: string;
   isSearching: boolean;
-  results: Place[];
+  results: SearchResult[];
   totalResults: number;
   currentPage: number;
   hasMore: boolean;

@@ -160,8 +160,8 @@ export interface Place {
   country_id: string; // Foreign Key to countries.id (int8)
   region_id: string; // Foreign Key to regions.id (int8)
   city_id: string; // Foreign Key to cities.id (int8)
-  town_id?: string; // Foreign Key to towns.id (uuid)
   location: { lng: number; lat: number; name: string; street_address: string };
+  town_id?: string;
 
   website?: string;
   socials?: { platform_name?: string; link: string }[];
@@ -172,6 +172,7 @@ export interface Place {
   ownership_id?: string | null; // optional, Foreign Key to ownerships.id
 
   rating?: { rate: number; count: number };
+  distance?: number;
   open_hours?: {
     day: string;
     from: string;
@@ -190,7 +191,13 @@ export interface Place {
   source_link?: string;
 
   added_by: string;
-  status: 'pending' | 'approved' | 'rejected' | 'archived' | 'draft';
+  status:
+    | 'pending'
+    | 'scraped'
+    | 'approved'
+    | 'rejected'
+    | 'archived'
+    | 'draft';
 }
 
 export interface UserUploadedPhotosForPlace {

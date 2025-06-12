@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Mic, Search, MapPin, Sparkles, Bot, Zap } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { MapPreview } from './map-preview';
+import { Input } from '@/components/ui/input';
+import { Bot, Mic, Search, Sparkles, Zap } from 'lucide-react';
 import React from 'react';
+import { MapPreview } from './map-preview';
+import { useSearchContext } from './search/hooks/use-search-context';
+import { useSearch } from './search';
 
 const exampleSearches = [
   'Affordable schools in my area',
@@ -25,43 +26,23 @@ const floatingElements = [
   { icon: '⛪', label: 'Churches', delay: '8s' },
 ];
 
-interface HeroSectionProps {
-  onSearch?: (query: string) => void;
-  searchInput?: string;
-  onSearchInputChange?: (input: string) => void;
-}
+export default function HeroSection() {
+  const { search } = useSearch();
+  const { searchTerm, setSearchTerm, onSearch, userLocation } =
+    useSearchContext();
 
-export default function HeroSection({
-  onSearch,
-  searchInput: externalSearchInput = '',
-  onSearchInputChange,
-}: HeroSectionProps) {
-  const [searchInput, setSearchInput] = useState(externalSearchInput);
-
-  // Sync external search input changes
-  useEffect(() => {
-    setSearchInput(externalSearchInput);
-  }, [externalSearchInput]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchInput(value);
-    onSearchInputChange?.(value);
-  };
-
-  const handleSearch = (e?: React.FormEvent) => {
+  const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (searchInput.trim() && onSearch) {
-      onSearch(searchInput.trim());
+    if (searchTerm.trim()) {
+      onSearch(searchTerm);
+      await search(searchTerm, undefined, userLocation);
     }
   };
 
-  const handleExampleClick = (query: string) => {
-    setSearchInput(query);
-    onSearchInputChange?.(query);
-    if (onSearch) {
-      onSearch(query);
-    }
+  const handleExampleClick = async (query: string) => {
+    setSearchTerm(query);
+    onSearch(query);
+    await search(query, undefined, userLocation);
   };
 
   return (
@@ -145,8 +126,8 @@ export default function HeroSection({
                     type="text"
                     placeholder="e.g., 'Find me a good jollof restaurant near Accra Mall'"
                     className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary/50"
-                    value={searchInput}
-                    onChange={handleInputChange}
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex gap-2">
                     <Button
@@ -164,7 +145,7 @@ export default function HeroSection({
                   type="submit"
                   size="lg"
                   className="rounded-lg px-8 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
-                  disabled={!searchInput.trim()}
+                  disabled={!searchTerm.trim()}
                 >
                   <Search className="h-5 w-5 mr-2" />
                   Search

@@ -38,3 +38,5 @@ next-env.d.ts
 /geoname
 /app/test-place-form
 /app/test-location-picker
+
+thought-process.txt

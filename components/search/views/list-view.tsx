@@ -3,12 +3,12 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
-import { Place } from '@/types/place';
-import { PlaceCard } from '../cards/place-card';
+import { SearchResult } from '../types';
+import { SearchResultCard } from '../cards/search-result-card';
 import { Button } from '@/components/ui/button';
 
 interface ListViewProps {
-  places: Place[];
+  places: SearchResult[];
   hoveredPlaceId: string | null;
   onPlaceHover: (placeId: string | null) => void;
   onPlaceSelect: (placeId: string) => void;
@@ -78,8 +78,8 @@ export function ListView({
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: index * 0.03 }}
             >
-              <PlaceCard
-                place={place}
+              <SearchResultCard
+                result={place}
                 isHovered={hoveredPlaceId === place.id}
                 onHover={onPlaceHover}
                 onSelect={onPlaceSelect}

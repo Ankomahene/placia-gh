@@ -1,6 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OSMPlaceScraper } from './osm-place-scraper/OSMPlaceScraper';
 
 export default function AdminDashboardPage() {
   return (
@@ -56,6 +57,18 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-muted-foreground">3 high priority</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* OpenStreetMap Place Scraper Section */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-2xl font-bold">Place Data Import</h2>
+          <p className="text-muted-foreground">
+            Import place data from OpenStreetMap using the Nominatim API.
+          </p>
+        </div>
+
+        <OSMPlaceScraper />
       </div>
     </div>
   );

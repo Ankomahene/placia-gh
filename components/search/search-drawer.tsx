@@ -1,41 +1,28 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   ArrowLeft,
-  Search,
-  MapPin,
   Grid3X3,
   List,
   Map,
+  MapPin,
   Mic,
+  Search,
 } from 'lucide-react';
-import { useSearch } from './hooks/use-search';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
+import { SearchLoadingSpinner } from './components/search-loading-spinner';
 import { SearchFilters } from './filters/search-filters';
-import { MapView } from './views/map-view';
+import { useSearch } from './hooks/use-search';
+import { useSearchContext } from './hooks/use-search-context';
 import { CardView } from './views/card-view';
 import { ListView } from './views/list-view';
-import { SearchLoadingSpinner } from './components/search-loading-spinner';
+import { MapView } from './views/map-view';
 
-interface SearchDrawerProps {
-  isOpen: boolean;
-  onClose: () => void;
-  initialQuery?: string;
-  searchInput?: string;
-  onSearchInputChange?: (input: string) => void;
-}
-
-export function SearchDrawer({
-  isOpen,
-  onClose,
-  initialQuery = '',
-  searchInput: externalSearchInput = '',
-  onSearchInputChange,
-}: SearchDrawerProps) {
+export function SearchDrawer() {
   const {
     searchState,
     search,
@@ -47,71 +34,27 @@ export function SearchDrawer({
     clearSearch,
   } = useSearch();
 
-  const [searchInput, setSearchInput] = React.useState(
-    externalSearchInput || initialQuery
-  );
-  const [hasUserSearched, setHasUserSearched] = React.useState(false);
+  const {
+    searchTerm,
+    userLocation,
+    isOpenSearchWindow,
+    setSearchTerm,
+    onSearch,
+    setIsOpenSearchWindow,
+  } = useSearchContext();
 
-  // Sync with external search input (from hero section)
-  useEffect(() => {
-    if (externalSearchInput != null && !hasUserSearched) {
-      setSearchInput(externalSearchInput);
-    }
-  }, [externalSearchInput, hasUserSearched]);
-
-  // Prevent body scroll when drawer is open
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
-
-  // Handle initial query only on first open
-  useEffect(() => {
-    if (
-      isOpen &&
-      initialQuery &&
-      initialQuery !== searchState.query &&
-      !hasUserSearched
-    ) {
-      setSearchInput(initialQuery);
-      search(initialQuery);
-      setHasUserSearched(true);
-    }
-  }, [isOpen, initialQuery, search, searchState.query, hasUserSearched]);
-
-  // Reset user search flag when drawer closes
-  useEffect(() => {
-    if (!isOpen) {
-      setHasUserSearched(false);
-    }
-  }, [isOpen]);
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchInput(value);
-    onSearchInputChange?.(value);
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      setHasUserSearched(true);
-      search(searchInput.trim());
+    if (searchTerm.trim() && searchTerm !== searchState.query) {
+      onSearch(searchTerm);
+      clearSearch();
+      await search(searchTerm, undefined, userLocation);
     }
   };
 
   const handleClose = () => {
+    setIsOpenSearchWindow(false);
     clearSearch();
-    setHasUserSearched(false);
-    onClose();
   };
 
   const renderViewToggle = () => (
@@ -215,7 +158,7 @@ export function SearchDrawer({
 
   return (
     <AnimatePresence>
-      {isOpen && (
+      {isOpenSearchWindow && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -248,8 +191,8 @@ export function SearchDrawer({
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input
-                      value={searchInput}
-                      onChange={handleInputChange}
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                       placeholder="Search for places in Ghana..."
                       className="pl-10 pr-16 py-2 sm:py-3 text-sm sm:text-base"
                       autoFocus
