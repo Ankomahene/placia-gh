@@ -1,15 +1,21 @@
 export interface ScoringWeights {
-  proximity: number;
-  locationMatch: number;
+  // Dynamic weights - adjusted based on query
+  proximity: number; // Highest when location/radius specified
+  locationMatch: number; // High when location specified
+  rating: number; // High when min_rating specified
+  nameMatch: number; // High when no location/rating criteria
+
+  // Supporting weights
   categoryMatch: number;
   subcategoryMatch: number;
-  rating: number;
-  priceMatch: number;
   openNow: number;
-  hasWebsite: number;
-  hasPhone: number;
+
+  // Additional context weights
   featuresMatch: number;
   tagsMatch: number;
+  hasWebsite: number;
+  hasPhone: number;
+  priceMatch: number;
   completeness: number;
 }
 
@@ -27,7 +33,7 @@ export interface ScoringConfig {
 }
 
 export interface PlaceScore {
-  place: import('./place').Place;
+  place: import('./place').PlaceResults;
   score: number;
   breakdown: Partial<Record<keyof ScoringWeights, number>>;
 }

@@ -216,11 +216,9 @@ async function saveUnmatchedLocation(
       if (error) {
         console.warn(`Could not save unmatched ${type}:`, error.message);
       } else {
-        console.log(`Saved unmatched ${type}:`, name, '- ID:', inserted.id);
         return inserted.id; // Return the ID for potential use
       }
     } else {
-      console.log(`Unmatched ${type} already exists:`, name);
       return existing[0].id;
     }
   } catch (error) {

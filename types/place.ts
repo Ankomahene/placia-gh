@@ -1,23 +1,23 @@
 export interface Country {
   id: string;
   name: string;
-  numeric_code: string;
-  phonecode: string;
-  capital: string;
-  currency: string;
-  currency_name: string;
-  currency_symbol: string;
-  region: string;
-  region_id: string;
-  subregion: string;
-  subregion_id: string;
-  nationality: string;
+  numeric_code?: string;
+  phonecode?: string;
+  capital?: string;
+  currency?: string;
+  currency_name?: string;
+  currency_symbol?: string;
+  region?: string;
+  region_id?: string;
+  subregion?: string;
+  subregion_id?: string;
+  nationality?: string;
   longitude: number;
   latitude: number;
-  emoji: string;
-  emojiU: string;
-  created_at: Date;
-  updated_at: Date;
+  emoji?: string;
+  emojiU?: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface Region {
@@ -29,8 +29,8 @@ export interface Region {
   is_unmatched?: boolean;
   source_address?: string;
   original_search_term?: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface City {
@@ -42,32 +42,32 @@ export interface City {
   is_unmatched?: boolean;
   source_address?: string;
   original_search_term?: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface Town {
   id: string;
   name: string;
   city_id: string; // FK to cities.id
-  alternatenames: string; //comma separated list of alternate names
+  alternatenames?: string; //comma separated list of alternate names
   longitude: number;
   latitude: number;
   is_unmatched?: boolean;
   source_address?: string;
   original_search_term?: string;
-  created_at: Date;
-  updated_at: Date;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface PlaceCategory {
   id: string;
   name: string;
   slug: string;
-  icon: string;
-  description: string;
-  created_at: Date;
-  updated_at: Date;
+  icon?: string;
+  description?: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface PlaceSubcategory {
@@ -75,11 +75,11 @@ export interface PlaceSubcategory {
   category_id: string; // FK to place_categories.id
   name: string;
   slug: string;
-  icon: string;
-  description: string;
-  created_at: Date;
-  updated_at: Date;
-  grouping_id: string;
+  icon?: string;
+  description?: string;
+  created_at?: Date;
+  updated_at?: Date;
+  grouping_id?: string;
 }
 
 export interface PlaceType {
@@ -87,10 +87,10 @@ export interface PlaceType {
   subcategory_id: string; // FK to place_subcategories.id
   name: string;
   slug: string;
-  icon: string;
-  description: string;
-  created_at: Date;
-  updated_at: Date;
+  icon?: string;
+  description?: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface Ownership {
@@ -98,10 +98,10 @@ export interface Ownership {
   subcategory_id: string; // FK to place_subcategories.id
   type: string; // e.g., Public, Private, International
   slug: string;
-  icon: string;
-  description: string;
-  created_at: Date;
-  updated_at: Date;
+  icon?: string;
+  description?: string;
+  created_at?: Date;
+  updated_at?: Date;
 }
 
 export interface PlaceGrouping {
@@ -109,8 +109,8 @@ export interface PlaceGrouping {
   name: string;
   icon?: string;
   description?: string;
-  created_at: string; // ISO string
-  updated_at: string;
+  created_at?: string; // ISO string
+  updated_at?: string;
 }
 
 export interface PlaceField {
@@ -172,6 +172,7 @@ export interface Place {
   ownership_id?: string | null; // optional, Foreign Key to ownerships.id
 
   rating?: { rate: number; count: number };
+
   distance?: number;
   open_hours?: {
     day: string;
@@ -198,6 +199,130 @@ export interface Place {
     | 'rejected'
     | 'archived'
     | 'draft';
+}
+
+export type PriceLevelLabel =
+  | 'very_expensive'
+  | 'expensive'
+  | 'moderate'
+  | 'budget_friendly';
+export type RatingLevelLabel =
+  | 'highly_rated'
+  | 'well_rated'
+  | 'moderately_rated'
+  | 'poorly_rated';
+
+export interface PlaceResults {
+  id: string;
+  name: string;
+  slug: string;
+  tagline?: string;
+  description: string;
+  contacts?: string[];
+  email?: string;
+  logo?: string;
+  main_image?: string;
+  gallery?: string[];
+
+  country: Partial<Country>;
+  region: Partial<Region>;
+  city: Partial<City>;
+  location: { lng: number; lat: number; name: string; street_address: string };
+
+  website?: string;
+  socials?: { platform_name?: string; link: string }[];
+
+  category: PlaceCategory;
+  subcategory: PlaceSubcategory;
+  type?: PlaceType | null;
+  ownership?: Ownership | null;
+
+  rating?: { rate: number; count: number };
+  rate_average?: number;
+  rate_count?: number;
+  rate_label?: RatingLevelLabel;
+  price_level?: number; // 0-4 price scale
+  price_level_count?: number;
+  price_level_label?: PriceLevelLabel;
+
+  distance?: number;
+  open_hours?: {
+    day: string;
+    from: string;
+    to: string;
+  }[];
+  open_now?: boolean | 'unknown';
+
+  features?: { label: string; icon: string }[];
+  services?: { label: string; icon: string }[];
+  tags?: string[];
+  accessibility?: { label: string; icon: string }[];
+
+  created_at: Date;
+  updated_at: Date;
+
+  other_details?: object;
+  source?: string;
+  source_link?: string;
+
+  added_by?: string;
+  status:
+    | 'pending'
+    | 'scraped'
+    | 'approved'
+    | 'rejected'
+    | 'archived'
+    | 'draft';
+
+  // Google Places specific fields (optional)
+  google_place_id?: string;
+  google_place_types?: string[];
+  business_status?: string;
+  formatted_address?: string;
+  international_phone_number?: string;
+  vicinity?: string;
+}
+
+export interface PlaceResultsSummary {
+  id: string;
+  name: string;
+  slug: string;
+  tagline?: string;
+  description?: string;
+  main_image?: string;
+  gallery?: string[];
+
+  country: Partial<Country>;
+  region: Partial<Region>;
+  city: Partial<City>;
+  location: { lng: number; lat: number; name: string; street_address: string };
+
+  category: Partial<PlaceCategory>;
+  subcategory: Partial<PlaceSubcategory>;
+  type?: Partial<PlaceType> | null;
+  ownership?: Partial<Ownership> | null;
+
+  rate_average?: number;
+  rate_count?: number;
+  rate_label?: RatingLevelLabel;
+  price_level?: number; // 0-4 price scale
+  price_level_count?: number;
+  price_level_label?: PriceLevelLabel;
+
+  distance?: number;
+  open_now?: boolean | 'unknown';
+
+  features?: { label: string; icon: string }[];
+  services?: { label: string; icon: string }[];
+  tags?: string[];
+  accessibility?: { label: string; icon: string }[];
+  source?: string;
+
+  // Google Places specific fields (optional)
+  google_place_types?: string[];
+  business_status?: string;
+  formatted_address?: string;
+  vicinity?: string;
 }
 
 export interface UserUploadedPhotosForPlace {

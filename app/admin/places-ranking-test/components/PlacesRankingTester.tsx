@@ -1,21 +1,20 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import type { StructuredSearchQuery } from '../../../../types/search';
-import type { Place } from '../../../../types/place';
 import {
-  rankAndSortPlaces,
-  computePlaceScore,
-  createScoringConfig,
-  DEFAULT_SCORING_CONFIG,
-} from '../../../../utils/places-ranking';
-import {
-  testScenarios,
   datasets,
+  testScenarios,
   type TestScenario,
-} from '../../../../data/test-places-data';
-import QueryEditor from './QueryEditor';
+} from '@/data/test-places-data';
+import {
+  computePlaceScore,
+  DEFAULT_SCORING_CONFIG,
+  rankAndSortPlaces,
+} from '@/lib/services/places-ranking';
+import type { Place } from '@/types/place';
+import type { StructuredSearchQuery } from '@/types/search';
+import { useMemo, useState } from 'react';
 import DataSelector from './DataSelector';
+import QueryEditor from './QueryEditor';
 import ResultsDisplay from './ResultsDisplay';
 import ScoringConfigEditor from './ScoringConfigEditor';
 

@@ -1,20 +1,28 @@
+import { PriceLevelLabel } from './place';
+
+export type SearchType = 'proximity' | 'rating' | 'price_level' | 'general';
+
 export interface StructuredSearchQuery {
   query: string;
   location?: string;
-  features?: string[];
   category?: string;
   subcategory?: string;
+  type?: string;
   radius_meters?: number;
   min_rating?: number;
-  price_level?: 'budget' | 'moderate' | 'expensive' | 'very_expensive';
+  min_price_level?: number; // Direct numeric value (1-4)
+  max_price_level?: number; // Direct numeric value (1-4)
   open_now?: boolean;
   has_website?: boolean;
   has_phone?: boolean;
   region?: string;
-  min_price?: number;
-  max_price?: number;
   language?: string;
   user_location?: { lat: number; lng: number };
+  search_type?: SearchType;
+  features?: string[];
+  tags?: string[];
+  opened_at?: string;
+  sort_order?: string; // Exact database function sort order
 }
 
 export interface GooglePlaceSearchResult {

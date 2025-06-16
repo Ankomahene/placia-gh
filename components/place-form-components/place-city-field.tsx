@@ -44,8 +44,6 @@ export function PlaceCityField({
   const { data: selectedCity } = useCityById(value);
   const isDisabled = !regionId || isLoading;
 
-  console.log('city_id', value);
-
   // Set default value if provided and no current value
   useEffect(() => {
     if (defaultCityId && !value && cities.length > 0) {

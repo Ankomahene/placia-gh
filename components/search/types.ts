@@ -1,5 +1,9 @@
-import { Place, PlaceCategory, PlaceSubcategory } from '@/types/place';
-import { FormattedGooglePlaceSearchResult } from '@/types/search';
+import {
+  Place,
+  PlaceCategory,
+  PlaceSubcategory,
+  PlaceResults,
+} from '@/types/place';
 
 export type ViewMode = 'map' | 'card' | 'list';
 export type SearchResultSource = 'local' | 'google';
@@ -7,8 +11,7 @@ export type SearchResultSource = 'local' | 'google';
 // Unified search result type that can be either local or Google
 export interface SearchResult {
   source: SearchResultSource;
-  place?: Place; // Local place data
-  googlePlace?: FormattedGooglePlaceSearchResult; // Google place data
+  place?: Place | PlaceResults; // Can be either Place (local) or PlaceResults (google/unified)
   // Common fields derived from either source
   id: string;
   name: string;

@@ -63,3 +63,9 @@ export function getFormattedDistance(
   const distance = calculateDistance(lat1, lon1, lat2, lon2, unit);
   return `${distance} ${unit}`;
 }
+
+//Convert meters to km
+export function convertMetersToKm(meters: number): number {
+  // Round to 2 decimal places for cleaner display
+  return Math.round((meters / 1000) * 100) / 100;
+}

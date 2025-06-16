@@ -26,7 +26,6 @@ export const SearchContextProvider = ({
   };
 
   const onSearch = (query: string) => {
-    console.log('searching for', query);
     if (!isOpenSearchWindow) {
       setIsOpenSearchWindow(true);
     }

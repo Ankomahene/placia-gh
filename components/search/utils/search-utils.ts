@@ -1,5 +1,4 @@
-import { Place } from '@/types/place';
-import { FormattedGooglePlaceSearchResult } from '@/types/search';
+import { Place, PlaceResults } from '@/types/place';
 import { SearchResult } from '../types';
 
 // Convert local Place to unified SearchResult
@@ -22,31 +21,25 @@ export function placeToSearchResult(place: Place): SearchResult {
   };
 }
 
-// Convert Google place to unified SearchResult
+// Convert Google place (PlaceResults) to unified SearchResult
 export function googlePlaceToSearchResult(
-  googlePlace: FormattedGooglePlaceSearchResult
+  googlePlace: PlaceResults
 ): SearchResult {
   return {
     source: 'google',
-    googlePlace,
-    id: `google-${googlePlace.placeId}`,
+    place: googlePlace,
+    id: googlePlace.id,
     name: googlePlace.name,
     location: {
       lat: googlePlace.location.lat,
       lng: googlePlace.location.lng,
-      name: googlePlace.vicinity || googlePlace.formattedAddress,
+      name: googlePlace.location.name,
     },
-    rating:
-      googlePlace.rating && googlePlace.totalReviews
-        ? {
-            rate: googlePlace.rating,
-            count: googlePlace.totalReviews,
-          }
-        : undefined,
-    image: googlePlace.gallery?.[0],
-    description: googlePlace.formattedAddress,
-    category: googlePlace.types?.[0],
-    tags: googlePlace.types,
+    rating: googlePlace.rating,
+    image: googlePlace.main_image,
+    description: googlePlace.description,
+    category: googlePlace.category.id,
+    tags: googlePlace.tags,
   };
 }
 
@@ -57,7 +50,7 @@ export function placesToSearchResults(places: Place[]): SearchResult[] {
 
 // Convert array of Google places to unified results
 export function googlePlacesToSearchResults(
-  googlePlaces: FormattedGooglePlaceSearchResult[]
+  googlePlaces: PlaceResults[]
 ): SearchResult[] {
   return googlePlaces.map(googlePlaceToSearchResult);
 }

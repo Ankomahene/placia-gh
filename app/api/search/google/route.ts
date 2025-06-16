@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseNaturalLanguageQueryForGoogleTextSearch } from '@/lib/services/openai-search-for-google';
-import { searchPlacesWithTextSearch } from '@/lib/services/google-places';
+import { parseNaturalLanguageQuery } from '@/lib/services/openai-search';
+import { searchGooglePlaces } from '@/lib/services/google/places';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,17 +13,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse natural language query using enhanced OpenAI parser
-    const structuredQuery = await parseNaturalLanguageQueryForGoogleTextSearch(
+    // Parse natural language query using unified OpenAI parser
+    const structuredQuery = await parseNaturalLanguageQuery(
       query,
       userLocation
     );
 
-    console.log('--------------------------------');
-    console.log('structuredQuery', structuredQuery);
-
     // Search places using Google textSearch with structured query
-    const places = await searchPlacesWithTextSearch(structuredQuery);
+    const places = await searchGooglePlaces(structuredQuery);
 
     return NextResponse.json({
       success: true,
@@ -32,6 +29,13 @@ export async function POST(request: NextRequest) {
         total_results: places.length,
         structured_query: structuredQuery,
         original_query: query,
+        source: 'google_places',
+        user_location_used: !!userLocation,
+        search_metadata: {
+          has_distance_calculation: false,
+          has_open_hours_check: false,
+          features_searched: 0,
+        },
       },
     });
   } catch (error) {

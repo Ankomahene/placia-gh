@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { PlaceResults } from '@/types/place';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { SearchState, SearchFilters, ViewMode, SearchResult } from '../types';
-import { mockPlaces, generateMockPlaces } from '../mock-data';
-import { Place } from '@/types/place';
+import { useCallback, useEffect, useState } from 'react';
+import { generateMockPlaces, mockPlaces } from '../mock-data';
+import { SearchFilters, SearchResult, SearchState, ViewMode } from '../types';
 import {
-  placesToSearchResults,
   googlePlacesToSearchResults,
+  placesToSearchResults,
 } from '../utils/search-utils';
-import { FormattedGooglePlaceSearchResult } from '@/types/search';
-import { getLocationCoordinates } from '@/lib/services/get-location-coordinates';
 
 const RESULTS_PER_PAGE = 50;
 
@@ -41,9 +39,9 @@ export function useSearch() {
     async (
       query: string,
       userLocation?: { lat: number; lng: number }
-    ): Promise<FormattedGooglePlaceSearchResult[]> => {
+    ): Promise<PlaceResults[]> => {
       try {
-        const response = await fetch('/api/search/google-text', {
+        const response = await fetch('/api/search/google', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ query, userLocation }),

@@ -31,7 +31,7 @@ export function useNominatimSearch(): UseNominatimSearchResult {
   ) => {
     // Different search strategies for "load more"
     let searchQuery = location ? `${query} in ${location}` : query;
-    let limit = '20';
+    let limit = '100';
 
     if (searchVariation > 0) {
       // For load more, try different search variations
@@ -41,23 +41,23 @@ export function useNominatimSearch(): UseNominatimSearchResult {
           searchQuery = location
             ? `${query} near ${location}`
             : `${query} amenity`;
-          limit = '30';
+          limit = '100';
           break;
         case 2:
           // Search with different location terms
           searchQuery = location
             ? `${query} ${location} area`
             : `${query} facility`;
-          limit = '25';
+          limit = '70';
           break;
         case 3:
           // Search with just the query without location constraints
           searchQuery = query;
-          limit = '40';
+          limit = '100';
           break;
         default:
           // Increase limit for subsequent attempts
-          limit = '50';
+          limit = '110';
           break;
       }
     }
