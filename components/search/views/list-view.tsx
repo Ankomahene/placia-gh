@@ -1,14 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
-import { SearchResult } from '../types';
+import { PlaceResultsSummary } from '@/types/place';
 import { SearchResultCard } from '../cards/search-result-card';
 import { Button } from '@/components/ui/button';
 
 interface ListViewProps {
-  places: SearchResult[];
+  places: PlaceResultsSummary[];
   hoveredPlaceId: string | null;
   onPlaceHover: (placeId: string | null) => void;
   onPlaceSelect: (placeId: string) => void;
@@ -16,6 +15,8 @@ interface ListViewProps {
   hasMore: boolean;
   isLoading: boolean;
 }
+
+const ITEMS_PER_PAGE = 20;
 
 export function ListView({
   places,
@@ -27,15 +28,45 @@ export function ListView({
   isLoading,
 }: ListViewProps) {
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const [displayedCount, setDisplayedCount] = useState(ITEMS_PER_PAGE);
 
-  // Intersection Observer for infinite scroll
+  // Deduplicate places using Map for O(n) performance
+  const deduplicatedPlaces = useMemo(() => {
+    const placeMap = new Map<string, PlaceResultsSummary>();
+    places.forEach((place) => {
+      if (!placeMap.has(place.id)) {
+        placeMap.set(place.id, place);
+      }
+    });
+    return Array.from(placeMap.values());
+  }, [places]);
+
+  // Get currently displayed places
+  const displayedPlaces = useMemo(() => {
+    return deduplicatedPlaces.slice(0, displayedCount);
+  }, [deduplicatedPlaces, displayedCount]);
+
+  const hasMoreLocal = displayedCount < deduplicatedPlaces.length;
+  const hasMoreServer = hasMore && displayedCount >= deduplicatedPlaces.length;
+
+  // Reset displayed count when search changes
   useEffect(() => {
-    if (!hasMore || isLoading) return;
+    setDisplayedCount(ITEMS_PER_PAGE);
+  }, [deduplicatedPlaces.length === 0]);
+
+  // Load more from local data
+  const loadMoreLocal = () => {
+    setDisplayedCount((prev) => prev + ITEMS_PER_PAGE);
+  };
+
+  // Intersection Observer for infinite scroll (local data only)
+  useEffect(() => {
+    if (!hasMoreLocal || isLoading) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          onLoadMore();
+          loadMoreLocal();
         }
       },
       { threshold: 0.1 }
@@ -46,9 +77,9 @@ export function ListView({
     }
 
     return () => observer.disconnect();
-  }, [hasMore, isLoading, onLoadMore]);
+  }, [hasMoreLocal, isLoading]);
 
-  if (places.length === 0 && !isLoading) {
+  if (deduplicatedPlaces.length === 0 && !isLoading) {
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center">
@@ -65,57 +96,69 @@ export function ListView({
     <div className="h-full overflow-y-auto">
       <div className="container mx-auto px-4 py-6">
         {/* List */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-4 max-w-4xl mx-auto"
-        >
-          {places.map((place, index) => (
-            <motion.div
+        <div className="space-y-4 max-w-4xl mx-auto">
+          {displayedPlaces.map((place) => (
+            <SearchResultCard
               key={place.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: index * 0.03 }}
-            >
-              <SearchResultCard
-                result={place}
-                isHovered={hoveredPlaceId === place.id}
-                onHover={onPlaceHover}
-                onSelect={onPlaceSelect}
-                variant="list"
-              />
-            </motion.div>
+              place={place}
+              onHover={onPlaceHover}
+              isSelected={hoveredPlaceId === place.id}
+              variant="list"
+              onClick={() => onPlaceSelect(place.id)}
+            />
           ))}
-        </motion.div>
+        </div>
 
         {/* Load More Section */}
-        {(hasMore || isLoading) && (
-          <div
-            ref={loadMoreRef}
-            className="flex items-center justify-center py-8"
-          >
+        {(hasMoreLocal || hasMoreServer || isLoading) && (
+          <div className="flex items-center justify-center py-8">
             {isLoading ? (
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span>Loading more places...</span>
               </div>
-            ) : hasMore ? (
+            ) : hasMoreLocal ? (
+              <div
+                ref={loadMoreRef}
+                className="flex flex-col items-center gap-3"
+              >
+                <Button
+                  onClick={loadMoreLocal}
+                  variant="outline"
+                  className="px-8"
+                >
+                  Show More Places ({deduplicatedPlaces.length - displayedCount}{' '}
+                  remaining)
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Showing {displayedCount} of {deduplicatedPlaces.length} places
+                </p>
+              </div>
+            ) : hasMoreServer ? (
               <Button onClick={onLoadMore} variant="outline" className="px-8">
-                Load More Places
+                Load More places
               </Button>
             ) : null}
           </div>
         )}
 
         {/* No more results message */}
-        {!hasMore && places.length > 0 && !isLoading && (
-          <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              You&apos;ve seen all {places.length} places
-            </p>
-          </div>
-        )}
+        {!hasMoreLocal &&
+          !hasMoreServer &&
+          deduplicatedPlaces.length > 0 &&
+          !isLoading && (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                You&apos;ve seen all {deduplicatedPlaces.length} places
+              </p>
+              {deduplicatedPlaces.length !== places.length && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  ({places.length - deduplicatedPlaces.length} duplicates
+                  removed)
+                </p>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );

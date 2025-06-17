@@ -8,7 +8,6 @@ import { Bot, Mic, Search, Sparkles, Zap } from 'lucide-react';
 import React from 'react';
 import { MapPreview } from './map-preview';
 import { useSearchContext } from './search/hooks/use-search-context';
-import { useSearch } from './search';
 
 const exampleSearches = [
   'Affordable schools in my area',
@@ -27,22 +26,21 @@ const floatingElements = [
 ];
 
 export default function HeroSection() {
-  const { search } = useSearch();
-  const { searchTerm, setSearchTerm, onSearch, userLocation } =
+  const { searchTerm, setSearchTerm, onSearch, userLocation, performSearch } =
     useSearchContext();
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (searchTerm.trim()) {
       onSearch(searchTerm);
-      await search(searchTerm, undefined, userLocation);
+      await performSearch(searchTerm, userLocation);
     }
   };
 
   const handleExampleClick = async (query: string) => {
     setSearchTerm(query);
     onSearch(query);
-    await search(query, undefined, userLocation);
+    await performSearch(query, userLocation);
   };
 
   return (

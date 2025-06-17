@@ -1,5 +1,12 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Database, Globe, Search, Brain } from 'lucide-react';
+import {
+  Database,
+  Globe,
+  Search,
+  Brain,
+  MessageSquareMore,
+} from 'lucide-react';
+import ConversationFlowTest from './conversation-flow-test';
 import GoogleSearchTest from './google-search-test';
 import InternalSearchTest from './internal-search-test';
 import EnhancedSmartSearchTest from './enhanced-smart-search-test';
@@ -17,8 +24,16 @@ export default function SearchTestPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="enhanced" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs defaultValue="conversation" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger
+              value="conversation"
+              className="flex items-center gap-2"
+            >
+              <MessageSquareMore className="h-4 w-4" />
+              Conversation Flow
+            </TabsTrigger>
+
             <TabsTrigger value="enhanced" className="flex items-center gap-2">
               <Brain className="h-4 w-4" />
               Enhanced Smart
@@ -33,6 +48,10 @@ export default function SearchTestPage() {
               Internal Search
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="conversation" className="space-y-6">
+            <ConversationFlowTest />
+          </TabsContent>
 
           <TabsContent value="enhanced" className="space-y-6">
             <EnhancedSmartSearchTest />

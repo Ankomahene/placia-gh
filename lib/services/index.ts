@@ -1,8 +1,5 @@
 // Unified OpenAI Search Service
-export {
-  parseNaturalLanguageQuery,
-  enhanceQueryWithContext,
-} from './openai-search';
+export { parseNaturalLanguageQuery } from './openai-search';
 
 // Google Places Services
 export {

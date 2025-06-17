@@ -1,9 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import type { PlaceResultsSummary } from '@/types/place';
-import {
-  parseNaturalLanguageQuery,
-  createConversationContext,
-} from './openai-search';
+import { parseNaturalLanguageQuery } from './openai-search';
 import { geocodeLocation } from './google/places';
 import { StructuredSearchQuery } from '@/types/search';
 
@@ -11,11 +8,12 @@ const supabase = createClient();
 
 interface SearchParams {
   naturalQuery: string;
-  defaultStructuredQuery?: StructuredSearchQuery;
   userLocation?: { lat: number; lng: number };
   limit?: number;
   offset?: number;
-  previousQuery?: StructuredSearchQuery;
+  useCache?: boolean; // New parameter to indicate if we should use cached structured query
+  usePreviousQuery?: boolean; // New parameter to indicate if we should use previous query
+  defaultStructuredQuery?: StructuredSearchQuery;
 }
 
 interface SearchResult {
@@ -32,64 +30,16 @@ interface SearchResult {
 }
 
 export class SmartPlaceSearch {
-  private conversationHistory: StructuredSearchQuery[] = [];
+  private lastStructuredQuery: StructuredSearchQuery | null = null; // Cache for pagination
 
-  // New conversational search method that maintains context
-  async conversationalSearch({
-    naturalQuery,
-    userLocation,
-    limit = 20,
-    offset = 0,
-  }: {
-    naturalQuery: string;
-    userLocation?: { lat: number; lng: number };
-    limit?: number;
-    offset?: number;
-  }): Promise<SearchResult & { currentQuery: StructuredSearchQuery }> {
-    const previousQuery =
-      this.conversationHistory[this.conversationHistory.length - 1];
-
-    const result = await this.searchWithAI({
-      naturalQuery,
-      userLocation,
-      limit,
-      offset,
-      previousQuery,
-    });
-
-    // Extract the structured query used for this search
-    const conversationContext = previousQuery
-      ? createConversationContext(previousQuery)
-      : undefined;
-
-    const currentQuery = await parseNaturalLanguageQuery(
-      naturalQuery,
-      userLocation,
-      conversationContext
-    );
-
-    // Update conversation history
-    this.conversationHistory.push(currentQuery);
-
-    // Keep only last 5 queries to prevent memory issues
-    if (this.conversationHistory.length > 5) {
-      this.conversationHistory = this.conversationHistory.slice(-5);
-    }
-
-    return {
-      ...result,
-      currentQuery,
-    };
-  }
-
-  // Reset conversation context
-  resetConversation(): void {
-    this.conversationHistory = [];
-  }
-
-  // Get conversation history
-  getConversationHistory(): StructuredSearchQuery[] {
-    return [...this.conversationHistory];
+  // Add this helper method to clean search queries
+  private cleanSearchQuery(query: string): string {
+    // Remove excessive operators and clean up the query
+    return query
+      .replace(/\s*&\s*&\s*/g, ' & ') // Clean up double ampersands
+      .replace(/\s*\|\s*\|\s*/g, ' | ') // Clean up double pipes
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .trim();
   }
 
   // Enhanced search with natural language processing
@@ -98,28 +48,37 @@ export class SmartPlaceSearch {
     userLocation,
     limit = 20,
     offset = 0,
+    useCache = false,
     defaultStructuredQuery,
-    previousQuery,
-  }: SearchParams): Promise<SearchResult> {
+  }: SearchParams & {
+    previousQuery?: StructuredSearchQuery;
+  }): Promise<SearchResult> {
     try {
-      // Create conversation context for follow-up detection
-      const conversationContext = previousQuery
-        ? createConversationContext(previousQuery)
-        : undefined;
+      let structuredQuery: StructuredSearchQuery;
 
-      const structuredQuery = await parseNaturalLanguageQuery(
-        naturalQuery,
-        userLocation,
-        conversationContext,
-        defaultStructuredQuery
-      );
+      // Use cached structured query if available and requested (for pagination)
+      if (useCache && this.lastStructuredQuery) {
+        structuredQuery = this.lastStructuredQuery;
+      } else {
+        // Parse the natural language query into structured format
+        structuredQuery = await parseNaturalLanguageQuery(
+          naturalQuery,
+          userLocation,
+          defaultStructuredQuery
+        );
+
+        // Cache the structured query for pagination
+        this.lastStructuredQuery = structuredQuery;
+      }
 
       const searchType = structuredQuery?.search_type || 'general';
+      const searchQuery = `${structuredQuery.query} ${structuredQuery.location ? '& ' + structuredQuery.location : ''} ${structuredQuery.tags ? '& ' + structuredQuery.tags.join(' | ') : ''}`;
+      const cleanedQuery = this.cleanSearchQuery(searchQuery);
 
       switch (searchType) {
         case 'proximity':
           return this.searchByProximity(
-            naturalQuery,
+            cleanedQuery,
             userLocation || { lat: 0, lng: 0 },
             structuredQuery.location || '',
             structuredQuery.radius_meters || 5000,
@@ -129,7 +88,7 @@ export class SmartPlaceSearch {
           );
         case 'rating':
           return this.searchByRating(
-            naturalQuery,
+            cleanedQuery,
             structuredQuery.min_rating || 4,
             5, // max_rating - not in StructuredSearchQuery
             limit,
@@ -140,7 +99,7 @@ export class SmartPlaceSearch {
           );
         case 'price_level':
           return this.searchByPriceLevel(
-            naturalQuery,
+            cleanedQuery,
             structuredQuery.min_price_level || 1,
             structuredQuery.max_price_level || 4,
             limit,
@@ -150,7 +109,7 @@ export class SmartPlaceSearch {
             structuredQuery.location || ''
           );
         default:
-          return this.generalSearch(naturalQuery, limit, offset);
+          return this.generalSearch(cleanedQuery, limit, offset);
       }
     } catch (error) {
       console.error('Enhanced search error:', error);
@@ -167,6 +126,11 @@ export class SmartPlaceSearch {
         },
       };
     }
+  }
+
+  // Clear cached structured query
+  clearCache(): void {
+    this.lastStructuredQuery = null;
   }
 
   // Search for nearby places with location resolution
@@ -233,6 +197,21 @@ export class SmartPlaceSearch {
       const results = data || [];
       const executionTime = Date.now() - startTime;
 
+      if (results.length === 0) {
+        const generalSearchResults = await this.generalSearch(
+          query,
+          limit,
+          offset
+        );
+        return {
+          ...generalSearchResults,
+          results: generalSearchResults.results.sort(
+            (a, b) => (b?.distance || 0) - (a?.distance || 0)
+          ),
+          executionTime: Date.now() - startTime,
+        };
+      }
+
       return {
         results,
         count: results.length,
@@ -262,7 +241,6 @@ export class SmartPlaceSearch {
     }
   }
 
-  // Search for highly rated places
   async searchByRating(
     query: string,
     minRating: number,
@@ -307,6 +285,21 @@ export class SmartPlaceSearch {
 
       const results = data || [];
       const executionTime = Date.now() - startTime;
+
+      if (results.length === 0) {
+        const generalSearchResults = await this.generalSearch(
+          query,
+          limit,
+          offset
+        );
+        return {
+          ...generalSearchResults,
+          results: generalSearchResults.results.sort(
+            (a, b) => (b?.rate_average || 0) - (a?.rate_average || 0)
+          ),
+          executionTime: Date.now() - startTime,
+        };
+      }
 
       return {
         results,
@@ -387,6 +380,21 @@ export class SmartPlaceSearch {
 
       const results = data || [];
       const executionTime = Date.now() - startTime;
+
+      if (results.length === 0) {
+        const generalSearchResults = await this.generalSearch(
+          query,
+          limit,
+          offset
+        );
+        return {
+          ...generalSearchResults,
+          results: generalSearchResults.results.sort(
+            (a, b) => (b?.price_level || 0) - (a?.price_level || 0)
+          ),
+          executionTime: Date.now() - startTime,
+        };
+      }
 
       return {
         results,
@@ -475,10 +483,11 @@ export class SmartPlaceSearch {
         pagination: {
           limit,
           offset,
-          hasMore: results.length === limit,
+          hasMore: offset + results.length < (count || 0),
         },
       };
     } catch (error) {
+      console.error(error);
       return {
         success: false,
         results: [],
@@ -505,8 +514,6 @@ export class SmartPlaceSearch {
           description,
           main_image,
           gallery,
-          distance,
-          open_now,
           location,
           rate_average,
           rate_count,
@@ -525,10 +532,11 @@ export class SmartPlaceSearch {
           category: categories(id, name),
           subcategory: subcategories(id, name),
           type: types(id, name),
-          ownership: ownerships(id, name)
+          ownership: ownerships(id, type)
         `,
         { count: 'exact' }
       )
+      .in('status', ['approved', 'scraped'])
       .textSearch('search_vector', query, {
         type: 'websearch',
         config: 'english',

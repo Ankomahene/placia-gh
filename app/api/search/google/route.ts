@@ -1,47 +1,71 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseNaturalLanguageQuery } from '@/lib/services/openai-search';
-import { searchGooglePlaces } from '@/lib/services/google/places';
+import { googlePlaceSearch } from '@/lib/services/google/places';
 
 export async function POST(request: NextRequest) {
   try {
-    const { query, userLocation } = await request.json();
+    const {
+      query,
+      userLocation,
+      pageToken,
+    }: {
+      query: string;
+      userLocation?: { lat: number; lng: number };
+      pageToken?: string;
+    } = await request.json();
 
-    if (!query || typeof query !== 'string') {
+    if (!query) {
       return NextResponse.json(
-        { error: 'Natural language query is required' },
+        { success: false, error: 'Query is required' },
         { status: 400 }
       );
     }
 
-    // Parse natural language query using unified OpenAI parser
-    const structuredQuery = await parseNaturalLanguageQuery(
-      query,
-      userLocation
-    );
+    const useCache = !!pageToken;
 
-    // Search places using Google textSearch with structured query
-    const places = await searchGooglePlaces(structuredQuery);
+    const searchResult = await googlePlaceSearch.search({
+      naturalQuery: query,
+      userLocation,
+      useCache,
+      pageToken,
+    });
+
+    if (!searchResult.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Search failed',
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       data: {
-        places,
-        total_results: places.length,
-        structured_query: structuredQuery,
+        places: searchResult.results,
+        total_results: searchResult.results.length,
+        nextPageToken: searchResult.nextPageToken,
+        structured_query: googlePlaceSearch.lastStructuredQuery,
         original_query: query,
-        source: 'google_places',
+        source: 'google-places-api',
         user_location_used: !!userLocation,
         search_metadata: {
-          has_distance_calculation: false,
-          has_open_hours_check: false,
-          features_searched: 0,
+          has_distance_calculation:
+            'distance' in (searchResult.results[0] || {}),
+          has_open_hours_check: 'open_now' in (searchResult.results[0] || {}),
+          features_searched:
+            googlePlaceSearch.lastStructuredQuery?.features?.length || 0,
         },
       },
     });
   } catch (error) {
-    console.error('Error in Google textSearch:', error);
+    console.error('Google search API error:', error);
     return NextResponse.json(
-      { error: 'Failed to search places with Google textSearch' },
+      {
+        success: false,
+        error: 'An error occurred during the search.',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

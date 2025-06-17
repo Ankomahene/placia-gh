@@ -6,8 +6,14 @@ import {
   GoogleGeocodingResult,
   FormattedGooglePlaceSearchResult,
 } from '@/types/search';
-import { PlaceResults, PlaceCategory, PlaceSubcategory } from '@/types/place';
+import {
+  PlaceResults,
+  PlaceCategory,
+  PlaceSubcategory,
+  PlaceResultsSummary,
+} from '@/types/place';
 import slugify from 'slugify';
+import { parseNaturalLanguageQuery } from '../openai-search';
 
 const client = new Client({});
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY!;
@@ -16,10 +22,256 @@ if (!process.env.GOOGLE_API_KEY) {
   throw new Error('GOOGLE_API_KEY environment variable is required');
 }
 
+interface GoogleSearchParams {
+  naturalQuery: string;
+  userLocation?: { lat: number; lng: number };
+  useCache?: boolean;
+  pageToken?: string;
+  defaultStructuredQuery?: StructuredSearchQuery;
+}
+
+interface SearchResult {
+  results: PlaceResultsSummary[];
+  success: boolean;
+  query: string;
+  nextPageToken?: string | null;
+}
+
+export class GooglePlaceSearch {
+  public lastStructuredQuery: StructuredSearchQuery | null = null;
+
+  async search({
+    naturalQuery,
+    userLocation,
+    useCache = false,
+    pageToken,
+    defaultStructuredQuery,
+  }: GoogleSearchParams): Promise<SearchResult> {
+    try {
+      let structuredQuery: StructuredSearchQuery;
+
+      if (useCache && this.lastStructuredQuery) {
+        structuredQuery = this.lastStructuredQuery;
+      } else {
+        structuredQuery = await parseNaturalLanguageQuery(
+          naturalQuery,
+          userLocation,
+          defaultStructuredQuery
+        );
+        this.lastStructuredQuery = structuredQuery;
+      }
+
+      const searchType = structuredQuery?.search_type || 'general';
+
+      switch (searchType) {
+        case 'proximity':
+          return this.searchByProximity(structuredQuery, pageToken);
+        case 'rating':
+          return this.searchByRating(structuredQuery, pageToken);
+        case 'price_level':
+          return this.searchByPriceLevel(structuredQuery, pageToken);
+        default:
+          return this.generalSearch(structuredQuery, pageToken);
+      }
+    } catch (error) {
+      console.error('Google search error:', error);
+      return {
+        results: [],
+        success: false,
+        query: naturalQuery,
+      };
+    }
+  }
+
+  async searchByProximity(
+    structuredQuery: StructuredSearchQuery,
+    pageToken?: string
+  ): Promise<SearchResult> {
+    const { user_location, location, query, sort_order } = structuredQuery;
+
+    let searchLocation: { lat: number; lng: number } | null = null;
+
+    try {
+      // Prioritize specified location over user location for proximity searches
+      if (location) {
+        searchLocation = await geocodeLocation(location);
+      } else if (user_location) {
+        searchLocation = user_location;
+      }
+
+      if (!searchLocation) {
+        return this.generalSearch(structuredQuery);
+      }
+
+      const { results, nextPageToken } = await nearbySearch(
+        searchLocation,
+        structuredQuery,
+        pageToken
+      );
+
+      if (results.length === 0) {
+        return this.generalSearch(structuredQuery);
+      }
+
+      let placeSummaries = transformGoogleSearchResultsToSummaries(results);
+
+      placeSummaries = placeSummaries.map((place) => ({
+        ...place,
+        distance: this.getDistance(searchLocation!, {
+          lat: place.location.lat,
+          lng: place.location.lng,
+        }),
+      }));
+
+      if (sort_order === 'farthest_first') {
+        placeSummaries.sort((a, b) => (b.distance || 0) - (a.distance || 0));
+      } else {
+        placeSummaries.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      }
+
+      return {
+        results: placeSummaries,
+        success: true,
+        query,
+        nextPageToken,
+      };
+    } catch (error) {
+      console.error('Error in searchByProximity:', error);
+      return this.generalSearch(structuredQuery);
+    }
+  }
+
+  async searchByRating(
+    structuredQuery: StructuredSearchQuery,
+    pageToken?: string
+  ): Promise<SearchResult> {
+    const { sort_order, query } = structuredQuery;
+    const { results, nextPageToken } = await searchGooglePlaces(
+      structuredQuery,
+      pageToken
+    );
+
+    if (results.length === 0) {
+      return this.generalSearch(structuredQuery);
+    }
+    let placeSummaries = transformGoogleSearchResultsToSummaries(results);
+
+    if (sort_order === 'lowest_first') {
+      placeSummaries.sort(
+        (a, b) => (a.rate_average || 0) - (b.rate_average || 0)
+      );
+    } else {
+      placeSummaries.sort(
+        (a, b) => (b.rate_average || 0) - (a.rate_average || 0)
+      );
+    }
+
+    return {
+      results: placeSummaries,
+      success: true,
+      query,
+      nextPageToken,
+    };
+  }
+
+  async searchByPriceLevel(
+    structuredQuery: StructuredSearchQuery,
+    pageToken?: string
+  ): Promise<SearchResult> {
+    const { sort_order, query } = structuredQuery;
+    const { results, nextPageToken } = await searchGooglePlaces(
+      structuredQuery,
+      pageToken
+    );
+
+    if (results.length === 0) {
+      return this.generalSearch(structuredQuery);
+    }
+
+    let placeSummaries = transformGoogleSearchResultsToSummaries(results);
+
+    if (sort_order === 'most_expensive_first') {
+      placeSummaries.sort(
+        (a, b) => (b.price_level || 0) - (a.price_level || 0)
+      );
+    } else {
+      placeSummaries.sort(
+        (a, b) => (a.price_level || 0) - (b.price_level || 0)
+      );
+    }
+
+    return {
+      results: placeSummaries,
+      success: true,
+      query,
+      nextPageToken,
+    };
+  }
+
+  async generalSearch(
+    structuredQuery: StructuredSearchQuery,
+    pageToken?: string
+  ): Promise<SearchResult> {
+    const { results, nextPageToken } = await searchGooglePlaces(
+      structuredQuery,
+      pageToken
+    );
+    if (results.length === 0 && structuredQuery.search_type !== 'general') {
+      // Fallback to general search.
+      const generalQuery: StructuredSearchQuery = {
+        ...structuredQuery,
+        search_type: 'general',
+      };
+      const { results: fallbackResults, nextPageToken: fallbackToken } =
+        await searchGooglePlaces(generalQuery);
+      const summarizedResults =
+        transformGoogleSearchResultsToSummaries(fallbackResults);
+      return {
+        results: summarizedResults,
+        success: true,
+        query: structuredQuery.query,
+        nextPageToken: fallbackToken,
+      };
+    }
+
+    const summarizedResults = transformGoogleSearchResultsToSummaries(results);
+    return {
+      results: summarizedResults,
+      success: true,
+      query: structuredQuery.query,
+      nextPageToken,
+    };
+  }
+
+  private getDistance(
+    coords1: { lat: number; lng: number },
+    coords2: { lat: number; lng: number }
+  ) {
+    const R = 6371e3; // metres
+    const φ1 = (coords1.lat * Math.PI) / 180;
+    const φ2 = (coords2.lat * Math.PI) / 180;
+    const Δφ = ((coords2.lat - coords1.lat) * Math.PI) / 180;
+    const Δλ = ((coords2.lng - coords1.lng) * Math.PI) / 180;
+
+    const a =
+      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c; // in metres
+  }
+}
+
+export const googlePlaceSearch = new GooglePlaceSearch();
+
 export async function nearbySearch(
   location: { lat: number; lng: number },
-  structuredQuery: StructuredSearchQuery
-): Promise<GooglePlaceSearchResult[]> {
+  structuredQuery: StructuredSearchQuery,
+  pageToken?: string
+): Promise<{
+  results: GooglePlaceSearchResult[];
+  nextPageToken?: string | null;
+}> {
   try {
     const {
       query,
@@ -30,19 +282,24 @@ export async function nearbySearch(
 
     const searchParams: any = {
       key: GOOGLE_API_KEY,
-      location: `${location.lat},${location.lng}`,
-      radius: radius_meters,
-      keyword: query,
-      type: 'establishment',
     };
 
-    if (min_rating) {
-      searchParams.minprice = 0;
-      searchParams.maxprice = 4;
-    }
+    if (pageToken) {
+      searchParams.pagetoken = pageToken;
+    } else {
+      searchParams.location = `${location.lat},${location.lng}`;
+      searchParams.radius = radius_meters;
+      searchParams.keyword = query;
+      searchParams.type = 'establishment';
 
-    if (open_now) {
-      searchParams.opennow = true;
+      if (min_rating) {
+        searchParams.minprice = 0;
+        searchParams.maxprice = 4;
+      }
+
+      if (open_now) {
+        searchParams.opennow = true;
+      }
     }
 
     const response = await client.placesNearby({
@@ -56,7 +313,7 @@ export async function nearbySearch(
       ? results.filter((place) => (place.rating || 0) >= min_rating)
       : results;
 
-    return filteredResults.map((place) => ({
+    const mappedResults = filteredResults.map((place) => ({
       place_id: place.place_id!,
       name: place.name!,
       geometry: {
@@ -76,15 +333,116 @@ export async function nearbySearch(
       types: place.types || [],
       vicinity: place.vicinity,
     }));
+
+    return {
+      results: mappedResults,
+      nextPageToken: response.data.next_page_token,
+    };
   } catch (error) {
     console.error('Error in nearby search:', error);
     throw new Error('Failed to perform nearby search');
   }
 }
 
-export async function getPlaceDetails(
-  placeId: string
-): Promise<GooglePlaceDetails> {
+function transformGooglePlaceDetailsToPlaceResults(
+  place: GooglePlaceDetails
+): PlaceResults {
+  const { category, subcategory } = mapGoogleTypesToCategories(place.types);
+  const gallery = place.photos?.map((photo) =>
+    getGooglePhotoUrl(photo.photo_reference, 800)
+  );
+
+  const parseOpeningHours = (
+    hours:
+      | {
+          open_now: boolean;
+          weekday_text: string[];
+        }
+      | undefined
+  ) => {
+    if (!hours || !hours.weekday_text) return [];
+    return hours.weekday_text
+      .map((text) => {
+        const parts = text.split(': ');
+        if (parts.length < 2) return null;
+        const day = parts[0];
+        const time = parts.slice(1).join(': ');
+
+        if (time.toLowerCase() === 'closed') return null;
+        if (time.toLowerCase() === 'open 24 hours') {
+          return { day, from: '00:00', to: '23:59' };
+        }
+
+        const timeParts = time.split('–');
+        if (timeParts.length < 2) return null;
+
+        return {
+          day,
+          from: timeParts[0].trim(),
+          to: timeParts[1].trim(),
+        };
+      })
+      .filter(Boolean) as { day: string; from: string; to: string }[];
+  };
+
+  const now = new Date();
+
+  return {
+    id: place.place_id,
+    name: place.name,
+    slug: slugify(place.name, { lower: true, strict: true }),
+    description: place.formatted_address,
+    contacts: place.formatted_phone_number
+      ? [place.formatted_phone_number]
+      : [],
+    main_image: gallery?.[0],
+    gallery: gallery || [],
+    country: { id: '', name: '' },
+    region: { id: '', name: '' },
+    city: { id: '', name: '' },
+    location: {
+      lat: place.geometry.location.lat,
+      lng: place.geometry.location.lng,
+      name: place.formatted_address,
+      street_address: place.vicinity || place.formatted_address,
+    },
+    website: place.website,
+    socials: [],
+    category,
+    subcategory,
+    type: null,
+    ownership: null,
+    rating:
+      place.rating && place.user_ratings_total
+        ? { rate: place.rating, count: place.user_ratings_total }
+        : undefined,
+    rate_average: place.rating,
+    rate_count: place.user_ratings_total,
+    price_level: place.price_level,
+    open_hours: parseOpeningHours(place.opening_hours),
+    open_now: place.opening_hours?.open_now,
+    features: [],
+    services: [],
+    tags: place.types || [],
+    accessibility: [],
+    created_at: now,
+    updated_at: now,
+    other_details: {
+      reviews: place.reviews,
+    },
+    source: 'google_places_details',
+    source_link: place.url,
+    status: 'approved',
+    google_place_id: place.place_id,
+    google_place_types: place.types,
+    business_status: place.business_status,
+    formatted_address: place.formatted_address,
+    international_phone_number: place.formatted_phone_number,
+    vicinity: place.vicinity,
+  };
+}
+
+export async function getPlaceDetails(placeId: string): Promise<PlaceResults> {
   try {
     const response = await client.placeDetails({
       params: {
@@ -105,51 +463,20 @@ export async function getPlaceDetails(
           'types',
           'opening_hours',
           'url',
+          'vicinity',
+          'business_status',
         ],
       },
     });
 
-    const place = response.data.result;
-    if (!place) {
+    const placeDetails = response.data.result;
+    if (!placeDetails) {
       throw new Error('Place not found');
     }
 
-    return {
-      place_id: place.place_id!,
-      name: place.name!,
-      formatted_address: place.formatted_address!,
-      formatted_phone_number: place.formatted_phone_number,
-      website: place.website,
-      rating: place.rating,
-      user_ratings_total: place.user_ratings_total,
-      price_level: place.price_level,
-      geometry: {
-        location: {
-          lat: place.geometry!.location!.lat,
-          lng: place.geometry!.location!.lng,
-        },
-      },
-      photos: place.photos?.map((photo) => ({
-        photo_reference: photo.photo_reference,
-        height: photo.height,
-        width: photo.width,
-      })),
-      reviews: place.reviews?.map((review) => ({
-        text: review.text,
-        rating: review.rating,
-        author_name: review.author_name,
-        time:
-          typeof review.time === 'string' ? parseInt(review.time) : review.time,
-      })),
-      types: place.types || [],
-      opening_hours: place.opening_hours
-        ? {
-            open_now: place.opening_hours.open_now || false,
-            weekday_text: place.opening_hours.weekday_text || [],
-          }
-        : undefined,
-      url: place.url,
-    };
+    return transformGooglePlaceDetailsToPlaceResults(
+      placeDetails as GooglePlaceDetails
+    );
   } catch (error) {
     console.error('Error getting place details:', error);
     throw new Error('Failed to get place details');
@@ -218,16 +545,20 @@ export async function reverseGeocode(
 }
 
 export async function searchGooglePlaces(
-  structuredQuery: StructuredSearchQuery
-): Promise<PlaceResults[]> {
+  structuredQuery: StructuredSearchQuery,
+  pageToken?: string
+): Promise<{
+  results: FormattedGooglePlaceSearchResult[];
+  nextPageToken?: string | null;
+}> {
   try {
     const {
       query,
       location,
       region,
       radius_meters,
-      min_price,
-      max_price,
+      min_price_level,
+      max_price_level,
       open_now,
       category,
       language,
@@ -236,67 +567,72 @@ export async function searchGooglePlaces(
 
     const searchParams: any = {
       key: GOOGLE_API_KEY,
-      query: query,
     };
 
-    // Add location if provided (can be coordinates or place name)
-    if (location) {
-      // Check if location is coordinates (lat,lng format)
-      if (
-        location.includes(',') &&
-        !isNaN(parseFloat(location.split(',')[0]))
-      ) {
-        searchParams.location = location;
-        if (radius_meters) {
-          searchParams.radius = Math.min(radius_meters, 50000); // Max 50km for textSearch
-        }
-      } else {
-        // It's a place name, geocode it first
-        try {
-          const coords = await geocodeLocation(location);
-          searchParams.location = `${coords.lat},${coords.lng}`;
+    if (pageToken) {
+      searchParams.pagetoken = pageToken;
+    } else {
+      searchParams.query = query;
+      // Add location if provided (can be coordinates or place name)
+      if (location) {
+        // Check if location is coordinates (lat,lng format)
+        if (
+          location.includes(',') &&
+          !isNaN(parseFloat(location.split(',')[0]))
+        ) {
+          searchParams.location = location;
           if (radius_meters) {
-            searchParams.radius = Math.min(radius_meters, 50000);
+            searchParams.radius = Math.min(radius_meters, 50000); // Max 50km for textSearch
           }
-        } catch (error) {
-          console.warn(
-            'Could not geocode location, proceeding without location filter'
-          );
+        } else {
+          // It's a place name, geocode it first
+          try {
+            const coords = await geocodeLocation(location);
+            searchParams.location = `${coords.lat},${coords.lng}`;
+            if (radius_meters) {
+              searchParams.radius = Math.min(radius_meters, 50000);
+            }
+          } catch (error) {
+            console.warn(
+              'Could not geocode location, proceeding without location filter'
+            );
+          }
         }
       }
-    }
 
-    if (user_location) {
-      searchParams.location = `${user_location.lat},${user_location.lng}`;
-      searchParams.radius = 1000;
-    }
+      // Only use user_location if no specific location is provided
+      if (user_location && !location) {
+        searchParams.location = `${user_location.lat},${user_location.lng}`;
+        searchParams.radius = radius_meters || 5000;
+      }
 
-    // Add region if provided
-    if (region) {
-      searchParams.region = region;
-    }
+      // Add region if provided
+      if (region) {
+        searchParams.region = region;
+      }
 
-    // Add price range if provided (Google uses 0-4 scale)
-    if (min_price !== undefined) {
-      searchParams.minprice = Math.max(0, Math.min(4, min_price));
-    }
-    if (max_price !== undefined) {
-      searchParams.maxprice = Math.max(0, Math.min(4, max_price));
-    }
+      // Add price range if provided (Google uses 0-4 scale)
+      if (min_price_level !== undefined) {
+        searchParams.minprice = Math.max(0, Math.min(4, min_price_level));
+      }
+      if (max_price_level !== undefined) {
+        searchParams.maxprice = Math.max(0, Math.min(4, max_price_level));
+      }
 
-    // Add open now filter
-    if (open_now) {
-      searchParams.opennow = true;
-    }
+      // Add open now filter
+      if (open_now) {
+        searchParams.opennow = true;
+      }
 
-    // Add place type if provided
-    if (category) {
-      searchParams.type = category;
-    }
+      // Add place type if provided
+      if (category) {
+        searchParams.type = category;
+      }
 
-    // Add language if provided
-    if (language) {
-      searchParams.language = language;
+      // Add language if provided
+      if (language) {
+        searchParams.language = language;
+      }
     }
 
     const response = await client.textSearch({
@@ -333,8 +669,10 @@ export async function searchGooglePlaces(
         };
       });
 
-    // Transform to PlaceResults format
-    return transformGooglePlacesToPlaceResults(formattedResults);
+    return {
+      results: formattedResults,
+      nextPageToken: response.data.next_page_token,
+    };
   } catch (error) {
     console.error('Error in Google textSearch:', error);
     throw new Error('Failed to search places with Google textSearch');
@@ -446,28 +784,43 @@ function mapGoogleTypesToCategories(types: string[] = []): {
   return { category, subcategory };
 }
 
-/**
- * Transforms Google Places search results to unified PlaceResults format
- */
-export function transformGooglePlacesToPlaceResults(
-  googlePlaces: FormattedGooglePlaceSearchResult[]
-): PlaceResults[] {
-  return googlePlaces.map((place) => {
-    const now = new Date();
+function transformGoogleSearchResultsToSummaries(
+  results: (GooglePlaceSearchResult | FormattedGooglePlaceSearchResult)[]
+): PlaceResultsSummary[] {
+  const formattedResults = results.map((p) => {
+    if ('place_id' in p) {
+      const gallery = p.photos?.map((photo) =>
+        getGooglePhotoUrl(photo.photo_reference, 800)
+      );
+      return {
+        placeId: p.place_id!,
+        name: p.name!,
+        location: {
+          lat: p.geometry.location.lat,
+          lng: p.geometry.location.lng,
+        },
+        rating: p.rating,
+        totalReviews: p.user_ratings_total,
+        priceLevel: p.price_level,
+        types: p.types || [],
+        vicinity: p.vicinity,
+        formattedAddress: p.formatted_address,
+        openNow: p.open_now,
+        gallery: gallery || [],
+      };
+    }
+    return p as FormattedGooglePlaceSearchResult;
+  });
 
-    // Map Google types to categories
+  return formattedResults.map((place) => {
     const { category, subcategory } = mapGoogleTypesToCategories(place.types);
-
     return {
       id: place.placeId,
       name: place.name,
       slug: slugify(place.name, { lower: true, strict: true }),
       description: place.formattedAddress || place.vicinity || '',
-      contacts: [],
       main_image: place.gallery?.[0],
       gallery: place.gallery || [],
-
-      // Default location data (would need proper geocoding for complete data)
       country: { id: '', name: '' },
       region: { id: '', name: '' },
       city: { id: '', name: '' },
@@ -477,53 +830,23 @@ export function transformGooglePlacesToPlaceResults(
         name: place.formattedAddress || place.vicinity || '',
         street_address: place.vicinity || place.formattedAddress || '',
       },
-
-      website: undefined,
-      socials: [],
-
-      // Use mapped categories from Google types
       category,
       subcategory,
       type: null,
       ownership: null,
-
-      rating: place.rating
-        ? {
-            rate: place.rating,
-            count: place.totalReviews || 0,
-          }
-        : undefined,
-      distance: undefined,
-      open_hours: [],
+      rate_average: place.rating,
+      rate_count: place.totalReviews || 0,
+      price_level: place.priceLevel,
       open_now: place.openNow,
+      tags: place.types || [],
+      source: 'google_places',
+      google_place_types: place.types,
+      formatted_address: place.formattedAddress,
+      vicinity: place.vicinity,
       features: [],
       services: [],
-      tags: place.types || [],
       accessibility: [],
-
-      created_at: now,
-      updated_at: now,
-
-      other_details: {
-        google_data: {
-          place_id: place.placeId,
-          types: place.types,
-          vicinity: place.vicinity,
-          price_level: place.priceLevel,
-        },
-      },
-      source: 'google_places',
-      source_link: undefined,
-      status: 'approved' as const,
-
-      // Google Places specific fields
-      google_place_id: place.placeId,
-      google_place_types: place.types,
-      price_level: place.priceLevel,
-      business_status: undefined, // Not available in current format
-      formatted_address: place.formattedAddress,
       international_phone_number: undefined, // Not available in current format
-      vicinity: place.vicinity,
     };
   });
 }

@@ -2,7 +2,7 @@
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { SearchResult } from '../types';
+import { PlaceResultsSummary } from '@/types/place';
 import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
@@ -26,7 +26,7 @@ const DynamicSearchMap = dynamic(
 );
 
 interface MapViewProps {
-  places: SearchResult[];
+  places: PlaceResultsSummary[];
   hoveredPlaceId: string | null;
   selectedPlaceId: string | null;
   onPlaceHover: (placeId: string | null) => void;
@@ -117,14 +117,10 @@ export function MapView({
       position: [place.location.lat, place.location.lng] as [number, number],
       name: place.name,
       isOpen,
-      rating: place.rating?.rate,
-      category: place.category,
-      image: place.image,
-      address:
-        place.location.name ||
-        (place.source === 'local'
-          ? place.place?.location.street_address
-          : place.googlePlace?.formattedAddress),
+      rating: place.rate_average,
+      category: place.category?.name || 'Place',
+      image: place.main_image,
+      address: place.location.name || place.formatted_address || place.vicinity,
       distance: `${distance} km`,
     };
   });
@@ -229,9 +225,9 @@ export function MapView({
                     <div className="flex">
                       {/* Place Image */}
                       <div className="w-24 h-24 relative flex-shrink-0 bg-muted">
-                        {place.image ? (
+                        {place.main_image ? (
                           <SafeImage
-                            src={place.image}
+                            src={place.main_image}
                             alt={place.name}
                             fill
                             className="object-cover"
@@ -306,14 +302,14 @@ export function MapView({
                         </p>
 
                         <div className="flex items-center justify-between mt-2">
-                          {place.rating && (
+                          {place.rate_average && (
                             <div className="flex items-center gap-1">
                               <div className="text-yellow-500">★</div>
                               <span className="text-xs font-medium">
-                                {place.rating.rate}
+                                {place.rate_average}
                               </span>
                               <span className="text-xs text-muted-foreground">
-                                ({place.rating.count})
+                                ({place.rate_count || 0})
                               </span>
                             </div>
                           )}

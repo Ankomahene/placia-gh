@@ -128,6 +128,7 @@ interface ChatMessage {
   loading?: boolean;
   typing?: boolean;
   displayedContent?: string;
+  originalQuery?: string;
 }
 
 interface SearchResultData {
@@ -153,12 +154,19 @@ export default function EnhancedSmartSearchTest() {
   const [activeTab, setActiveTab] = useState('chat');
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchLoading, setSearchLoading] = useState(false);
   const [searchResult, setSearchResult] = useState<any>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [jsonOutput, setJsonOutput] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [lastSearchQuery, setLastSearchQuery] = useState<string>('');
+
+  // Search states for Full Search tab
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Chat states for pagination
+  const [chatLoadingMore, setChatLoadingMore] = useState(false);
+
   const {
     latitude,
     longitude,
@@ -216,38 +224,11 @@ export default function EnhancedSmartSearchTest() {
     }
   };
 
-  const runFullSearch = async (query: string) => {
-    try {
-      const response = await fetch('/api/search/smart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          naturalQuery: query,
-          userLocation,
-          limit: 10,
-          useConversationalSearch: true,
-        }),
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        return data.data;
-      } else {
-        throw new Error(data.message || 'Search failed');
-      }
-    } catch (error) {
-      console.error('Full search error:', error);
-      throw error;
-    }
-  };
-
   const handleChatSubmit = async () => {
     if (!chatInput.trim()) return;
 
     const userQuery = chatInput.trim();
     setChatInput('');
-    setChatLoading(true);
-    setError(null);
 
     // Add user message
     addChatMessage({
@@ -272,12 +253,13 @@ export default function EnhancedSmartSearchTest() {
       );
 
       // Add bot response with conversational message and typing animation
-      const botMessageId = addChatMessage({
+      addChatMessage({
         type: 'bot',
         content: parserResult.conversationalResponse,
         structuredQuery: parserResult.structuredQuery,
         loading: true,
         typing: true,
+        originalQuery: userQuery,
       });
 
       // Wait for typing animation to complete before searching
@@ -288,19 +270,8 @@ export default function EnhancedSmartSearchTest() {
         )
       );
 
-      // Then run full search
-      const searchResults = await runFullSearch(userQuery);
-
-      // Generate success message
-      const successMessage = generateSuccessMessage(searchResults);
-
-      // Update bot message with results and typing animation
-      updateChatMessage(botMessageId, {
-        content: successMessage,
-        searchResults,
-        loading: false,
-        typing: true,
-      });
+      // Then run chat search (this will handle the results internally)
+      await performChatSearch(userQuery);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -309,27 +280,67 @@ export default function EnhancedSmartSearchTest() {
         content: `I'm sorry, I encountered an error: ${errorMessage}. Please try again.`,
       });
       setError(errorMessage);
-    } finally {
-      setChatLoading(false);
     }
   };
 
   const handleSearchTest = async () => {
     if (!searchQuery.trim()) return;
+    await performSearch(searchQuery);
+  };
 
-    setSearchLoading(true);
-    setError(null);
-    setSearchResult(null);
+  const handleLoadMore = async () => {
+    if (!lastSearchQuery) return;
+    await performSearch(lastSearchQuery, true);
+  };
+
+  const handleChatLoadMore = async (
+    messageId: string,
+    currentResults: SearchResultData
+  ) => {
+    // Find the message to get the original query
+    const message = chatMessages.find((msg) => msg.id === messageId);
+    const originalQuery = message?.originalQuery || '';
+
+    if (!originalQuery || chatLoadingMore) return;
+
+    setChatLoadingMore(true);
 
     try {
-      const result = await runFullSearch(searchQuery);
-      setSearchResult(result);
+      const response = await fetch('/api/search/smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: originalQuery,
+          userLocation,
+          limit: 20,
+          offset: currentResults.results.length,
+          useCache: true, // Use cache for load more requests
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update the specific chat message with merged results
+        updateChatMessage(messageId, {
+          searchResults: {
+            ...data,
+            results: [...currentResults.results, ...data.results],
+            pagination: {
+              ...data.pagination,
+              offset: currentResults.results.length,
+            },
+          },
+        });
+      }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      setError(errorMessage);
+      console.error('Failed to load more chat results:', error);
     } finally {
-      setSearchLoading(false);
+      setChatLoadingMore(false);
     }
   };
 
@@ -431,6 +442,123 @@ export default function EnhancedSmartSearchTest() {
     </Card>
   );
 
+  const performSearch = async (
+    searchQuery: string,
+    loadMore: boolean = false
+  ) => {
+    const currentOffset = loadMore ? searchResult?.results?.length || 0 : 0;
+
+    if (loadMore) {
+      setLoadingMore(true);
+    } else {
+      setIsLoading(true);
+      setSearchResult(null);
+      setError(null);
+    }
+
+    try {
+      const response = await fetch('/api/search/smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: searchQuery,
+          userLocation,
+          limit: 20,
+          offset: currentOffset,
+          useCache: loadMore, // Use cache for load more requests
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        if (loadMore && searchResult) {
+          // Merge with existing results
+          setSearchResult({
+            ...data,
+            results: [...searchResult.results, ...data.results],
+          });
+        } else {
+          // New search
+          setSearchResult(data);
+          setLastSearchQuery(searchQuery);
+        }
+      } else {
+        throw new Error(data.message || 'Search failed');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : 'Unknown error';
+      setError(errorMessage);
+      if (!loadMore) {
+        setSearchResult(null);
+      }
+    } finally {
+      setIsLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const performChatSearch = async (
+    searchQuery: string,
+    loadMore: boolean = false
+  ) => {
+    try {
+      const response = await fetch('/api/search/smart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: searchQuery,
+          userLocation,
+          limit: 20,
+          offset: 0,
+          useCache: false, // Always fresh search for chat
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Add to chat messages
+        const assistantMessage: ChatMessage = {
+          id: Date.now().toString(),
+          type: 'bot',
+          content: `Found ${data.count} places in ${data.executionTime}ms`,
+          timestamp: new Date(),
+          searchResults: {
+            results: data.results,
+            count: data.count,
+            executionTime: data.executionTime,
+            pagination: data.pagination,
+          },
+          originalQuery: searchQuery,
+        };
+
+        setChatMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        throw new Error(data.message || 'Search failed');
+      }
+    } catch (error) {
+      console.error('Chat search error:', error);
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'bot',
+        content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        timestamp: new Date(),
+      };
+      setChatMessages((prev) => [...prev, errorMessage]);
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto p-6 space-y-6">
       <div className="text-center">
@@ -494,7 +622,7 @@ export default function EnhancedSmartSearchTest() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Chat Interface */}
             <Card className="flex flex-col h-[600px]">
-              <CardHeader>
+              <CardHeader className="flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
                   Chat Interface
@@ -503,8 +631,8 @@ export default function EnhancedSmartSearchTest() {
                   Test conversational search with natural language
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 flex flex-col">
-                <ScrollArea className="flex-1 mb-4 border rounded-lg p-4">
+              <CardContent className="flex-1 flex flex-col min-h-0">
+                <ScrollArea className="flex-1 mb-4 border rounded-lg p-4 h-[360px]">
                   <div className="space-y-4">
                     {chatMessages.length === 0 && (
                       <div className="text-center text-gray-500 py-8">
@@ -518,7 +646,9 @@ export default function EnhancedSmartSearchTest() {
                         className={`flex gap-3 ${message.type === 'user' ? 'justify-end' : ''}`}
                       >
                         <div
-                          className={`flex gap-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse' : ''}`}
+                          className={`flex gap-3 max-w-[80%] ${
+                            message.type === 'user' ? 'flex-row-reverse' : ''
+                          }`}
                         >
                           <div
                             className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -580,15 +710,50 @@ export default function EnhancedSmartSearchTest() {
                                       </div>
                                       <p className="text-xs text-gray-600 truncate">
                                         {place.location?.street_address ||
-                                          `${place.city?.name || ''} ${place.region?.name || ''}`.trim()}
+                                          `${place.city?.name || ''} ${
+                                            place.region?.name || ''
+                                          }`.trim()}
                                       </p>
                                     </div>
                                   ))}
                                 {message.searchResults.count > 2 && (
-                                  <p className="text-xs opacity-70">
-                                    +{message.searchResults.count - 2} more
-                                    results
-                                  </p>
+                                  <div className="text-xs opacity-70 space-y-2">
+                                    <p>
+                                      Showing{' '}
+                                      {Math.min(
+                                        2,
+                                        message.searchResults.results.length
+                                      )}{' '}
+                                      of {message.searchResults.count} results
+                                    </p>
+                                    {message.searchResults.pagination
+                                      ?.hasMore && (
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 text-xs"
+                                        onClick={() =>
+                                          handleChatLoadMore(
+                                            message.id,
+                                            message.searchResults!
+                                          )
+                                        }
+                                        disabled={chatLoadingMore}
+                                      >
+                                        {chatLoadingMore ? (
+                                          <>
+                                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                            Loading...
+                                          </>
+                                        ) : (
+                                          <>
+                                            <ChevronDown className="h-3 w-3 mr-1" />
+                                            Load more
+                                          </>
+                                        )}
+                                      </Button>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -600,7 +765,7 @@ export default function EnhancedSmartSearchTest() {
                   <div ref={chatEndRef} />
                 </ScrollArea>
 
-                <div className="space-y-2">
+                <div className="space-y-2 flex-shrink-0">
                   <div className="flex gap-2">
                     <Input
                       value={chatInput}
@@ -609,13 +774,13 @@ export default function EnhancedSmartSearchTest() {
                       onKeyDown={(e) =>
                         e.key === 'Enter' && !e.shiftKey && handleChatSubmit()
                       }
-                      disabled={chatLoading}
+                      disabled={isLoading}
                     />
                     <Button
                       onClick={handleChatSubmit}
-                      disabled={chatLoading || !chatInput.trim()}
+                      disabled={isLoading || !chatInput.trim()}
                     >
-                      {chatLoading ? (
+                      {isLoading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
                         <Send className="h-4 w-4" />
@@ -630,7 +795,7 @@ export default function EnhancedSmartSearchTest() {
                         size="sm"
                         className="text-xs h-7"
                         onClick={() => setChatInput(query)}
-                        disabled={chatLoading}
+                        disabled={isLoading}
                       >
                         {query.slice(0, 30)}...
                       </Button>
@@ -716,9 +881,9 @@ export default function EnhancedSmartSearchTest() {
                 />
                 <Button
                   onClick={handleSearchTest}
-                  disabled={searchLoading || !searchQuery.trim()}
+                  disabled={isLoading || !searchQuery.trim()}
                 >
-                  {searchLoading ? (
+                  {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <Search className="h-4 w-4" />
@@ -734,7 +899,7 @@ export default function EnhancedSmartSearchTest() {
                     variant="outline"
                     size="sm"
                     onClick={() => setSearchQuery(query)}
-                    disabled={searchLoading}
+                    disabled={isLoading}
                   >
                     {query}
                   </Button>
@@ -756,7 +921,8 @@ export default function EnhancedSmartSearchTest() {
                 <CardTitle className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-green-600" />
-                    Search Results ({searchResult.count})
+                    Search Results showing {searchResult.results.length} of{' '}
+                    {searchResult.count}
                   </span>
                   <Badge variant="outline">
                     {searchResult.executionTime}ms
@@ -772,11 +938,26 @@ export default function EnhancedSmartSearchTest() {
                   {searchResult.pagination?.hasMore && (
                     <div className="text-center py-4">
                       <p className="text-sm text-gray-600 mb-2">
-                        More results available
+                        Showing {searchResult.results.length} of{' '}
+                        {searchResult.count} results
                       </p>
-                      <Button variant="outline" size="sm">
-                        <ChevronDown className="h-4 w-4 mr-1" />
-                        Load More Results
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleLoadMore}
+                        disabled={loadingMore}
+                      >
+                        {loadingMore ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <ChevronDown className="h-4 w-4 mr-1" />
+                            Load More Results
+                          </>
+                        )}
                       </Button>
                     </div>
                   )}

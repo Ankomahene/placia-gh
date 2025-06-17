@@ -17,9 +17,10 @@ import {
   Settings,
   Eye,
   Globe,
+  PlusCircle,
 } from 'lucide-react';
 import { convertMetersToKm } from '@/lib/utils';
-import { PlaceResults } from '@/types/place';
+import { PlaceResultsSummary } from '@/types/place';
 
 interface ParsedQuery {
   query?: string;
@@ -40,8 +41,9 @@ interface ParsedQuery {
 interface GoogleSearchResponse {
   success: boolean;
   data: {
-    places: PlaceResults[];
+    places: PlaceResultsSummary[];
     total_results: number;
+    nextPageToken?: string | null;
     structured_query: ParsedQuery;
     original_query: string;
     source: string;
@@ -87,8 +89,11 @@ export default function GoogleSearchTest() {
   const [parseLoading, setParseLoading] = useState(false);
   const [searchLoading, setSearchLoading] = useState(false);
   const [parsedData, setParsedData] = useState<ParseResponse | null>(null);
-  const [searchResults, setSearchResults] =
-    useState<GoogleSearchResponse | null>(null);
+  const [places, setPlaces] = useState<PlaceResultsSummary[]>([]);
+  const [nextPageToken, setNextPageToken] = useState<string | null | undefined>(
+    null
+  );
+  const [totalResults, setTotalResults] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const getCurrentLocation = () => {
@@ -120,7 +125,9 @@ export default function GoogleSearchTest() {
     setParseLoading(true);
     setError(null);
     setParsedData(null);
-    setSearchResults(null);
+    setPlaces([]);
+    setNextPageToken(null);
+    setTotalResults(0);
 
     try {
       const response = await fetch('/api/search/parse', {
@@ -149,14 +156,22 @@ export default function GoogleSearchTest() {
     }
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (token?: string) => {
     setSearchLoading(true);
     setError(null);
+
+    // Reset results for a new search
+    if (!token) {
+      setPlaces([]);
+      setNextPageToken(null);
+      setTotalResults(0);
+    }
 
     try {
       const requestBody = {
         query: query.trim(),
         userLocation: useUserLocation ? userLocation : undefined,
+        pageToken: token,
       };
 
       const response = await fetch('/api/search/google', {
@@ -165,13 +180,15 @@ export default function GoogleSearchTest() {
         body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json();
+      const data: GoogleSearchResponse = await response.json();
 
-      if (!response.ok) {
+      if (!response.ok || !data.success) {
         throw new Error(data.details || data.error || 'Search failed');
       }
 
-      setSearchResults(data);
+      setPlaces((prev) => [...prev, ...data.data.places]);
+      setNextPageToken(data.data.nextPageToken);
+      setTotalResults((prev) => prev + data.data.total_results);
     } catch (err) {
       console.error('Search error:', err);
       setError(
@@ -296,7 +313,7 @@ export default function GoogleSearchTest() {
                 </Button>
 
                 <Button
-                  onClick={handleSearch}
+                  onClick={() => handleSearch()}
                   disabled={!query.trim() || searchLoading}
                   className="w-full"
                   variant="secondary"
@@ -479,37 +496,41 @@ export default function GoogleSearchTest() {
           )}
 
           {/* Search Results */}
-          {searchResults && (
+          {places.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Eye className="h-5 w-5 text-green-500" />
-                  Google Places Results ({searchResults.data.total_results}{' '}
-                  found)
+                  Google Places Results ({totalResults} found)
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {searchResults.data.places.length === 0 ? (
+                  {places.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">
                       No places found matching your criteria.
                     </p>
                   ) : (
                     <div className="space-y-4">
-                      {searchResults.data.places.map((place) => (
+                      {places.map((place) => (
                         <div key={place.id} className="border rounded-lg p-4">
                           <div className="flex justify-between items-start mb-2">
                             <h3 className="font-semibold text-lg">
                               {place.name}
                             </h3>
                             <div className="flex items-center gap-2">
-                              {place.rating && (
+                              {place.rate_average && (
                                 <div className="flex items-center gap-1">
                                   <Star className="h-4 w-4 text-yellow-500 fill-current" />
                                   <span className="text-sm">
-                                    {place.rating.rate} ({place.rating.count})
+                                    {place.rate_average} ({place.rate_count})
                                   </span>
                                 </div>
+                              )}
+                              {getPriceLevelDisplay(place.price_level) && (
+                                <Badge variant="outline">
+                                  {getPriceLevelDisplay(place.price_level)}
+                                </Badge>
                               )}
                             </div>
                           </div>
@@ -571,28 +592,28 @@ export default function GoogleSearchTest() {
                                 )}
                               </div>
                             )}
-
-                          {(place.international_phone_number ||
-                            place.website) && (
-                            <div className="flex gap-4 text-sm text-blue-600">
-                              {place.international_phone_number && (
-                                <span>{place.international_phone_number}</span>
-                              )}
-                              {place.website && (
-                                <a
-                                  href={place.website}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="hover:underline"
-                                >
-                                  Website
-                                </a>
-                              )}
-                            </div>
-                          )}
                         </div>
                       ))}
                     </div>
+                  )}
+                  {nextPageToken && (
+                    <Button
+                      onClick={() => handleSearch(nextPageToken)}
+                      disabled={searchLoading}
+                      className="w-full mt-4"
+                    >
+                      {searchLoading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Loading more...
+                        </>
+                      ) : (
+                        <>
+                          <PlusCircle className="h-4 w-4 mr-2" />
+                          Load More Results
+                        </>
+                      )}
+                    </Button>
                   )}
                 </div>
               </CardContent>

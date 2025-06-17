@@ -15,7 +15,6 @@ import {
 } from 'lucide-react';
 import React from 'react';
 import { SearchLoadingSpinner } from './components/search-loading-spinner';
-import { SearchFilters } from './filters/search-filters';
 import { useSearch } from './hooks/use-search';
 import { useSearchContext } from './hooks/use-search-context';
 import { CardView } from './views/card-view';
@@ -24,14 +23,18 @@ import { MapView } from './views/map-view';
 
 export function SearchDrawer() {
   const {
-    searchState,
+    query,
+    isSearching,
+    results,
+    viewMode,
+    hoveredPlaceId,
+    selectedPlaceId,
+    hasMore,
     search,
     loadMore,
     setViewMode,
-    setFilters,
-    setHoveredPlace,
-    setSelectedPlace,
-    clearSearch,
+    setHoveredPlaceId,
+    setSelectedPlaceId,
   } = useSearch();
 
   const {
@@ -45,22 +48,20 @@ export function SearchDrawer() {
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchTerm.trim() && searchTerm !== searchState.query) {
+    if (searchTerm.trim() && searchTerm !== query) {
       onSearch(searchTerm);
-      clearSearch();
-      await search(searchTerm, undefined, userLocation);
+      await search(searchTerm, userLocation);
     }
   };
 
   const handleClose = () => {
     setIsOpenSearchWindow(false);
-    clearSearch();
   };
 
   const renderViewToggle = () => (
     <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
       <Button
-        variant={searchState.viewMode === 'map' ? 'default' : 'ghost'}
+        variant={viewMode === 'map' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => setViewMode('map')}
         className="px-2 sm:px-3 py-1.5 sm:py-2 h-auto text-xs sm:text-sm"
@@ -69,7 +70,7 @@ export function SearchDrawer() {
         <span className="hidden sm:inline">Map</span>
       </Button>
       <Button
-        variant={searchState.viewMode === 'card' ? 'default' : 'ghost'}
+        variant={viewMode === 'card' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => setViewMode('card')}
         className="px-2 sm:px-3 py-1.5 sm:py-2 h-auto text-xs sm:text-sm"
@@ -78,7 +79,7 @@ export function SearchDrawer() {
         <span className="hidden sm:inline">Cards</span>
       </Button>
       <Button
-        variant={searchState.viewMode === 'list' ? 'default' : 'ghost'}
+        variant={viewMode === 'list' ? 'default' : 'ghost'}
         size="sm"
         onClick={() => setViewMode('list')}
         className="px-2 sm:px-3 py-1.5 sm:py-2 h-auto text-xs sm:text-sm"
@@ -90,7 +91,7 @@ export function SearchDrawer() {
   );
 
   const renderContent = () => {
-    if (searchState.isSearching && searchState.results.length === 0) {
+    if (isSearching && results.length === 0) {
       return (
         <div className="flex-1 flex items-center justify-center">
           <SearchLoadingSpinner />
@@ -98,7 +99,7 @@ export function SearchDrawer() {
       );
     }
 
-    if (!searchState.query && searchState.results.length === 0) {
+    if (!query && results.length === 0) {
       return (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center max-w-md">
@@ -115,40 +116,40 @@ export function SearchDrawer() {
       );
     }
 
-    switch (searchState.viewMode) {
+    switch (viewMode) {
       case 'map':
         return (
           <MapView
-            places={searchState.results}
-            hoveredPlaceId={searchState.hoveredPlaceId}
-            selectedPlaceId={searchState.selectedPlaceId}
-            onPlaceHover={setHoveredPlace}
-            onPlaceSelect={setSelectedPlace}
-            isLoading={searchState.isSearching}
+            places={results}
+            hoveredPlaceId={hoveredPlaceId}
+            selectedPlaceId={selectedPlaceId}
+            onPlaceHover={setHoveredPlaceId}
+            onPlaceSelect={setSelectedPlaceId}
+            isLoading={isSearching}
           />
         );
       case 'card':
         return (
           <CardView
-            places={searchState.results}
-            hoveredPlaceId={searchState.hoveredPlaceId}
-            onPlaceHover={setHoveredPlace}
-            onPlaceSelect={setSelectedPlace}
-            onLoadMore={loadMore}
-            hasMore={searchState.hasMore}
-            isLoading={searchState.isSearching}
+            places={results}
+            hoveredPlaceId={hoveredPlaceId}
+            onPlaceHover={setHoveredPlaceId}
+            onPlaceSelect={setSelectedPlaceId}
+            onLoadMore={() => loadMore(userLocation)}
+            hasMore={hasMore}
+            isLoading={isSearching}
           />
         );
       case 'list':
         return (
           <ListView
-            places={searchState.results}
-            hoveredPlaceId={searchState.hoveredPlaceId}
-            onPlaceHover={setHoveredPlace}
-            onPlaceSelect={setSelectedPlace}
-            onLoadMore={loadMore}
-            hasMore={searchState.hasMore}
-            isLoading={searchState.isSearching}
+            places={results}
+            hoveredPlaceId={hoveredPlaceId}
+            onPlaceHover={setHoveredPlaceId}
+            onPlaceSelect={setSelectedPlaceId}
+            onLoadMore={() => loadMore(userLocation)}
+            hasMore={hasMore}
+            isLoading={isSearching}
           />
         );
       default:
@@ -212,11 +213,11 @@ export function SearchDrawer() {
                 </form>
 
                 {/* View Toggle */}
-                {searchState.results.length > 0 && renderViewToggle()}
+                {results.length > 0 && renderViewToggle()}
               </div>
 
               {/* Results Summary */}
-              {searchState.query && (
+              {query && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -224,38 +225,21 @@ export function SearchDrawer() {
                   className="mt-2 sm:mt-3 flex items-center gap-2"
                 >
                   <span className="text-xs sm:text-sm text-muted-foreground">
-                    {searchState.isSearching
+                    {isSearching
                       ? 'Searching...'
-                      : searchState.totalResults > 0
-                        ? `Found ${searchState.totalResults} place${searchState.totalResults === 1 ? '' : 's'}`
+                      : results.length > 0
+                        ? `Found ${results.length} place${results.length === 1 ? '' : 's'}`
                         : 'No places found'}
                   </span>
-                  {searchState.query && (
+                  {query && (
                     <Badge variant="secondary" className="text-xs">
-                      &quot;{searchState.query}&quot;
+                      &quot;{query}&quot;
                     </Badge>
                   )}
                 </motion.div>
               )}
             </div>
           </motion.div>
-
-          {/* Filters */}
-          {searchState.results.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="border-b bg-muted/20 flex-shrink-0"
-            >
-              <div className="container mx-auto px-4 py-2 sm:py-3">
-                <SearchFilters
-                  filters={searchState.filters}
-                  onFiltersChange={setFilters}
-                />
-              </div>
-            </motion.div>
-          )}
 
           {/* Content - This is the scrollable area */}
           <motion.div

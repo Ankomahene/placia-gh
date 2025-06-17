@@ -18,6 +18,7 @@ export interface StructuredSearchQuery {
   region?: string;
   language?: string;
   user_location?: { lat: number; lng: number };
+  use_user_location?: boolean;
   search_type?: SearchType;
   features?: string[];
   tags?: string[];
@@ -97,6 +98,8 @@ export interface GooglePlaceDetails {
     weekday_text: string[];
   };
   url?: string;
+  vicinity?: string;
+  business_status?: string;
 }
 
 export interface GoogleGeocodingResult {

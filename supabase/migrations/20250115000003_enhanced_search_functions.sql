@@ -34,10 +34,9 @@ BEGIN
       'main_image', p.main_image,
       'gallery', p.gallery,
       'distance', ST_Distance(
-        ST_Point(p.longitude, p.latitude)::geography,
+        ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
         ST_Point(center_lng, center_lat)::geography
       ),
-      'open_now', p.open_now,
       'location', p.location,
       'rate_average', p.rate_average,
       'rate_count', p.rate_count,
@@ -56,7 +55,7 @@ BEGIN
       'category', COALESCE(jsonb_build_object('id', cat.id, 'name', cat.name), '{}'),
       'subcategory', COALESCE(jsonb_build_object('id', sub.id, 'name', sub.name), '{}'),
       'type', CASE WHEN t.id IS NOT NULL THEN jsonb_build_object('id', t.id, 'name', t.name) ELSE NULL END,
-      'ownership', CASE WHEN o.id IS NOT NULL THEN jsonb_build_object('id', o.id, 'name', o.name) ELSE NULL END
+      'ownership', CASE WHEN o.id IS NOT NULL THEN jsonb_build_object('id', o.id, 'type', o.type) ELSE NULL END
     ) as result
   FROM places p
   LEFT JOIN countries c ON p.country_id = c.id
@@ -73,22 +72,22 @@ BEGIN
     AND COALESCE(p.price_level, 2) >= min_price_level
     AND COALESCE(p.price_level, 2) <= max_price_level
     AND ST_DWithin(
-      ST_Point(p.longitude, p.latitude)::geography,
+      ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
       ST_Point(center_lng, center_lat)::geography,
       max_distance
     )
   ORDER BY 
     CASE 
       WHEN sort_order = 'nearest_first' THEN ST_Distance(
-        ST_Point(p.longitude, p.latitude)::geography,
+        ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
         ST_Point(center_lng, center_lat)::geography
       )
       WHEN sort_order = 'farthest_first' THEN -ST_Distance(
-        ST_Point(p.longitude, p.latitude)::geography,
+        ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
         ST_Point(center_lng, center_lat)::geography
       )
       ELSE ST_Distance(
-        ST_Point(p.longitude, p.latitude)::geography,
+        ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
         ST_Point(center_lng, center_lat)::geography
       )
     END ASC
@@ -122,12 +121,11 @@ BEGIN
       'distance', CASE 
         WHEN center_lat IS NOT NULL AND center_lng IS NOT NULL THEN
           ST_Distance(
-            ST_Point(p.longitude, p.latitude)::geography,
+            ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
             ST_Point(center_lng, center_lat)::geography
           )
         ELSE 0
       END,
-      'open_now', p.open_now,
       'location', p.location,
       'rate_average', p.rate_average,
       'rate_count', p.rate_count,
@@ -146,7 +144,7 @@ BEGIN
       'category', COALESCE(jsonb_build_object('id', cat.id, 'name', cat.name), '{}'),
       'subcategory', COALESCE(jsonb_build_object('id', sub.id, 'name', sub.name), '{}'),
       'type', CASE WHEN t.id IS NOT NULL THEN jsonb_build_object('id', t.id, 'name', t.name) ELSE NULL END,
-      'ownership', CASE WHEN o.id IS NOT NULL THEN jsonb_build_object('id', o.id, 'name', o.name) ELSE NULL END
+      'ownership', CASE WHEN o.id IS NOT NULL THEN jsonb_build_object('id', o.id, 'type', o.type) ELSE NULL END
     ) as result
   FROM places p
   LEFT JOIN countries c ON p.country_id = c.id
@@ -157,13 +155,17 @@ BEGIN
   LEFT JOIN types t ON p.type_id = t.id
   LEFT JOIN ownerships o ON p.ownership_id = o.id
   WHERE p.status IN ('approved', 'scraped')
-    AND (search_query = '' OR p.search_vector @@ websearch_to_tsquery('english', search_query))
+    AND (
+      search_query = '' OR 
+      p.search_vector @@ plainto_tsquery('english', search_query) OR
+      p.search_vector @@ websearch_to_tsquery('english', search_query)
+    )
     AND COALESCE(p.rate_average, 0) >= min_rating
     AND COALESCE(p.rate_average, 0) <= max_rating
     AND (
       center_lat IS NULL OR center_lng IS NULL OR
       ST_DWithin(
-        ST_Point(p.longitude, p.latitude)::geography,
+        ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
         ST_Point(center_lng, center_lat)::geography,
         max_distance
       )
@@ -205,12 +207,11 @@ BEGIN
       'distance', CASE 
         WHEN center_lat IS NOT NULL AND center_lng IS NOT NULL THEN
           ST_Distance(
-            ST_Point(p.longitude, p.latitude)::geography,
+            ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
             ST_Point(center_lng, center_lat)::geography
           )
         ELSE 0
       END,
-      'open_now', p.open_now,
       'location', p.location,
       'rate_average', p.rate_average,
       'rate_count', p.rate_count,
@@ -229,7 +230,7 @@ BEGIN
       'category', COALESCE(jsonb_build_object('id', cat.id, 'name', cat.name), '{}'),
       'subcategory', COALESCE(jsonb_build_object('id', sub.id, 'name', sub.name), '{}'),
       'type', CASE WHEN t.id IS NOT NULL THEN jsonb_build_object('id', t.id, 'name', t.name) ELSE NULL END,
-      'ownership', CASE WHEN o.id IS NOT NULL THEN jsonb_build_object('id', o.id, 'name', o.name) ELSE NULL END
+      'ownership', CASE WHEN o.id IS NOT NULL THEN jsonb_build_object('id', o.id, 'type', o.type) ELSE NULL END
     ) as result
   FROM places p
   LEFT JOIN countries c ON p.country_id = c.id
@@ -246,7 +247,7 @@ BEGIN
     AND (
       center_lat IS NULL OR center_lng IS NULL OR
       ST_DWithin(
-        ST_Point(p.longitude, p.latitude)::geography,
+        ST_Point((p.location->>'lng')::numeric, (p.location->>'lat')::numeric)::geography,
         ST_Point(center_lng, center_lat)::geography,
         max_distance
       )

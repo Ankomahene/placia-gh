@@ -3,6 +3,7 @@ import {
   PlaceCategory,
   PlaceSubcategory,
   PlaceResults,
+  PlaceResultsSummary,
 } from '@/types/place';
 
 export type ViewMode = 'map' | 'card' | 'list';
@@ -44,12 +45,8 @@ export interface SearchFilters {
 export interface SearchState {
   query: string;
   isSearching: boolean;
-  results: SearchResult[];
-  totalResults: number;
-  currentPage: number;
-  hasMore: boolean;
+  results: PlaceResultsSummary[];
   viewMode: ViewMode;
-  filters: SearchFilters;
   hoveredPlaceId: string | null;
   selectedPlaceId: string | null;
 }
