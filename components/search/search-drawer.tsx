@@ -12,6 +12,7 @@ import {
   MapPin,
   Mic,
   Search,
+  MessageCircle,
 } from 'lucide-react';
 import React from 'react';
 import { SearchLoadingSpinner } from './components/search-loading-spinner';
@@ -19,9 +20,8 @@ import { useSearch } from './hooks/use-search';
 import { useSearchContext } from './hooks/use-search-context';
 import { CardView } from './views/card-view';
 import { ListView } from './views/list-view';
-// import { GoogleMapView } from './views/google-map-view';
-// import { MapView } from './views/map-view';
 import { UnifiedMapView } from './views/unified-map-view';
+import { ChatView } from './views/chat';
 
 export function SearchDrawer() {
   const {
@@ -89,6 +89,15 @@ export function SearchDrawer() {
         <List className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
         <span className="hidden sm:inline">List</span>
       </Button>
+      <Button
+        variant={viewMode === 'chat' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => setViewMode('chat')}
+        className="px-2 sm:px-3 py-1.5 sm:py-2 h-auto text-xs sm:text-sm"
+      >
+        <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+        <span className="hidden sm:inline">Chat</span>
+      </Button>
     </div>
   );
 
@@ -151,6 +160,17 @@ export function SearchDrawer() {
             onPlaceSelect={setSelectedPlaceId}
             onLoadMore={() => loadMore(userLocation)}
             hasMore={hasMore}
+            isLoading={isSearching}
+          />
+        );
+      case 'chat':
+        return (
+          <ChatView
+            places={results}
+            hoveredPlaceId={hoveredPlaceId}
+            selectedPlaceId={selectedPlaceId}
+            onPlaceHover={setHoveredPlaceId}
+            onPlaceSelect={setSelectedPlaceId}
             isLoading={isSearching}
           />
         );
@@ -219,7 +239,7 @@ export function SearchDrawer() {
               </div>
 
               {/* Results Summary */}
-              {query && (
+              {query && viewMode !== 'chat' && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}

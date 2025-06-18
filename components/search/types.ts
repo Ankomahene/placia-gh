@@ -6,7 +6,7 @@ import {
   PlaceResultsSummary,
 } from '@/types/place';
 
-export type ViewMode = 'map' | 'card' | 'list';
+export type ViewMode = 'map' | 'card' | 'list' | 'chat';
 export type SearchResultSource = 'local' | 'google';
 
 // Unified search result type that can be either local or Google

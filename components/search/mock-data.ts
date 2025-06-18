@@ -1,4 +1,9 @@
-import { Place, PlaceCategory, PlaceSubcategory } from '@/types/place';
+import {
+  Place,
+  PlaceCategory,
+  PlaceSubcategory,
+  PlaceResultsSummary,
+} from '@/types/place';
 
 export const mockCategories: PlaceCategory[] = [
   {
@@ -493,3 +498,202 @@ export const generateMockPlaces = (
 
   return places;
 };
+
+export const mockChatPlaces: PlaceResultsSummary[] = [
+  {
+    id: '1',
+    name: 'Labadi Beach Hotel',
+    slug: 'labadi-beach-hotel',
+    tagline: 'Luxury beachfront experience',
+    description:
+      'A beautiful 5-star hotel right on the beach with stunning ocean views, luxury amenities, and world-class service.',
+    main_image:
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+    gallery: [
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=400&h=300&fit=crop',
+    ],
+    country: { name: 'Ghana' },
+    region: { name: 'Greater Accra' },
+    city: { name: 'Accra' },
+    location: {
+      lng: -0.187,
+      lat: 5.556,
+      name: 'Labadi Beach',
+      street_address: 'Labadi Beach Road, Accra',
+    },
+    category: { name: 'Hotels & Accommodation', icon: 'bed' },
+    subcategory: { name: 'Beach Resort', icon: 'umbrella-beach' },
+    type: { name: 'Resort Hotel' },
+    ownership: { type: 'Private' },
+    rate_average: 4.5,
+    rate_count: 324,
+    rate_label: 'highly_rated',
+    price_level: 4,
+    price_level_count: 85,
+    price_level_label: 'expensive',
+    distance: 1200,
+    open_now: true,
+    features: [
+      { label: 'Free WiFi', icon: 'wifi' },
+      { label: 'Pool', icon: 'swimming-pool' },
+      { label: 'Beach Access', icon: 'umbrella-beach' },
+    ],
+    services: [
+      { label: 'Room Service', icon: 'room-service' },
+      { label: 'Spa', icon: 'spa' },
+      { label: 'Restaurant', icon: 'utensils' },
+    ],
+    tags: ['luxury', 'beachfront', 'family-friendly'],
+    accessibility: [
+      { label: 'Wheelchair Access', icon: 'wheelchair' },
+      { label: 'Elevator', icon: 'elevator' },
+    ],
+    source: 'placia',
+  },
+  {
+    id: '2',
+    name: 'Osu Castle',
+    slug: 'osu-castle',
+    tagline: 'Historic Danish fortress',
+    description:
+      'A historic castle built by the Danish in the 17th century, now serving as a museum and cultural site.',
+    main_image:
+      'https://images.unsplash.com/photo-1585262646203-b5e5e2e95bcf?w=400&h=300&fit=crop',
+    country: { name: 'Ghana' },
+    region: { name: 'Greater Accra' },
+    city: { name: 'Accra' },
+    location: {
+      lng: -0.178,
+      lat: 5.548,
+      name: 'Osu',
+      street_address: 'Castle Road, Osu, Accra',
+    },
+    category: { name: 'Attractions & Landmarks', icon: 'landmark' },
+    subcategory: { name: 'Historical Sites', icon: 'castle' },
+    type: { name: 'Museum' },
+    ownership: { type: 'Government' },
+    rate_average: 4.2,
+    rate_count: 156,
+    rate_label: 'well_rated',
+    price_level: 1,
+    price_level_count: 42,
+    price_level_label: 'budget_friendly',
+    distance: 800,
+    open_now: true,
+    features: [
+      { label: 'Guided Tours', icon: 'users' },
+      { label: 'Photography', icon: 'camera' },
+      { label: 'Historical Exhibits', icon: 'book' },
+    ],
+    services: [
+      { label: 'Tour Guide', icon: 'user-check' },
+      { label: 'Gift Shop', icon: 'shopping-bag' },
+    ],
+    tags: ['historic', 'cultural', 'educational'],
+    accessibility: [{ label: 'Parking', icon: 'car' }],
+    source: 'placia',
+  },
+  {
+    id: '3',
+    name: 'Makola Market',
+    slug: 'makola-market',
+    tagline: 'Vibrant local market experience',
+    description:
+      "One of Accra's largest and most vibrant markets, perfect for experiencing local culture and finding unique items.",
+    main_image:
+      'https://images.unsplash.com/photo-1556909045-f2c3123a0a2e?w=400&h=300&fit=crop',
+    country: { name: 'Ghana' },
+    region: { name: 'Greater Accra' },
+    city: { name: 'Accra' },
+    location: {
+      lng: -0.207,
+      lat: 5.556,
+      name: 'Central Accra',
+      street_address: 'Makola Street, Central Accra',
+    },
+    category: { name: 'Shopping', icon: 'shopping-bag' },
+    subcategory: { name: 'Traditional Markets', icon: 'store' },
+    type: { name: 'Local Market' },
+    ownership: { type: 'Community' },
+    rate_average: 3.8,
+    rate_count: 203,
+    rate_label: 'well_rated',
+    price_level: 1,
+    price_level_count: 98,
+    price_level_label: 'budget_friendly',
+    distance: 2100,
+    open_now: true,
+    features: [
+      { label: 'Local Crafts', icon: 'palette' },
+      { label: 'Fresh Produce', icon: 'apple' },
+      { label: 'Textiles', icon: 'shirt' },
+    ],
+    services: [
+      { label: 'Local Guides', icon: 'user-check' },
+      { label: 'Currency Exchange', icon: 'banknote' },
+    ],
+    tags: ['local', 'authentic', 'shopping', 'cultural'],
+    accessibility: [{ label: 'Public Transport', icon: 'bus' }],
+    source: 'google',
+  },
+];
+
+export const mockChatMessages = [
+  {
+    id: '1',
+    type: 'user' as const,
+    content: 'Show me the best hotels near Labadi Beach',
+    timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+  },
+  {
+    id: '2',
+    type: 'bot' as const,
+    content:
+      'I found 3 excellent hotels near Labadi Beach. Here are the top recommendations based on your location and preferences:',
+    timestamp: new Date(Date.now() - 4 * 60 * 1000), // 4 minutes ago
+    searchResults: mockChatPlaces,
+    metadata: {
+      count: 3,
+      executionTime: 245,
+      searchQuery: 'hotels near Labadi Beach',
+      filters: ['beachfront', 'high-rating'],
+    },
+  },
+  {
+    id: '3',
+    type: 'user' as const,
+    content: 'What about something more budget-friendly?',
+    timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
+  },
+  {
+    id: '4',
+    type: 'bot' as const,
+    content: 'Here are some great budget-friendly options near the beach area:',
+    timestamp: new Date(Date.now() - 1 * 60 * 1000), // 1 minute ago
+    searchResults: mockChatPlaces.filter(
+      (p) => p.price_level && p.price_level <= 2
+    ),
+    metadata: {
+      count: 2,
+      executionTime: 180,
+      searchQuery: 'budget hotels near Labadi Beach',
+      filters: ['budget', 'good-rating'],
+    },
+  },
+];
+
+export interface ChatMessage {
+  id: string;
+  type: 'user' | 'bot';
+  content: string;
+  timestamp: Date;
+  searchResults?: PlaceResultsSummary[];
+  metadata?: {
+    count: number;
+    executionTime: number;
+    searchQuery: string;
+    filters?: string[];
+    hasMore?: boolean;
+  };
+}
