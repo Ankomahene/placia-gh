@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  parseNaturalLanguageQuery,
-  createConversationContext,
-} from '@/lib/services/openai-search';
+import { parseNaturalLanguageQuery } from '@/lib/services/openai-search';
 import { StructuredSearchQuery } from '@/types/search';
 
 // POST method for testing OpenAI parsing
@@ -23,16 +20,10 @@ export async function POST(request: NextRequest) {
 
     const startTime = Date.now();
 
-    // Create conversation context if previous query exists
-    const conversationContext = previousQuery
-      ? createConversationContext(previousQuery as StructuredSearchQuery)
-      : undefined;
-
     // Parse the natural language query
     const structuredQuery = await parseNaturalLanguageQuery(
       naturalQuery,
-      userLocation,
-      conversationContext
+      userLocation
     );
 
     const processingTime = Date.now() - startTime;
@@ -49,7 +40,6 @@ export async function POST(request: NextRequest) {
         naturalQuery,
         structuredQuery,
         conversationalResponse,
-        conversationContext,
         processingTime,
         timestamp: new Date().toISOString(),
       },

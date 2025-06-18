@@ -352,7 +352,7 @@ export default function InternalSearchTest() {
                   <div>
                     <h4 className="font-medium mb-2">Original Query:</h4>
                     <p className="text-sm bg-gray-100 p-2 rounded italic">
-                      "{parsedData.data.original_query}"
+                      &apos;{parsedData.data.original_query}&apos;
                     </p>
                   </div>
 

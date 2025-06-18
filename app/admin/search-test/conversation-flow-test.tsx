@@ -321,8 +321,8 @@ export default function ConversationFlowTest() {
           Conversation Flow Analysis
         </h2>
         <p className="text-muted-foreground">
-          Test the AI's ability to detect follow-up queries and refine natural
-          language queries
+          Test the AI&apos;s ability to detect follow-up queries and refine
+          natural language queries
         </p>
       </div>
 

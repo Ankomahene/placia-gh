@@ -1,4 +1,3 @@
-import { rankAndSortPlaces } from '@/lib/services/places-ranking';
 import { createClient } from '@/lib/supabase/server';
 import { cleanAndSplitString } from '@/lib/utils/string';
 import { PlaceResults } from '@/types/place';
@@ -283,9 +282,9 @@ export async function searchInternalPlaces(
       });
     }
     // Use ranking system to sort results
-    const rankedPlaces = rankAndSortPlaces(structuredQuery, placesResults);
+    // const rankedPlaces = rankAndSortPlaces(structuredQuery, placesResults);
 
-    return rankedPlaces;
+    return placesResults;
   } catch (error) {
     console.error('Error searching internal places:', error);
     throw new Error('Failed to search internal places');

@@ -51,8 +51,10 @@ export function CardView({
 
   // Reset displayed count when search changes
   useEffect(() => {
-    setDisplayedCount(ITEMS_PER_PAGE);
-  }, [deduplicatedPlaces.length === 0]);
+    if (deduplicatedPlaces.length === 0) {
+      setDisplayedCount(ITEMS_PER_PAGE);
+    }
+  }, [deduplicatedPlaces.length]);
 
   // Load more from local data
   const loadMoreLocal = () => {

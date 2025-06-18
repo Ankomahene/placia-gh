@@ -150,7 +150,7 @@ export function CategorySelectionStep({
   const filteredCategories = categories?.filter(
     (category) =>
       category.name.toLowerCase().includes(categorySearch.toLowerCase()) ||
-      category.description.toLowerCase().includes(categorySearch.toLowerCase())
+      category.description?.toLowerCase().includes(categorySearch.toLowerCase())
   );
 
   return (
@@ -200,13 +200,15 @@ export function CategorySelectionStep({
                     errors?.category_id && 'border-red-500'
                   )}
                 >
-                  <IconRenderer
-                    icon={category.icon}
-                    className={cn(
-                      'text-primary',
-                      selectedCategoryId === category.id && 'text-white'
-                    )}
-                  />
+                  {category.icon && (
+                    <IconRenderer
+                      icon={category.icon}
+                      className={cn(
+                        'text-primary',
+                        selectedCategoryId === category.id && 'text-white'
+                      )}
+                    />
+                  )}
                   <div className="text-center">
                     <div className="font-medium">{category.name}</div>
                   </div>

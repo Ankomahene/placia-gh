@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
             structuredQuery.features && structuredQuery.features.length > 0
           ),
           has_rating_filter: !!structuredQuery.min_rating,
-          has_price_filter: !!structuredQuery.price_level,
+          has_price_filter: !!structuredQuery.min_price_level,
           detected_radius: structuredQuery.radius_meters,
           open_now_filter: structuredQuery.open_now,
         },

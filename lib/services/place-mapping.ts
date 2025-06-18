@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 import slugify from 'slugify';
 import { GooglePlaceDetails } from '@/types/search';
 import { Place } from '@/types/place';
-import { getGooglePhotoUrl } from './google-places';
+import { getGooglePhotoUrl } from './google/places';
 
 // Mapping Google place types to our categories
 const GOOGLE_TYPE_TO_CATEGORY: Record<
