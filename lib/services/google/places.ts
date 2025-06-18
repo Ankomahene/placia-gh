@@ -35,6 +35,7 @@ interface SearchResult {
   success: boolean;
   query: string;
   nextPageToken?: string | null;
+  search_type?: string;
 }
 
 export class GooglePlaceSearch {
@@ -79,6 +80,7 @@ export class GooglePlaceSearch {
         results: [],
         success: false,
         query: naturalQuery,
+        search_type: 'general',
       };
     }
   }
@@ -134,6 +136,7 @@ export class GooglePlaceSearch {
         success: true,
         query,
         nextPageToken,
+        search_type: 'proximity',
       };
     } catch (error) {
       console.error('Error in searchByProximity:', error);
@@ -145,17 +148,70 @@ export class GooglePlaceSearch {
     structuredQuery: StructuredSearchQuery,
     pageToken?: string
   ): Promise<SearchResult> {
-    const { sort_order, query } = structuredQuery;
-    const { results, nextPageToken } = await searchGooglePlaces(
-      structuredQuery,
-      pageToken
-    );
+    const { sort_order, query, use_user_location, user_location, location } =
+      structuredQuery;
 
-    if (results.length === 0) {
-      return this.generalSearch(structuredQuery);
+    let results: any[];
+    let nextPageToken: string | null | undefined;
+    let searchLocation: { lat: number; lng: number } | null = null;
+
+    // Determine if we have a location to search near
+    if (use_user_location && user_location) {
+      searchLocation = user_location;
+    } else if (location) {
+      try {
+        searchLocation = await geocodeLocation(location);
+      } catch (error) {
+        console.warn(
+          'Could not geocode location for rating search, falling back to text search'
+        );
+      }
     }
+
+    // Priority 1: If we have a location, search nearby first for better location-based results
+    if (searchLocation) {
+      try {
+        const nearbyResults = await nearbySearch(
+          searchLocation,
+          structuredQuery,
+          pageToken
+        );
+        results = nearbyResults.results;
+        nextPageToken = nearbyResults.nextPageToken;
+      } catch (error) {
+        console.warn('Nearby search failed, falling back to text search');
+        const searchResults = await searchGooglePlaces(
+          structuredQuery,
+          pageToken
+        );
+        results = searchResults.results;
+        nextPageToken = searchResults.nextPageToken;
+      }
+    } else {
+      // Priority 2: Regular search without location constraint
+      const searchResults = await searchGooglePlaces(
+        structuredQuery,
+        pageToken
+      );
+      results = searchResults.results;
+      nextPageToken = searchResults.nextPageToken;
+    }
+
+    // Fallback: If no results, try general search
+    if (results.length === 0) {
+      const fallbackResult = await this.generalSearch(
+        structuredQuery,
+        pageToken
+      );
+      return {
+        ...fallbackResult,
+        search_type: 'general',
+      };
+    }
+
     let placeSummaries = transformGoogleSearchResultsToSummaries(results);
 
+    // Sort by rating based on sort_order
     if (sort_order === 'lowest_first') {
       placeSummaries.sort(
         (a, b) => (a.rate_average || 0) - (b.rate_average || 0)
@@ -171,6 +227,7 @@ export class GooglePlaceSearch {
       success: true,
       query,
       nextPageToken,
+      search_type: 'rating',
     };
   }
 
@@ -178,18 +235,70 @@ export class GooglePlaceSearch {
     structuredQuery: StructuredSearchQuery,
     pageToken?: string
   ): Promise<SearchResult> {
-    const { sort_order, query } = structuredQuery;
-    const { results, nextPageToken } = await searchGooglePlaces(
-      structuredQuery,
-      pageToken
-    );
+    const { sort_order, query, use_user_location, user_location, location } =
+      structuredQuery;
 
+    let results: any[];
+    let nextPageToken: string | null | undefined;
+    let searchLocation: { lat: number; lng: number } | null = null;
+
+    // Determine if we have a location to search near
+    if (use_user_location && user_location) {
+      searchLocation = user_location;
+    } else if (location) {
+      try {
+        searchLocation = await geocodeLocation(location);
+      } catch (error) {
+        console.warn(
+          'Could not geocode location for price level search, falling back to text search'
+        );
+      }
+    }
+
+    // Priority 1: If we have a location, search nearby first for better location-based results
+    if (searchLocation) {
+      try {
+        const nearbyResults = await nearbySearch(
+          searchLocation,
+          structuredQuery,
+          pageToken
+        );
+        results = nearbyResults.results;
+        nextPageToken = nearbyResults.nextPageToken;
+      } catch (error) {
+        console.warn('Nearby search failed, falling back to text search');
+        const searchResults = await searchGooglePlaces(
+          structuredQuery,
+          pageToken
+        );
+        results = searchResults.results;
+        nextPageToken = searchResults.nextPageToken;
+      }
+    } else {
+      // Priority 2: Regular search without location constraint
+      const searchResults = await searchGooglePlaces(
+        structuredQuery,
+        pageToken
+      );
+      results = searchResults.results;
+      nextPageToken = searchResults.nextPageToken;
+    }
+
+    // Fallback: If no results, try general search
     if (results.length === 0) {
-      return this.generalSearch(structuredQuery);
+      const fallbackResult = await this.generalSearch(
+        structuredQuery,
+        pageToken
+      );
+      return {
+        ...fallbackResult,
+        search_type: 'general',
+      };
     }
 
     let placeSummaries = transformGoogleSearchResultsToSummaries(results);
 
+    // Sort by price level based on sort_order
     if (sort_order === 'most_expensive_first') {
       placeSummaries.sort(
         (a, b) => (b.price_level || 0) - (a.price_level || 0)
@@ -205,6 +314,7 @@ export class GooglePlaceSearch {
       success: true,
       query,
       nextPageToken,
+      search_type: 'price_level',
     };
   }
 
@@ -231,6 +341,7 @@ export class GooglePlaceSearch {
         success: true,
         query: structuredQuery.query,
         nextPageToken: fallbackToken,
+        search_type: 'general',
       };
     }
 
@@ -240,6 +351,7 @@ export class GooglePlaceSearch {
       success: true,
       query: structuredQuery.query,
       nextPageToken,
+      search_type: 'general',
     };
   }
 

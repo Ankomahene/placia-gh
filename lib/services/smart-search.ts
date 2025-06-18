@@ -22,6 +22,7 @@ interface SearchResult {
   success: boolean;
   query: string;
   executionTime: number;
+  search_type?: string;
   pagination: {
     limit: number;
     offset: number;
@@ -119,6 +120,7 @@ export class SmartPlaceSearch {
         success: false,
         query: naturalQuery,
         executionTime: 0,
+        search_type: 'general',
         pagination: {
           limit,
           offset,
@@ -161,6 +163,7 @@ export class SmartPlaceSearch {
             success: false,
             query,
             executionTime: Date.now() - startTime,
+            search_type: 'proximity',
             pagination: {
               limit,
               offset,
@@ -209,6 +212,7 @@ export class SmartPlaceSearch {
             (a, b) => (b?.distance || 0) - (a?.distance || 0)
           ),
           executionTime: Date.now() - startTime,
+          search_type: 'proximity',
         };
       }
 
@@ -218,6 +222,7 @@ export class SmartPlaceSearch {
         success: true,
         query,
         executionTime,
+        search_type: 'proximity',
         pagination: {
           limit,
           offset,
@@ -232,6 +237,7 @@ export class SmartPlaceSearch {
         success: false,
         query,
         executionTime: Date.now() - startTime,
+        search_type: 'proximity',
         pagination: {
           limit,
           offset,
@@ -298,6 +304,7 @@ export class SmartPlaceSearch {
             (a, b) => (b?.rate_average || 0) - (a?.rate_average || 0)
           ),
           executionTime: Date.now() - startTime,
+          search_type: 'rating',
         };
       }
 
@@ -307,6 +314,7 @@ export class SmartPlaceSearch {
         success: true,
         query,
         executionTime,
+        search_type: 'rating',
         pagination: {
           limit,
           offset,
@@ -321,6 +329,7 @@ export class SmartPlaceSearch {
         success: false,
         query,
         executionTime: Date.now() - startTime,
+        search_type: 'rating',
         pagination: {
           limit,
           offset,
@@ -393,6 +402,7 @@ export class SmartPlaceSearch {
             (a, b) => (b?.price_level || 0) - (a?.price_level || 0)
           ),
           executionTime: Date.now() - startTime,
+          search_type: 'price_level',
         };
       }
 
@@ -402,6 +412,7 @@ export class SmartPlaceSearch {
         success: true,
         query,
         executionTime,
+        search_type: 'price_level',
         pagination: {
           limit,
           offset,
@@ -416,6 +427,7 @@ export class SmartPlaceSearch {
         success: false,
         query,
         executionTime: Date.now() - startTime,
+        search_type: 'price_level',
         pagination: {
           limit,
           offset,
@@ -480,6 +492,7 @@ export class SmartPlaceSearch {
         count: count || 0,
         query,
         executionTime,
+        search_type: 'general',
         pagination: {
           limit,
           offset,
@@ -494,6 +507,7 @@ export class SmartPlaceSearch {
         count: 0,
         query,
         executionTime: Date.now() - startTime,
+        search_type: 'general',
         pagination: {
           limit,
           offset,

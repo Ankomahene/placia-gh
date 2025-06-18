@@ -173,6 +173,7 @@ export async function parseNaturalLanguageQuery(
       ...(parsed.search_type && { search_type: parsed.search_type }),
       ...(parsed.use_user_location &&
         userLocation && {
+          use_user_location: true,
           user_location: userLocation,
           radius_meters: parsed.radius_meters,
         }),
