@@ -15,34 +15,33 @@ interface SearchResultCardProps {
   onClick?: () => void;
 }
 
-const getRatingLabel = (ratingLabel?: string) => {
-  if (!ratingLabel) return { label: '', color: 'text-muted-foreground' };
+const getRatingLabel = (rating?: number) => {
+  if (!rating) return { label: '', color: 'text-muted-foreground' };
 
-  switch (ratingLabel) {
-    case 'highly_rated':
-      return { label: 'High', color: 'text-green-600 dark:text-green-400' };
-    case 'well_rated':
-      return { label: 'Good', color: 'text-blue-600 dark:text-blue-400' };
-    case 'moderately_rated':
-      return { label: 'Fair', color: 'text-yellow-600 dark:text-yellow-400' };
-    case 'poorly_rated':
-      return { label: 'Low', color: 'text-red-600 dark:text-red-400' };
-    default:
-      return { label: '', color: 'text-muted-foreground' };
+  if (rating >= 4.5) {
+    return { label: 'High', color: 'text-green-600 dark:text-green-400' };
+  } else if (rating >= 4) {
+    return { label: 'Good', color: 'text-blue-600 dark:text-blue-400' };
+  } else if (rating >= 3) {
+    return { label: 'Fair', color: 'text-yellow-600 dark:text-yellow-400' };
+  } else if (rating >= 2) {
+    return { label: 'Low', color: 'text-red-600 dark:text-red-400' };
+  } else {
+    return { label: 'Poor', color: 'text-muted-foreground' };
   }
 };
 
-const getPriceLevelLabel = (priceLabel?: string) => {
-  if (!priceLabel) return { label: '', symbol: '' };
+const getPriceLevelLabel = (priceLevel?: number) => {
+  if (!priceLevel) return { label: '', symbol: '' };
 
-  switch (priceLabel) {
-    case 'very_expensive':
+  switch (priceLevel) {
+    case 4:
       return { label: 'Very Expensive', symbol: '$$$$' };
-    case 'expensive':
+    case 3:
       return { label: 'Expensive', symbol: '$$$' };
-    case 'moderate':
+    case 2:
       return { label: 'Moderate', symbol: '$$' };
-    case 'budget_friendly':
+    case 1:
       return { label: 'Budget', symbol: '$' };
     default:
       return { label: '', symbol: '' };
@@ -56,8 +55,8 @@ export function SearchResultCard({
   variant = 'card',
   onClick,
 }: SearchResultCardProps) {
-  const ratingInfo = getRatingLabel(place.rate_label);
-  const priceInfo = getPriceLevelLabel(place.price_level_label);
+  const ratingInfo = getRatingLabel(place.rate_average);
+  const priceInfo = getPriceLevelLabel(place.price_level);
   const getDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.location.lng},${place.location.lat}`;
 
   const isCardView = variant === 'card';
@@ -211,7 +210,7 @@ export function SearchResultCard({
         </a>
         {onClick && (
           <Button variant="outline" size="sm" onClick={onClick}>
-            View
+            View Details
           </Button>
         )}
       </div>
@@ -221,7 +220,7 @@ export function SearchResultCard({
   return (
     <Card
       className={cn(
-        'overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg border-border hover:border-primary/50',
+        'overflow-hidden cursor-pointer transition-all duration-200 hover:shadow-lg border-border hover:border-primary/50 pt-0',
         isSelected &&
           'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg',
         isCardView ? 'h-full' : 'h-auto'
@@ -240,7 +239,9 @@ export function SearchResultCard({
           </div>
         ) : (
           <div className="flex gap-4 p-4">
-            <ImageSection />
+            <div className="rounded-md overflow-hidden">
+              <ImageSection />
+            </div>
             <ContentSection />
           </div>
         )}
