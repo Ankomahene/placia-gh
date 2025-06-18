@@ -66,6 +66,6 @@ export interface PlaceCardProps {
 export interface MarkerInfoWindowProps {
   marker: MapMarker;
   isVisible: boolean;
-  onClose: () => void;
+  onClose?: () => void;
   onDirectionsRequest?: () => void;
 }

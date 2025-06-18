@@ -1,13 +1,9 @@
 'use client';
 
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
 import { PlaceResultsSummary } from '@/types/place';
-import { motion } from 'framer-motion';
 import { Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { SafeImage } from '@/components/ui/safe-image';
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 
 // Dynamically import map components to avoid SSR issues
 const DynamicSearchMap = dynamic(
@@ -42,64 +38,20 @@ export function MapView({
   onPlaceSelect,
   isLoading,
 }: MapViewProps) {
-  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   // Track which place is being clicked for map flying
   const [flyToMarkerId, setFlyToMarkerId] = useState<string | null>(null);
 
-  // Function to scroll a card into view
-  const scrollCardIntoView = (placeId: string) => {
-    const cardElement = cardRefs.current[placeId];
-    if (cardElement && scrollAreaRef.current) {
-      // Find the scroll container within ScrollArea
-      const scrollContainer = scrollAreaRef.current.querySelector(
-        '[data-radix-scroll-area-viewport]'
-      );
-      if (scrollContainer) {
-        const containerRect = scrollContainer.getBoundingClientRect();
-        const cardRect = cardElement.getBoundingClientRect();
-
-        // Calculate if card is out of view
-        const cardTop =
-          cardRect.top - containerRect.top + scrollContainer.scrollTop;
-        const cardBottom = cardTop + cardRect.height;
-        const viewportTop = scrollContainer.scrollTop;
-        const viewportBottom = viewportTop + containerRect.height;
-
-        // Only scroll if card is not fully visible
-        if (cardTop < viewportTop || cardBottom > viewportBottom) {
-          // Calculate scroll position to center the card in view
-          const targetScrollTop =
-            cardTop - containerRect.height / 2 + cardRect.height / 2;
-
-          scrollContainer.scrollTo({
-            top: Math.max(0, targetScrollTop),
-            behavior: 'smooth',
-          });
-        }
-      }
-    }
-  };
-
   const handleMapPinHover = (placeId: string | null) => {
-    // if (selectedPlaceId !== placeId) {
-    //   onPlaceSelect('');
-    // }
+    if (selectedPlaceId !== placeId) {
+      onPlaceSelect('');
+    }
     onPlaceHover(placeId); // Only update the hover state
-  };
-
-  const handleCardHover = (placeId: string | null) => {
-    // if (selectedPlaceId !== placeId) {
-    //   onPlaceSelect('');
-    // }
-    onPlaceHover(placeId);
   };
 
   // Handle card click - fly to the selected place
   const handleCardClick = (placeId: string) => {
     onPlaceSelect(placeId);
     // Trigger map fly to marker when clicking card
-    // scrollCardIntoView(placeId);
     setFlyToMarkerId(placeId);
     // Clear the flyTo after animation
     setTimeout(() => setFlyToMarkerId(null), 2000);
@@ -156,12 +108,7 @@ export function MapView({
     <div className="h-full flex overflow-hidden">
       {/* Map */}
       <div className="flex-1 p-4">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.3 }}
-          className="w-full h-full rounded-xl overflow-hidden border border-border"
-        >
+        <div className="w-full h-full rounded-xl overflow-hidden border border-border">
           <DynamicSearchMap
             markers={mapMarkers}
             hoveredMarkerId={hoveredPlaceId}
@@ -170,173 +117,8 @@ export function MapView({
             onMarkerClick={handleCardClick}
             flyToMarkerId={flyToMarkerId}
           />
-        </motion.div>
+        </div>
       </div>
-
-      {/* Sidebar */}
-      <motion.div
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-        className="w-96 border-l border-border bg-background/50 backdrop-blur-sm flex flex-col"
-      >
-        {/* Sidebar Header - Fixed */}
-        <div className="p-4 border-b border-border flex-shrink-0">
-          <h3 className="font-semibold text-lg">Places ({places.length})</h3>
-          <p className="text-sm text-muted-foreground">
-            Hover over map pins to highlight cards
-          </p>
-        </div>
-
-        {/* Scrollable Content */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ScrollArea className="h-full" ref={scrollAreaRef}>
-            <div className="p-4 space-y-3">
-              {isLoading && places.length === 0 ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Loading places...</span>
-                  </div>
-                </div>
-              ) : (
-                places.map((place, index) => (
-                  <motion.div
-                    key={place.id}
-                    ref={(el) => {
-                      cardRefs.current[place.id] = el;
-                    }}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.03 }}
-                    className={`
-                      border rounded-lg overflow-hidden transition-all duration-200 cursor-pointer
-                      ${
-                        hoveredPlaceId === place.id ||
-                        selectedPlaceId === place.id
-                          ? 'border-primary shadow-md'
-                          : 'border-border hover:border-primary/50'
-                      }
-                    `}
-                    onMouseEnter={() => handleCardHover(place.id)}
-                    onMouseLeave={() => handleCardHover(null)}
-                    onClick={() => handleCardClick(place.id)}
-                  >
-                    <div className="flex">
-                      {/* Place Image */}
-                      <div className="w-24 h-24 relative flex-shrink-0 bg-muted">
-                        {place.main_image ? (
-                          <SafeImage
-                            src={place.main_image}
-                            alt={place.name}
-                            fill
-                            className="object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                            <svg
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className="w-8 h-8 text-primary/40"
-                            >
-                              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                              <circle cx="12" cy="10" r="3"></circle>
-                            </svg>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Place Info */}
-                      <div className="p-3 flex-1">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-medium text-sm line-clamp-1">
-                                {place.name}
-                              </h3>
-                              {place.source === 'google' ? (
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-blue-50 text-blue-700 border-blue-200 px-1 py-0"
-                                >
-                                  G
-                                </Badge>
-                              ) : (
-                                <Badge
-                                  variant="outline"
-                                  className="text-xs bg-green-50 text-green-700 border-green-200 px-1 py-0"
-                                >
-                                  L
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                          <div className="ml-2 flex items-center gap-1">
-                            <div
-                              className={`w-2 h-2 rounded-full ${
-                                mapMarkers.find((m) => m.id === place.id)
-                                  ?.isOpen
-                                  ? 'bg-green-500'
-                                  : 'bg-red-500'
-                              }`}
-                            />
-                            <span
-                              className={`text-xs font-medium ${
-                                mapMarkers.find((m) => m.id === place.id)
-                                  ?.isOpen
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                              }`}
-                            >
-                              {mapMarkers.find((m) => m.id === place.id)?.isOpen
-                                ? 'Open'
-                                : 'Closed'}
-                            </span>
-                          </div>
-                        </div>
-
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                          {place.location.name}
-                        </p>
-
-                        <div className="flex items-center justify-between mt-2">
-                          {place.rate_average && (
-                            <div className="flex items-center gap-1">
-                              <div className="text-yellow-500">★</div>
-                              <span className="text-xs font-medium">
-                                {place.rate_average}
-                              </span>
-                              <span className="text-xs text-muted-foreground">
-                                ({place.rate_count || 0})
-                              </span>
-                            </div>
-                          )}
-
-                          <div className="text-xs text-muted-foreground font-medium">
-                            {
-                              mapMarkers.find((m) => m.id === place.id)
-                                ?.distance
-                            }
-                          </div>
-                        </div>
-
-                        <div
-                          className="mt-2 text-xs cursor-pointer text-primary hover:underline"
-                          onClick={() => handleCardClick(place.id)}
-                        >
-                          View details
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))
-              )}
-            </div>
-          </ScrollArea>
-        </div>
-      </motion.div>
     </div>
   );
 }

@@ -29,6 +29,10 @@ export function GoogleMapClient({
   const infoWindowRef = useRef<any>(null);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
   const [hoveredMarker, setHoveredMarker] = useState<MapMarker | null>(null);
+  const [hoverCardPosition, setHoverCardPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Initialize Google Maps
   useEffect(() => {
@@ -91,6 +95,45 @@ export function GoogleMapClient({
       document.head.appendChild(script);
     } else {
       initMap();
+    }
+  }, []);
+
+  // Function to get marker screen position
+  const getMarkerScreenPosition = useCallback((marker: MapMarker) => {
+    if (!googleMapRef.current || !mapRef.current) return null;
+
+    try {
+      // Create a temporary overlay to get screen coordinates
+      const overlay = new (window as any).google.maps.OverlayView();
+      overlay.onAdd = function () {};
+      overlay.onRemove = function () {};
+      overlay.draw = function () {};
+      overlay.setMap(googleMapRef.current);
+
+      const projection = overlay.getProjection();
+      if (!projection) {
+        overlay.setMap(null);
+        return null;
+      }
+
+      const position = new (window as any).google.maps.LatLng(
+        marker.position.lat,
+        marker.position.lng
+      );
+
+      const point = projection.fromLatLngToContainerPixel(position);
+      if (!point) {
+        overlay.setMap(null);
+        return null;
+      }
+
+      // Clean up the temporary overlay
+      overlay.setMap(null);
+
+      return { x: point.x, y: point.y };
+    } catch (error) {
+      console.error('Error calculating marker screen position:', error);
+      return null;
     }
   }, []);
 
@@ -224,11 +267,21 @@ export function GoogleMapClient({
       markerElement.addEventListener('mouseenter', () => {
         onMarkerHover(marker.id);
         setHoveredMarker(marker);
+
+        // Calculate and set hover card position
+        const screenPos = getMarkerScreenPosition(marker);
+        if (screenPos) {
+          setHoverCardPosition({
+            x: screenPos.x,
+            y: screenPos.y - 60, // Position above the marker
+          });
+        }
       });
 
       markerElement.addEventListener('mouseleave', () => {
         onMarkerHover(null);
         setHoveredMarker(null);
+        setHoverCardPosition(null);
       });
 
       // Add click listener
@@ -262,6 +315,7 @@ export function GoogleMapClient({
     onMarkerHover,
     onMarkerClick,
     userLocation,
+    getMarkerScreenPosition,
   ]);
 
   // Handle user location
@@ -360,22 +414,59 @@ export function GoogleMapClient({
     }
   }, [flyToMarkerId, markers, isMapLoaded]);
 
+  // Update hover card position when map moves or zooms
+  useEffect(() => {
+    if (!hoveredMarker || !isMapLoaded || !googleMapRef.current) return;
+
+    const updatePosition = () => {
+      const screenPos = getMarkerScreenPosition(hoveredMarker);
+      if (screenPos) {
+        setHoverCardPosition({
+          x: screenPos.x,
+          y: screenPos.y - 60,
+        });
+      }
+    };
+
+    const listener = googleMapRef.current.addListener(
+      'bounds_changed',
+      updatePosition
+    );
+
+    return () => {
+      if (listener) {
+        (window as any).google.maps.event.removeListener(listener);
+      }
+    };
+  }, [hoveredMarker, isMapLoaded, getMarkerScreenPosition]);
+
   return (
     <div className="relative w-full h-full">
       <div ref={mapRef} className="w-full h-full" />
 
       {/* Hover Info Window */}
-      {hoveredMarker && (
-        <MarkerInfoWindow
-          marker={hoveredMarker}
-          isVisible={true}
-          onClose={() => setHoveredMarker(null)}
-          onDirectionsRequest={
-            onDirectionsRequest
-              ? () => onDirectionsRequest(hoveredMarker.id)
-              : undefined
-          }
-        />
+      {hoveredMarker && hoverCardPosition && (
+        <div
+          className="absolute pointer-events-none z-10"
+          style={{
+            left: `${hoverCardPosition.x}px`,
+            top: `${hoverCardPosition.y}px`,
+            transform: 'translateX(-50%)',
+          }}
+        >
+          <div className="pointer-events-auto">
+            <MarkerInfoWindow
+              marker={hoveredMarker}
+              isVisible={true}
+              onClose={undefined}
+              onDirectionsRequest={
+                onDirectionsRequest
+                  ? () => onDirectionsRequest(hoveredMarker.id)
+                  : undefined
+              }
+            />
+          </div>
+        </div>
       )}
     </div>
   );

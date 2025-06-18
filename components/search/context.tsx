@@ -6,7 +6,9 @@ import { PlaceResultsSummary } from '@/types/place';
 interface ISearchContext {
   // Input state
   searchTerm: string;
+  previousSearchTerm: string;
   setSearchTerm: (query: string) => void;
+  setPreviousSearchTerm: (query: string) => void;
   onSearch: (query: string) => void;
   isOpenSearchWindow: boolean;
   setIsOpenSearchWindow: (isOpen: boolean) => void;
@@ -43,6 +45,7 @@ export const SearchContextProvider = ({
   children: React.ReactNode;
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [previousSearchTerm, setPreviousSearchTerm] = useState('');
   const [isOpenSearchWindow, setIsOpenSearchWindow] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export const SearchContextProvider = ({
       if (!isOpenSearchWindow) {
         setIsOpenSearchWindow(true);
       }
+      setPreviousSearchTerm(query);
     },
     [isOpenSearchWindow]
   );
@@ -183,9 +187,11 @@ export const SearchContextProvider = ({
       value={{
         // Input state
         searchTerm,
+        previousSearchTerm,
         isOpenSearchWindow,
         userLocation,
         setSearchTerm,
+        setPreviousSearchTerm,
         onSearch,
         setIsOpenSearchWindow,
 

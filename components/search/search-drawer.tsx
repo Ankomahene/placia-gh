@@ -19,7 +19,9 @@ import { useSearch } from './hooks/use-search';
 import { useSearchContext } from './hooks/use-search-context';
 import { CardView } from './views/card-view';
 import { ListView } from './views/list-view';
-import { GoogleMapView } from './views/google-map-view';
+// import { GoogleMapView } from './views/google-map-view';
+// import { MapView } from './views/map-view';
+import { UnifiedMapView } from './views/unified-map-view';
 
 export function SearchDrawer() {
   const {
@@ -119,7 +121,7 @@ export function SearchDrawer() {
     switch (viewMode) {
       case 'map':
         return (
-          <GoogleMapView
+          <UnifiedMapView
             places={results}
             hoveredPlaceId={hoveredPlaceId}
             selectedPlaceId={selectedPlaceId}

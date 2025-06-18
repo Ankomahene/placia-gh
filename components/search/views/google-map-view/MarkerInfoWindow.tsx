@@ -16,20 +16,22 @@ export function MarkerInfoWindow({
   if (!isVisible) return null;
 
   return (
-    <Card className="absolute top-4 left-4 w-80 p-4 shadow-lg border bg-background/95 backdrop-blur-sm z-10">
+    <Card className="w-80 p-3 shadow-xl border bg-background/95 backdrop-blur-sm animate-in fade-in-0 zoom-in-95 duration-200">
       <div className="flex items-start gap-3">
-        {/* Close Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          className="absolute top-2 right-2 h-6 w-6 p-0"
-          onClick={onClose}
-        >
-          <X className="w-3 h-3" />
-        </Button>
+        {/* Close Button - Only show if onClose is provided */}
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="absolute top-1 right-1 h-6 w-6 p-0 opacity-70 hover:opacity-100"
+            onClick={onClose}
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        )}
 
         {/* Image */}
-        <div className="w-16 h-16 relative flex-shrink-0 bg-muted rounded-md overflow-hidden">
+        <div className="w-14 h-14 relative flex-shrink-0 bg-muted rounded-lg overflow-hidden">
           {marker.image ? (
             <SafeImage
               src={marker.image}
@@ -44,7 +46,7 @@ export function MarkerInfoWindow({
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="2"
-                className="w-6 h-6 text-primary/40"
+                className="w-5 h-5 text-primary/40"
               >
                 <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
                 <circle cx="12" cy="10" r="3"></circle>
@@ -56,7 +58,9 @@ export function MarkerInfoWindow({
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-medium text-sm line-clamp-1">{marker.name}</h3>
+            <h3 className="font-semibold text-sm line-clamp-1">
+              {marker.name}
+            </h3>
             <div className="flex items-center gap-1">
               <div
                 className={`w-2 h-2 rounded-full ${
@@ -73,11 +77,11 @@ export function MarkerInfoWindow({
             </div>
           </div>
 
-          <p className="text-xs text-muted-foreground line-clamp-1 mb-2">
+          <p className="text-xs text-muted-foreground line-clamp-2 mb-2">
             {marker.address}
           </p>
 
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center justify-between mb-2">
             {marker.rating && (
               <div className="flex items-center gap-1">
                 <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
@@ -93,7 +97,7 @@ export function MarkerInfoWindow({
           </div>
 
           <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-xs px-2 py-0">
               {marker.category}
             </Badge>
 
@@ -101,8 +105,11 @@ export function MarkerInfoWindow({
               <Button
                 variant="outline"
                 size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={onDirectionsRequest}
+                className="h-6 px-2 text-xs ml-auto"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDirectionsRequest();
+                }}
               >
                 <Navigation className="w-3 h-3 mr-1" />
                 Directions
@@ -110,6 +117,11 @@ export function MarkerInfoWindow({
             )}
           </div>
         </div>
+      </div>
+
+      {/* Arrow pointing down to marker */}
+      <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+        <div className="w-4 h-4 bg-background border-r border-b border-border transform rotate-45" />
       </div>
     </Card>
   );

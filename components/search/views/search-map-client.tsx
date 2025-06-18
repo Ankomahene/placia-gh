@@ -4,7 +4,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 import L from 'leaflet';
-import { useMap } from 'react-leaflet';
+import { useMap, useMapEvents } from 'react-leaflet';
+import { PlacePopup, popupStyles } from './shared';
+import ReactDOMServer from 'react-dom/server';
 
 // Dynamically import react-leaflet components
 const MapContainer = dynamic(
@@ -44,6 +46,8 @@ interface SearchMapClientProps {
   center?: [number, number];
   zoom?: number;
   flyToMarkerId?: string | null;
+  isSidebarCollapsed?: boolean;
+  hoverSource?: 'card' | 'marker' | null;
 }
 
 // Fix leaflet default icon issue
@@ -63,10 +67,12 @@ function MapController({
   markers,
   selectedMarkerId,
   flyToMarkerId,
+  isSidebarCollapsed,
 }: {
   markers: MapMarker[];
   selectedMarkerId: string | null;
   flyToMarkerId?: string | null;
+  isSidebarCollapsed?: boolean;
 }) {
   const map = useMap();
   const hasInitialized = useRef(false);
@@ -78,13 +84,23 @@ function MapController({
       const marker = markers.find((m) => m.id === flyToMarkerId);
       if (marker) {
         // Fly to marker with higher zoom level for better detail view
-        map.flyTo(marker.position, 16, {
+        map.flyTo(marker.position, 18, {
           duration: 1.5,
           easeLinearity: 0.5,
         });
       }
     }
   }, [flyToMarkerId, markers, map]);
+
+  // Handle sidebar collapse/expand - invalidate map size
+  useEffect(() => {
+    // Delay to allow CSS transition to complete
+    const timeoutId = setTimeout(() => {
+      map.invalidateSize();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [isSidebarCollapsed, map]);
 
   // Initial map setup - fit all markers in view ONLY when markers actually change
   useEffect(() => {
@@ -113,6 +129,26 @@ function MapController({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [markers]); // Remove map dependency to prevent re-runs when map changes
+
+  return null;
+}
+
+// MapEvents component to handle map clicks
+function MapEvents({
+  markersRef,
+}: {
+  markersRef: React.RefObject<Record<string, any>>;
+}) {
+  useMapEvents({
+    click: () => {
+      // Close all popups when clicking outside markers
+      Object.values(markersRef.current).forEach((marker) => {
+        if (marker && marker.closePopup) {
+          marker.closePopup();
+        }
+      });
+    },
+  });
 
   return null;
 }
@@ -225,6 +261,8 @@ export function SearchMapClient({
   center = [5.6037, -0.187], // Default to Accra, Ghana
   zoom = 12,
   flyToMarkerId,
+  isSidebarCollapsed,
+  hoverSource,
 }: SearchMapClientProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -235,25 +273,46 @@ export function SearchMapClient({
     setMounted(true);
   }, []);
 
-  // Handle popup opening/closing when card is hovered
+  // Track if hover is from card or marker
+  const hoverSourceRef = useRef<'card' | 'marker' | null>(null);
+  const lastHoveredIdRef = useRef<string | null>(null);
+
+  // Handle popup opening/closing based on hover source
   useEffect(() => {
     if (mounted && mapRef.current) {
-      // Close all popups first
-      Object.values(markersRef.current).forEach((marker) => {
-        if (marker && marker.closePopup) {
-          marker.closePopup();
-        }
-      });
+      // Update hover source from props
+      hoverSourceRef.current = hoverSource || null;
 
-      // Open popup for hovered marker
-      if (hoveredMarkerId && markersRef.current[hoveredMarkerId]) {
-        const marker = markersRef.current[hoveredMarkerId];
-        if (marker && marker.openPopup) {
-          marker.openPopup();
+      // Handle hover change
+      if (hoveredMarkerId && hoveredMarkerId !== lastHoveredIdRef.current) {
+        // New hover started - close other popups and open new one
+        Object.values(markersRef.current).forEach((marker) => {
+          if (marker && marker.closePopup) {
+            marker.closePopup();
+          }
+        });
+
+        // Open popup for hovered marker
+        if (markersRef.current[hoveredMarkerId]) {
+          const marker = markersRef.current[hoveredMarkerId];
+          if (marker && marker.openPopup) {
+            marker.openPopup();
+          }
+        }
+      } else if (!hoveredMarkerId && lastHoveredIdRef.current) {
+        // Hover ended - close popup only if it was from card hover
+        if (hoverSourceRef.current === 'card') {
+          Object.values(markersRef.current).forEach((marker) => {
+            if (marker && marker.closePopup) {
+              marker.closePopup();
+            }
+          });
         }
       }
+
+      lastHoveredIdRef.current = hoveredMarkerId;
     }
-  }, [hoveredMarkerId, mounted]);
+  }, [hoveredMarkerId, hoverSource, mounted]);
 
   // Add custom CSS for markers and popups
   useEffect(() => {
@@ -446,7 +505,10 @@ export function SearchMapClient({
         markers={markers}
         selectedMarkerId={selectedMarkerId}
         flyToMarkerId={flyToMarkerId}
+        isSidebarCollapsed={isSidebarCollapsed}
       />
+
+      <MapEvents markersRef={markersRef} />
 
       {markers.map((marker) => {
         const isHovered = marker.id === hoveredMarkerId;
@@ -469,7 +531,22 @@ export function SearchMapClient({
             }}
             eventHandlers={{
               mouseover: (e) => {
+                // Mark this as marker hover
+                hoverSourceRef.current = 'marker';
                 onMarkerHover(marker.id);
+
+                // Close all other popups first
+                Object.values(markersRef.current).forEach((otherMarker) => {
+                  if (
+                    otherMarker &&
+                    otherMarker !== e.target &&
+                    otherMarker.closePopup
+                  ) {
+                    otherMarker.closePopup();
+                  }
+                });
+
+                // Open current marker's popup
                 const markerInstance = e.target;
                 if (markerInstance && markerInstance.openPopup) {
                   markerInstance.openPopup();
@@ -477,19 +554,16 @@ export function SearchMapClient({
               },
               mouseout: (e) => {
                 onMarkerHover(null);
-                const markerInstance = e.target;
-                if (markerInstance && markerInstance.closePopup) {
-                  markerInstance.closePopup();
-                }
+                // Don't close popup on mouseout - let it stay open for interaction
               },
               click: () => onMarkerClick(marker.id),
             }}
             zIndexOffset={isSelected ? 1000 : isHovered ? 900 : 0}
           >
             <Popup
-              closeButton={false}
-              autoClose={true}
-              closeOnClick={false}
+              closeButton={true}
+              autoClose={false}
+              closeOnClick={true}
               autoPan={false}
               keepInView={false}
             >

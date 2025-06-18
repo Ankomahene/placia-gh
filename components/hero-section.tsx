@@ -26,14 +26,22 @@ const floatingElements = [
 ];
 
 export default function HeroSection() {
-  const { searchTerm, setSearchTerm, onSearch, userLocation, performSearch } =
-    useSearchContext();
+  const {
+    searchTerm,
+    previousSearchTerm,
+    setSearchTerm,
+    onSearch,
+    userLocation,
+    performSearch,
+  } = useSearchContext();
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (searchTerm.trim()) {
       onSearch(searchTerm);
-      await performSearch(searchTerm, userLocation);
+      if (searchTerm !== previousSearchTerm) {
+        await performSearch(searchTerm, userLocation);
+      }
     }
   };
 
