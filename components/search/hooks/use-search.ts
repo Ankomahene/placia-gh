@@ -7,6 +7,8 @@ export function useSearch() {
     // View state
     viewMode,
     setViewMode,
+    searchMode,
+    setSearchMode,
     hoveredPlaceId,
     setHoveredPlaceId,
     selectedPlaceId,
@@ -18,6 +20,16 @@ export function useSearch() {
     searchResults,
     hasMore,
 
+    // Complete search result objects
+    googleSearchResult,
+    smartSearchResult,
+
+    // Sorting state
+    sortConfig,
+    setSortConfig,
+    sortingCapabilities,
+    sortedResults,
+
     // Search actions
     performSearch,
     loadMore,
@@ -26,14 +38,27 @@ export function useSearch() {
   return {
     query: currentQuery,
     isSearching,
-    results: searchResults,
+    results: sortedResults, // Use sorted results instead of raw results
+    rawResults: searchResults, // Expose raw results for debugging
     viewMode,
+    searchMode,
     hoveredPlaceId,
     selectedPlaceId,
     hasMore,
+
+    // Complete search result objects with all metadata
+    googleSearchResult,
+    smartSearchResult,
+
+    // Sorting functionality
+    sortConfig,
+    setSortConfig,
+    sortingCapabilities,
+
     search: performSearch,
     loadMore,
     setViewMode,
+    setSearchMode,
     setHoveredPlaceId,
     setSelectedPlaceId,
   };

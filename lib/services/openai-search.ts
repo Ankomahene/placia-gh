@@ -109,7 +109,8 @@ Extract the following information from user queries:
 export async function parseNaturalLanguageQuery(
   naturalQuery: string,
   userLocation?: { lat: number; lng: number },
-  defaultStructuredQuery?: StructuredSearchQuery
+  defaultStructuredQuery?: StructuredSearchQuery,
+  useInitialQuery?: boolean
 ): Promise<StructuredSearchQuery> {
   try {
     // If a default structured query is provided, use it and skip OpenAI call
@@ -147,11 +148,10 @@ export async function parseNaturalLanguageQuery(
     }
 
     const parsed = JSON.parse(content) as SearchQueryOutput;
-    console.log('Parsed query:', parsed);
 
     // Build structured query
     const structuredQuery: StructuredSearchQuery = {
-      query: parsed.query || naturalQuery,
+      query: useInitialQuery ? naturalQuery : parsed.query || naturalQuery,
       ...(parsed.location && { location: parsed.location }),
       ...(parsed.features &&
         parsed.features.length > 0 && { features: parsed.features }),
@@ -180,6 +180,8 @@ export async function parseNaturalLanguageQuery(
       ...(parsed.tags && { tags: parsed.tags }),
       ...(parsed.sort_order && { sort_order: parsed.sort_order }),
     };
+
+    console.log('Structured query:', structuredQuery);
 
     return structuredQuery;
   } catch (error) {

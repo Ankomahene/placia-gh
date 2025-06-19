@@ -36,6 +36,7 @@ interface SearchResult {
   query: string;
   nextPageToken?: string | null;
   search_type?: string;
+  sort_order?: string;
 }
 
 export class GooglePlaceSearch {
@@ -137,6 +138,7 @@ export class GooglePlaceSearch {
         query,
         nextPageToken,
         search_type: 'proximity',
+        sort_order,
       };
     } catch (error) {
       console.error('Error in searchByProximity:', error);
@@ -223,11 +225,20 @@ export class GooglePlaceSearch {
     }
 
     return {
-      results: placeSummaries,
+      results: placeSummaries.map((place) => ({
+        ...place,
+        ...(searchLocation && {
+          distance: this.getDistance(searchLocation, {
+            lat: place.location.lat,
+            lng: place.location.lng,
+          }),
+        }),
+      })),
       success: true,
       query,
       nextPageToken,
       search_type: 'rating',
+      sort_order,
     };
   }
 
@@ -310,11 +321,20 @@ export class GooglePlaceSearch {
     }
 
     return {
-      results: placeSummaries,
+      results: placeSummaries.map((place) => ({
+        ...place,
+        ...(searchLocation && {
+          distance: this.getDistance(searchLocation, {
+            lat: place.location.lat,
+            lng: place.location.lng,
+          }),
+        }),
+      })),
       success: true,
       query,
       nextPageToken,
       search_type: 'price_level',
+      sort_order,
     };
   }
 
@@ -342,6 +362,7 @@ export class GooglePlaceSearch {
         query: structuredQuery.query,
         nextPageToken: fallbackToken,
         search_type: 'general',
+        sort_order: undefined, // General search doesn't have specific sort order
       };
     }
 
@@ -352,6 +373,7 @@ export class GooglePlaceSearch {
       query: structuredQuery.query,
       nextPageToken,
       search_type: 'general',
+      sort_order: undefined, // General search doesn't have specific sort order
     };
   }
 

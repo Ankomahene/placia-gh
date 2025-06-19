@@ -23,6 +23,7 @@ interface SearchResult {
   query: string;
   executionTime: number;
   search_type?: string;
+  sort_order?: string;
   pagination: {
     limit: number;
     offset: number;
@@ -213,6 +214,7 @@ export class SmartPlaceSearch {
           ),
           executionTime: Date.now() - startTime,
           search_type: 'proximity',
+          sort_order: order,
         };
       }
 
@@ -223,6 +225,7 @@ export class SmartPlaceSearch {
         query,
         executionTime,
         search_type: 'proximity',
+        sort_order: order,
         pagination: {
           limit,
           offset,
@@ -238,6 +241,7 @@ export class SmartPlaceSearch {
         query,
         executionTime: Date.now() - startTime,
         search_type: 'proximity',
+        sort_order: order,
         pagination: {
           limit,
           offset,
@@ -315,6 +319,7 @@ export class SmartPlaceSearch {
         query,
         executionTime,
         search_type: 'rating',
+        sort_order: order,
         pagination: {
           limit,
           offset,
@@ -330,6 +335,7 @@ export class SmartPlaceSearch {
         query,
         executionTime: Date.now() - startTime,
         search_type: 'rating',
+        sort_order: order,
         pagination: {
           limit,
           offset,
@@ -493,6 +499,7 @@ export class SmartPlaceSearch {
         query,
         executionTime,
         search_type: 'general',
+        sort_order: undefined, // General search doesn't have specific sort order
         pagination: {
           limit,
           offset,
@@ -508,6 +515,7 @@ export class SmartPlaceSearch {
         query,
         executionTime: Date.now() - startTime,
         search_type: 'general',
+        sort_order: undefined, // General search doesn't have specific sort order
         pagination: {
           limit,
           offset,

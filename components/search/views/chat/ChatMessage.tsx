@@ -27,7 +27,15 @@ export function ChatMessage({
   const isBot = message.type === 'bot';
 
   const formatTimestamp = (timestamp: Date) => {
-    return timestamp.toLocaleTimeString([], {
+    // Ensure timestamp is a Date object
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+
+    // Additional safety check for invalid dates
+    if (isNaN(date.getTime())) {
+      return 'Invalid time';
+    }
+
+    return date.toLocaleTimeString([], {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -60,29 +68,42 @@ export function ChatMessage({
             'mb-2',
             isBot
               ? 'bg-muted/30 border-border/50'
-              : 'bg-primary text-primary-foreground border-primary'
+              : 'bg-primary text-primary-foreground border-primary py-2'
           )}
         >
-          <CardContent className="p-3">
+          <CardContent className="px-3">
             <p className="text-sm leading-relaxed">{message.content}</p>
             {message.metadata && (
-              <div className="flex items-center gap-2 mt-2 pt-2 border-t border-border/20">
-                <Clock className="w-3 h-3 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  Found {message.metadata.count} results in{' '}
-                  {message.metadata.executionTime}ms
-                </span>
-                {message.metadata.filters && (
-                  <div className="flex gap-1 ml-2">
-                    {message.metadata.filters.map((filter, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {filter}
-                      </Badge>
-                    ))}
+              <div className="space-y-2 mt-2 pt-2 border-t border-border/20">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    Showing {message.metadata.count} results
+                  </span>
+                  {message.metadata.filters && (
+                    <div className="flex gap-1 ml-2">
+                      {message.metadata.filters.map((filter, index) => (
+                        <Badge
+                          key={index}
+                          variant="secondary"
+                          className="text-xs"
+                        >
+                          {filter}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Conversation Analysis */}
+                {message.metadata.conversationAnalysis && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-muted-foreground">
+                      {(
+                        message.metadata.conversationAnalysis.confidence * 100
+                      ).toFixed(0)}
+                      % confidence
+                    </span>
                   </div>
                 )}
               </div>

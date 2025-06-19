@@ -13,9 +13,12 @@ import {
   Mic,
   Search,
   MessageCircle,
+  LayoutGrid,
+  Bot,
 } from 'lucide-react';
 import React from 'react';
 import { SearchLoadingSpinner } from './components/search-loading-spinner';
+import { SearchSorting } from './components/search-sorting';
 import { useSearch } from './hooks/use-search';
 import { useSearchContext } from './hooks/use-search-context';
 import { CardView } from './views/card-view';
@@ -29,12 +32,17 @@ export function SearchDrawer() {
     isSearching,
     results,
     viewMode,
+    searchMode,
     hoveredPlaceId,
     selectedPlaceId,
     hasMore,
+    sortConfig,
+    setSortConfig,
+    sortingCapabilities,
     search,
     loadMore,
     setViewMode,
+    setSearchMode,
     setHoveredPlaceId,
     setSelectedPlaceId,
   } = useSearch();
@@ -89,10 +97,24 @@ export function SearchDrawer() {
         <List className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
         <span className="hidden sm:inline">List</span>
       </Button>
+    </div>
+  );
+
+  const renderModeToggle = () => (
+    <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
       <Button
-        variant={viewMode === 'chat' ? 'default' : 'ghost'}
+        variant={searchMode === 'general' ? 'default' : 'ghost'}
         size="sm"
-        onClick={() => setViewMode('chat')}
+        onClick={() => setSearchMode('general')}
+        className="px-2 sm:px-3 py-1.5 sm:py-2 h-auto text-xs sm:text-sm"
+      >
+        <LayoutGrid className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+        <span className="hidden sm:inline">General</span>
+      </Button>
+      <Button
+        variant={searchMode === 'chat' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => setSearchMode('chat')}
         className="px-2 sm:px-3 py-1.5 sm:py-2 h-auto text-xs sm:text-sm"
       >
         <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
@@ -101,7 +123,7 @@ export function SearchDrawer() {
     </div>
   );
 
-  const renderContent = () => {
+  const renderGeneralContent = () => {
     if (isSearching && results.length === 0) {
       return (
         <div className="flex-1 flex items-center justify-center">
@@ -163,20 +185,23 @@ export function SearchDrawer() {
             isLoading={isSearching}
           />
         );
-      case 'chat':
-        return (
-          <ChatView
-            places={results}
-            hoveredPlaceId={hoveredPlaceId}
-            selectedPlaceId={selectedPlaceId}
-            onPlaceHover={setHoveredPlaceId}
-            onPlaceSelect={setSelectedPlaceId}
-            isLoading={isSearching}
-          />
-        );
       default:
         return null;
     }
+  };
+
+  const renderChatContent = () => {
+    return (
+      <ChatView
+        places={results}
+        hoveredPlaceId={hoveredPlaceId}
+        selectedPlaceId={selectedPlaceId}
+        onPlaceHover={setHoveredPlaceId}
+        onPlaceSelect={setSelectedPlaceId}
+        isLoading={isSearching}
+        initialQuery={searchTerm}
+      />
+    );
   };
 
   return (
@@ -189,89 +214,132 @@ export function SearchDrawer() {
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-50 bg-background flex flex-col"
         >
-          {/* Header */}
-          <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="border-b bg-background/95 backdrop-blur-xl flex-shrink-0"
-          >
-            <div className="container mx-auto px-4 py-3 sm:py-4">
-              <div className="flex items-center gap-2 sm:gap-4">
-                {/* Back Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClose}
-                  className="flex-shrink-0 px-2 sm:px-3"
-                >
-                  <ArrowLeft className="h-4 w-4 sm:mr-2" />
-                  <span className="hidden sm:inline">Back</span>
-                </Button>
+          {/* Chat Mode - Full Screen Chat */}
+          {searchMode === 'chat' && (
+            <>
+              {/* Minimal Chat Header */}
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="border-b bg-background/95 backdrop-blur-xl flex-shrink-0"
+              >
+                <div className="container mx-auto px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    {/* Back/Close Button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClose}
+                      className="flex-shrink-0 px-2 sm:px-3"
+                    >
+                      <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Back</span>
+                    </Button>
 
-                {/* Search Form */}
-                <form onSubmit={handleSearch} className="flex-1 max-w-2xl">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                    <Input
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Search for places in Ghana..."
-                      className="pl-10 pr-16 py-2 sm:py-3 text-sm sm:text-base"
-                      autoFocus
-                    />
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full"
-                      >
-                        <Mic className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span className="sr-only">Voice search</span>
-                      </Button>
+                    {/* Chat Title */}
+                    <div className="flex flex-1 justify-center items-center text-center">
+                      <Bot className="h-6 w-6 sm:mr-2 text-gradient-to-r from-primary to-primary/50" />
+                      <h2 className="text-lg font-semibold">AI Chat Search</h2>
                     </div>
+
+                    {/* Mode Toggle */}
+                    {renderModeToggle()}
                   </div>
-                </form>
+                </div>
+              </motion.div>
 
-                {/* View Toggle */}
-                {results.length > 0 && renderViewToggle()}
-              </div>
+              {/* Chat Content */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="flex-1 min-h-0 overflow-hidden"
+              >
+                {renderChatContent()}
+              </motion.div>
+            </>
+          )}
 
-              {/* Results Summary */}
-              {query && viewMode !== 'chat' && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="mt-2 sm:mt-3 flex items-center gap-2"
-                >
-                  <span className="text-xs sm:text-sm text-muted-foreground">
-                    {isSearching
-                      ? 'Searching...'
-                      : results.length > 0
-                        ? `Found ${results.length} place${results.length === 1 ? '' : 's'}`
-                        : 'No places found'}
-                  </span>
-                  {query && (
-                    <Badge variant="secondary" className="text-xs">
-                      &quot;{query}&quot;
-                    </Badge>
-                  )}
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
+          {/* General Mode - Traditional Search Interface */}
+          {searchMode === 'general' && (
+            <>
+              {/* Full Header with Search and Controls */}
+              <motion.div
+                initial={{ y: -20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="border-b bg-background/95 backdrop-blur-xl flex-shrink-0"
+              >
+                <div className="container mx-auto px-4 py-3">
+                  <div className="flex items-center gap-4">
+                    {/* Back/Close Button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleClose}
+                      className="flex-shrink-0"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Back
+                    </Button>
 
-          {/* Content - This is the scrollable area */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="flex-1 min-h-0 overflow-hidden"
-          >
-            {renderContent()}
-          </motion.div>
+                    {/* Search Form */}
+                    <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          type="text"
+                          placeholder="Search for places in Ghana..."
+                          className="pr-12"
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                        >
+                          <Mic className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Button
+                        type="submit"
+                        className="px-6"
+                        disabled={!searchTerm.trim()}
+                      >
+                        <Search className="h-4 w-4 mr-2" />
+                        Search
+                      </Button>
+                    </form>
+
+                    {/* Mode Toggle */}
+                    {renderModeToggle()}
+                  </div>
+
+                  {/* View Toggle and Sorting */}
+                  <div className="flex items-center justify-between mt-4">
+                    {renderViewToggle()}
+                    <SearchSorting
+                      sortConfig={sortConfig}
+                      onSortChange={setSortConfig}
+                      capabilities={sortingCapabilities}
+                    />
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Content Area */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.2 }}
+                className="flex-1 min-h-0 overflow-hidden"
+              >
+                {renderGeneralContent()}
+              </motion.div>
+            </>
+          )}
         </motion.div>
       )}
     </AnimatePresence>

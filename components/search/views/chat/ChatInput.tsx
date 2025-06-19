@@ -102,7 +102,8 @@ export function ChatInput() {
       </div>
       <p className="text-xs text-muted-foreground mt-2 text-center">
         Ask natural questions like &quot;Show me luxury hotels near the
-        beach&quot; or &quot;Best restaurants in Kumasi&quot;
+        beach&quot; or &quot;Find me something nearby&quot; - I can understand
+        context and follow-ups!
       </p>
     </div>
   );

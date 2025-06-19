@@ -33,11 +33,13 @@ export default function HeroSection() {
     onSearch,
     userLocation,
     performSearch,
+    setSearchMode,
   } = useSearchContext();
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (searchTerm.trim()) {
+      setSearchMode('general');
       onSearch(searchTerm);
       if (searchTerm !== previousSearchTerm) {
         await performSearch(searchTerm, userLocation);
@@ -45,10 +47,15 @@ export default function HeroSection() {
     }
   };
 
+  const handleChatSearch = async () => {
+    if (searchTerm.trim()) {
+      setSearchMode('chat');
+      onSearch(searchTerm);
+    }
+  };
+
   const handleExampleClick = async (query: string) => {
     setSearchTerm(query);
-    onSearch(query);
-    await performSearch(query, userLocation);
   };
 
   return (
@@ -125,7 +132,7 @@ export default function HeroSection() {
 
           {/* Enhanced Search Interface */}
           <div className="relative max-w-3xl mx-auto mb-8">
-            <Card className="p-2 shadow-2xl border-primary/20 bg-card/95 backdrop-blur-sm">
+            <Card className="p-2 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm">
               <form onSubmit={handleSearch} className="flex gap-2">
                 <div className="relative flex-grow">
                   <Input
@@ -156,6 +163,17 @@ export default function HeroSection() {
                   <Search className="h-5 w-5 mr-2" />
                   Search
                   <Zap className="h-4 w-4 ml-2" />
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleChatSearch}
+                  size="lg"
+                  variant="outline"
+                  className="rounded-lg px-6 py-6 border-primary/20 hover:bg-primary/5 hover:border-primary/30"
+                  disabled={!searchTerm.trim()}
+                >
+                  <Bot className="h-5 w-5 mr-2" />
+                  Chat
                 </Button>
               </form>
             </Card>

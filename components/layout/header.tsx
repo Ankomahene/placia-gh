@@ -51,16 +51,16 @@ export default function Header() {
               }}
             />
           ) : (
-            <>
+            <div className="flex items-center gap-2">
               <Link href="/auth/login">
                 <Button variant="outline" size="sm">
                   Sign In
                 </Button>
               </Link>
               <Link href="/auth/signup">
-                <Button size="sm">Get Started</Button>
+                <Button size="sm">Sign Up</Button>
               </Link>
-            </>
+            </div>
           )}
         </div>
 
@@ -84,7 +84,7 @@ export default function Header() {
                   </Button>
                 </Link>
                 <Link href="/auth/signup">
-                  <Button className="w-full">Get Started</Button>
+                  <Button className="w-full">Sign Up</Button>
                 </Link>
               </div>
             </SheetContent>

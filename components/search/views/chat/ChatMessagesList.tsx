@@ -36,8 +36,9 @@ export function ChatMessagesList({
           {[
             'Best hotels in Accra',
             'Restaurants near me',
-            'Things to do in Kumasi',
-            'Budget-friendly places',
+            '24 hour pharmacies in Accra',
+            'Find me something nearby',
+            'Show me places',
           ].map((suggestion) => (
             <Button
               key={suggestion}
@@ -77,7 +78,7 @@ export function ChatMessagesList({
               <div className="flex items-center gap-1">
                 <Loader2 className="w-3 h-3 animate-spin" />
                 <span className="text-sm text-muted-foreground">
-                  AI is thinking...
+                  AI is searching...
                 </span>
               </div>
             </CardContent>

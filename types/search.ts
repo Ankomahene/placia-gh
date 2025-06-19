@@ -1,5 +1,3 @@
-import { PriceLevelLabel } from './place';
-
 export type SearchType = 'proximity' | 'rating' | 'price_level' | 'general';
 
 export interface StructuredSearchQuery {

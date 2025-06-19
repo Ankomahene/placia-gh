@@ -11,11 +11,13 @@ export async function POST(request: Request) {
       userLocation,
       googlePageToken,
       smartSearchOffset,
+      useInitialQuery,
     }: {
       query: string;
       userLocation?: { lat: number; lng: number };
       googlePageToken?: string;
       smartSearchOffset?: number;
+      useInitialQuery?: boolean;
     } = await request.json();
 
     if (!query) {
@@ -30,7 +32,9 @@ export async function POST(request: Request) {
 
     const structuredQuery = await parseNaturalLanguageQuery(
       query,
-      userLocation
+      userLocation,
+      undefined,
+      useInitialQuery
     );
 
     // Run both searches in parallel
@@ -51,34 +55,51 @@ export async function POST(request: Request) {
       }),
     ]);
 
-    // Add source to each result
-    const googlePlaces: PlaceResultsSummary[] = googleResult.success
-      ? googleResult.results.map((p) => ({ ...p, source: 'google' }))
-      : [];
-    const smartPlaces: PlaceResultsSummary[] = smartSearchResult.success
-      ? smartSearchResult.results.map((p) => ({ ...p, source: 'placia' }))
-      : [];
+    // Add source to each result but preserve the full search result structure
+    const googleResultWithSource = {
+      ...googleResult,
+      results: googleResult.success
+        ? googleResult.results.map((p) => ({ ...p, source: 'google' }))
+        : [],
+    };
+
+    const smartSearchResultWithSource = {
+      ...smartSearchResult,
+      results: smartSearchResult.success
+        ? smartSearchResult.results.map((p) => ({ ...p, source: 'placia' }))
+        : [],
+    };
 
     // Interleave the results for a better user experience
-    const combinedResults: PlaceResultsSummary[] = [];
+    const combinedPlaces: PlaceResultsSummary[] = [];
     let i = 0;
     let j = 0;
-    while (i < smartPlaces.length || j < googlePlaces.length) {
-      if (i < smartPlaces.length) {
-        combinedResults.push(smartPlaces[i++]);
+    while (
+      i < smartSearchResultWithSource.results.length ||
+      j < googleResultWithSource.results.length
+    ) {
+      if (i < smartSearchResultWithSource.results.length) {
+        combinedPlaces.push(smartSearchResultWithSource.results[i++]);
       }
-      if (j < googlePlaces.length) {
-        combinedResults.push(googlePlaces[j++]);
+      if (j < googleResultWithSource.results.length) {
+        combinedPlaces.push(googleResultWithSource.results[j++]);
       }
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        places: combinedResults,
+        // Combined places for backward compatibility
+        places: combinedPlaces,
+
+        // Complete search result objects
+        googleSearchResult: googleResultWithSource,
+        smartSearchResult: smartSearchResultWithSource,
+
+        // Pagination tokens for backward compatibility
         nextGooglePageToken: googleResult.nextPageToken,
         nextSmartSearchOffset:
-          smartSearchResult.pagination.hasMore && smartSearchResult.success
+          smartSearchResult.pagination?.hasMore && smartSearchResult.success
             ? smartSearchResult.pagination.offset +
               smartSearchResult.pagination.limit
             : null,

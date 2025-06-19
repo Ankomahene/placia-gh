@@ -15,6 +15,7 @@ interface ChatViewProps {
   onPlaceHover: (placeId: string | null) => void;
   onPlaceSelect: (placeId: string) => void;
   isLoading: boolean;
+  initialQuery?: string;
 }
 
 export { ChatHeader } from './ChatHeader';
@@ -32,9 +33,10 @@ export function ChatView({
   onPlaceHover,
   onPlaceSelect,
   isLoading,
+  initialQuery,
 }: ChatViewProps) {
   return (
-    <ChatProvider places={places}>
+    <ChatProvider places={places} initialQuery={initialQuery}>
       <div className="h-full flex flex-col max-w-6xl mx-auto border my-2 rounded-md overflow-hidden shadow-md">
         {/* Header */}
         <ChatHeader />

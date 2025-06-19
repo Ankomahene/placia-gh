@@ -695,5 +695,21 @@ export interface ChatMessage {
     searchQuery: string;
     filters?: string[];
     hasMore?: boolean;
+    allResults?: PlaceResultsSummary[]; // Store all results for client-side pagination
+    conversationAnalysis?: {
+      is_followup: boolean;
+      followup_type:
+        | 'refinement'
+        | 'category_change'
+        | 'new_search'
+        | 'clarification_needed';
+      confidence: number;
+      needs_clarification?: boolean;
+      clarification_type?:
+        | 'missing_place_type'
+        | 'missing_location'
+        | 'too_vague'
+        | 'ambiguous_intent';
+    };
   };
 }

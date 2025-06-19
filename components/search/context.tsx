@@ -1,7 +1,38 @@
 import { useLocation } from '@/hooks/use-location';
 import { createContext, useState, useCallback, useMemo } from 'react';
-import { ViewMode } from './types';
+import { ViewMode, SearchMode, SortConfig, SortingCapabilities } from './types';
 import { PlaceResultsSummary } from '@/types/place';
+import {
+  applySorting,
+  analyzeSortingCapabilities,
+  convertServiceSortToConfig,
+  getDefaultSortConfigForSearchType,
+} from './utils/sorting-utils';
+
+// Types for complete search results
+interface GoogleSearchResult {
+  results: PlaceResultsSummary[];
+  success: boolean;
+  query: string;
+  nextPageToken?: string | null;
+  search_type?: string;
+  sort_order?: string;
+}
+
+interface SmartSearchResult {
+  results: PlaceResultsSummary[];
+  count: number;
+  success: boolean;
+  query: string;
+  executionTime: number;
+  search_type?: string;
+  sort_order?: string;
+  pagination: {
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}
 
 interface ISearchContext {
   // Input state
@@ -17,6 +48,8 @@ interface ISearchContext {
   // View state
   viewMode: ViewMode;
   setViewMode: (viewMode: ViewMode) => void;
+  searchMode: SearchMode;
+  setSearchMode: (searchMode: SearchMode) => void;
   hoveredPlaceId: string | null;
   setHoveredPlaceId: (placeId: string | null) => void;
   selectedPlaceId: string | null;
@@ -27,6 +60,16 @@ interface ISearchContext {
   isSearching: boolean;
   searchResults: PlaceResultsSummary[];
   hasMore: boolean;
+
+  // Complete search result objects
+  googleSearchResult: GoogleSearchResult | null;
+  smartSearchResult: SmartSearchResult | null;
+
+  // Sorting state
+  sortConfig: SortConfig;
+  setSortConfig: (config: SortConfig) => void;
+  sortingCapabilities: SortingCapabilities;
+  sortedResults: PlaceResultsSummary[];
 
   // Search actions
   performSearch: (
@@ -48,6 +91,7 @@ export const SearchContextProvider = ({
   const [previousSearchTerm, setPreviousSearchTerm] = useState('');
   const [isOpenSearchWindow, setIsOpenSearchWindow] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('card');
+  const [searchMode, setSearchMode] = useState<SearchMode>('general');
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
 
@@ -60,6 +104,63 @@ export const SearchContextProvider = ({
     nextGooglePageToken: undefined as string | undefined | null,
     nextSmartSearchOffset: undefined as number | undefined | null,
   });
+
+  // Complete search result objects
+  const [googleSearchResult, setGoogleSearchResult] =
+    useState<GoogleSearchResult | null>(null);
+  const [smartSearchResult, setSmartSearchResult] =
+    useState<SmartSearchResult | null>(null);
+
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    type: 'none',
+    order: 'nearest_first',
+  });
+
+  // Analyze sorting capabilities based on current search results
+  const sortingCapabilities = useMemo(() => {
+    return analyzeSortingCapabilities(searchResults);
+  }, [searchResults]);
+
+  // Apply sorting to search results
+  const sortedResults = useMemo(() => {
+    if (sortConfig.type === 'none') {
+      return searchResults;
+    }
+    return applySorting(searchResults, sortConfig);
+  }, [searchResults, sortConfig]);
+
+  // Function to set default sort based on search results
+  const setDefaultSortFromSearchResults = useCallback(
+    (
+      googleResult: GoogleSearchResult | null,
+      smartResult: SmartSearchResult | null
+    ) => {
+      // Try to get sort config from service responses first
+      const googleSortConfig = convertServiceSortToConfig(
+        googleResult?.search_type,
+        googleResult?.sort_order
+      );
+      const smartSortConfig = convertServiceSortToConfig(
+        smartResult?.search_type,
+        smartResult?.sort_order
+      );
+
+      // Use Google result sort config if available, otherwise Smart result, otherwise reset
+      if (googleSortConfig) {
+        setSortConfig(googleSortConfig);
+      } else if (smartSortConfig) {
+        setSortConfig(smartSortConfig);
+      } else {
+        // Fallback to default sort config based on search type
+        const searchType =
+          googleResult?.search_type || smartResult?.search_type;
+        const defaultConfig = getDefaultSortConfigForSearchType(searchType);
+        setSortConfig(defaultConfig);
+      }
+    },
+    []
+  );
 
   const location = useLocation();
   const userLocation = useMemo(
@@ -89,6 +190,8 @@ export const SearchContextProvider = ({
       setCurrentQuery(trimmedQuery);
       setSearchResults([]);
       setHasMore(false);
+      setGoogleSearchResult(null);
+      setSmartSearchResult(null);
       setPagination({
         nextGooglePageToken: undefined,
         nextSmartSearchOffset: undefined,
@@ -110,10 +213,18 @@ export const SearchContextProvider = ({
 
           setSearchResults(results);
           setHasMore(newHasMore);
+          setGoogleSearchResult(data.data.googleSearchResult || null);
+          setSmartSearchResult(data.data.smartSearchResult || null);
           setPagination({
             nextGooglePageToken: data.data.nextGooglePageToken,
             nextSmartSearchOffset: data.data.nextSmartSearchOffset,
           });
+
+          // Set default sort configuration based on search results
+          setDefaultSortFromSearchResults(
+            data.data.googleSearchResult || null,
+            data.data.smartSearchResult || null
+          );
         } else {
           throw new Error(data.error || 'Search failed');
         }
@@ -125,7 +236,7 @@ export const SearchContextProvider = ({
         setIsSearching(false);
       }
     },
-    []
+    [setDefaultSortFromSearchResults]
   );
 
   const loadMore = useCallback(
@@ -155,6 +266,36 @@ export const SearchContextProvider = ({
 
           setSearchResults(newResults);
           setHasMore(newHasMore);
+
+          // Update search result objects (merge with existing for load more)
+          if (data.data.googleSearchResult) {
+            setGoogleSearchResult((prev) =>
+              prev
+                ? {
+                    ...data.data.googleSearchResult,
+                    results: [
+                      ...(prev.results || []),
+                      ...data.data.googleSearchResult.results,
+                    ],
+                  }
+                : data.data.googleSearchResult
+            );
+          }
+
+          if (data.data.smartSearchResult) {
+            setSmartSearchResult((prev) =>
+              prev
+                ? {
+                    ...data.data.smartSearchResult,
+                    results: [
+                      ...(prev.results || []),
+                      ...data.data.smartSearchResult.results,
+                    ],
+                  }
+                : data.data.smartSearchResult
+            );
+          }
+
           setPagination({
             nextGooglePageToken: data.data.nextGooglePageToken,
             nextSmartSearchOffset: data.data.nextSmartSearchOffset,
@@ -176,6 +317,9 @@ export const SearchContextProvider = ({
     setSearchResults([]);
     setHasMore(false);
     setIsSearching(false);
+    setGoogleSearchResult(null);
+    setSmartSearchResult(null);
+    setSortConfig({ type: 'none', order: 'nearest_first' });
     setPagination({
       nextGooglePageToken: undefined,
       nextSmartSearchOffset: undefined,
@@ -197,9 +341,11 @@ export const SearchContextProvider = ({
 
         // View state
         viewMode,
+        searchMode,
         hoveredPlaceId,
         selectedPlaceId,
         setViewMode,
+        setSearchMode,
         setHoveredPlaceId,
         setSelectedPlaceId,
 
@@ -208,6 +354,16 @@ export const SearchContextProvider = ({
         isSearching,
         searchResults,
         hasMore,
+
+        // Complete search result objects
+        googleSearchResult,
+        smartSearchResult,
+
+        // Sorting state
+        sortConfig,
+        setSortConfig,
+        sortingCapabilities,
+        sortedResults,
 
         // Search actions
         performSearch,
