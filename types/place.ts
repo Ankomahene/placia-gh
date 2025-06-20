@@ -334,3 +334,16 @@ export interface UserUploadedPhotosForPlace {
   created_at: Date;
   updated_at: Date;
 }
+
+export interface PlaceReview {
+  id: string;
+  place_id: string;
+  user_id: string;
+  user_name: string;
+  user_avatar?: string;
+  rating: number;
+  content: string;
+  likes: number;
+  created_at: Date;
+  updated_at: Date;
+}
