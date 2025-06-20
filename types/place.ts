@@ -1,3 +1,5 @@
+import { User } from './user';
+
 export interface Country {
   id: string;
   name: string;
@@ -281,6 +283,7 @@ export interface PlaceResults {
   formatted_address?: string;
   international_phone_number?: string;
   vicinity?: string;
+  isBusinessPlace?: boolean;
 }
 
 export interface PlaceResultsSummary {
@@ -323,6 +326,7 @@ export interface PlaceResultsSummary {
   business_status?: string;
   formatted_address?: string;
   vicinity?: string;
+  isBusiness?: boolean;
 }
 
 export interface UserUploadedPhotosForPlace {
@@ -330,20 +334,50 @@ export interface UserUploadedPhotosForPlace {
   place_id: string;
   user_id: string;
   photos: string[];
-  comment: string;
+  comment?: string;
+  likes: string[]; // Array of user IDs who liked this
   created_at: Date;
   updated_at: Date;
+  user?: Partial<User>;
 }
 
 export interface PlaceReview {
   id: string;
   place_id: string;
   user_id: string;
-  user_name: string;
-  user_avatar?: string;
   rating: number;
-  content: string;
-  likes: number;
+  comment?: string; // Database field name
+  text?: string; // For Google reviews and backward compatibility
+  likes: string[]; // Array of user IDs who liked this review
+  user?: Partial<User>;
   created_at: Date;
   updated_at: Date;
+  // Optional Google-specific data for Google reviews
+  google_data?: {
+    author_url: string;
+    relative_time_description: string;
+    language: string;
+    translated: boolean;
+  };
+  // Additional fields to match database
+  author_name?: string;
+  author_email?: string;
+}
+
+export interface ReviewLikes {
+  id: string;
+  review_id: string;
+  user_id: string;
+  created_at: Date;
+  updated_at: Date;
+  user?: Partial<User>;
+}
+
+export interface UploadedPhotosLikes {
+  id: string;
+  photo_id: string;
+  user_id: string;
+  created_at: Date;
+  updated_at: Date;
+  user?: Partial<User>;
 }

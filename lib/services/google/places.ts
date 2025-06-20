@@ -495,10 +495,42 @@ function transformGooglePlaceDetailsToPlaceResults(
       | undefined
   ) => {
     if (!hours || !hours.weekday_text) return [];
+
+    const convertTo24Hour = (time: string): string => {
+      if (!time) return '';
+
+      // Remove extra spaces and normalize
+      time = time.trim();
+
+      // Handle already 24-hour format
+      if (/^\d{1,2}:\d{2}$/.test(time)) {
+        return time.padStart(5, '0');
+      }
+
+      // Handle 12-hour format with AM/PM
+      const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (!match) {
+        console.warn('Could not parse time:', time);
+        return '';
+      }
+
+      let [, hours, minutes, ampm] = match;
+      let hour = parseInt(hours, 10);
+
+      if (ampm.toUpperCase() === 'PM' && hour !== 12) {
+        hour += 12;
+      } else if (ampm.toUpperCase() === 'AM' && hour === 12) {
+        hour = 0;
+      }
+
+      return `${hour.toString().padStart(2, '0')}:${minutes}`;
+    };
+
     return hours.weekday_text
       .map((text) => {
         const parts = text.split(': ');
         if (parts.length < 2) return null;
+
         const day = parts[0];
         const time = parts.slice(1).join(': ');
 
@@ -507,13 +539,36 @@ function transformGooglePlaceDetailsToPlaceResults(
           return { day, from: '00:00', to: '23:59' };
         }
 
-        const timeParts = time.split('–');
-        if (timeParts.length < 2) return null;
+        // Handle different time separators (–, -, to)
+        const timeParts = time.split(/\s*[–\-]\s*|\s+to\s+/i);
+        if (timeParts.length < 2) {
+          console.warn('Could not parse opening hours:', text);
+          return null;
+        }
+
+        const fromTime = convertTo24Hour(timeParts[0].trim());
+        const toTime = convertTo24Hour(timeParts[1].trim());
+
+        if (!fromTime || !toTime) {
+          console.warn('Could not convert times:', timeParts);
+          return null;
+        }
+
+        // Check for invalid same times (likely parsing error)
+        if (fromTime === toTime) {
+          console.warn(
+            'Same opening and closing time detected:',
+            fromTime,
+            'from text:',
+            text
+          );
+          return null;
+        }
 
         return {
           day,
-          from: timeParts[0].trim(),
-          to: timeParts[1].trim(),
+          from: fromTime,
+          to: toTime,
         };
       })
       .filter(Boolean) as { day: string; from: string; to: string }[];

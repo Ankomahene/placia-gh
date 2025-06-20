@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { SafeImage } from '@/components/ui/safe-image';
 import { Navigation, Star } from 'lucide-react';
 import { PlaceCardProps } from './types';
+import Link from 'next/link';
+import { getPlaceDetailsUrl } from '@/lib/utils/place-utils';
 
 export function PlaceCard({
   place,
@@ -16,6 +18,8 @@ export function PlaceCard({
   mapMarker,
   cardRef,
 }: PlaceCardProps) {
+  const placeDetailsUrl = getPlaceDetailsUrl(place);
+
   return (
     <div
       ref={cardRef}
@@ -65,7 +69,8 @@ export function PlaceCard({
                 <h3 className="font-medium text-sm line-clamp-1">
                   {place.name}
                 </h3>
-                {place.source === 'google' ? (
+                {place.source === 'google' ||
+                place.source === 'google_places' ? (
                   <Badge
                     variant="outline"
                     className="text-xs bg-blue-50 text-blue-700 border-blue-200 px-1 py-0"
@@ -77,7 +82,7 @@ export function PlaceCard({
                     variant="outline"
                     className="text-xs bg-green-50 text-green-700 border-green-200 px-1 py-0"
                   >
-                    L
+                    P
                   </Badge>
                 )}
               </div>
@@ -121,15 +126,13 @@ export function PlaceCard({
           </div>
 
           <div className="flex items-center gap-2 mt-3">
-            <div
+            <Link
+              href={placeDetailsUrl}
               className="text-xs cursor-pointer text-primary hover:underline flex-1"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClick(place.id);
-              }}
+              onClick={(e) => e.stopPropagation()}
             >
               View details
-            </div>
+            </Link>
 
             {onDirectionsRequest && (
               <Button

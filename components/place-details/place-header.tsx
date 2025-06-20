@@ -1,22 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { PlaceResults } from '@/types/place';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Heart, 
-  Share2, 
-  MapPin, 
-  Star, 
-  Clock, 
+import {
+  Heart,
+  Share2,
+  MapPin,
+  Star,
+  Clock,
   DollarSign,
   Camera,
-  ChevronLeft
+  ChevronLeft,
+  Navigation,
+  Palette,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import {
+  getRatingLabel,
+  getPriceLevelLabel,
+  getOpenStatusColor,
+  formatOpenStatus,
+  getGlassBackground,
+  getMutedBackground,
+} from '@/lib/utils/place-utils';
+import { patterns } from '@/components/patterns';
 
 interface PlaceHeaderProps {
   place: PlaceResults;
@@ -24,173 +35,315 @@ interface PlaceHeaderProps {
 
 export function PlaceHeader({ place }: PlaceHeaderProps) {
   const [isFavorite, setIsFavorite] = useState(false);
-  
+  const [selectedPatternIndex, setSelectedPatternIndex] = useState<number>(0);
+
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
   };
-  
-  // Generate a placeholder gradient if no image
-  const placeholderStyle = {
-    background: `linear-gradient(135deg, hsl(${Math.floor(Math.random() * 360)}, 70%, 60%), hsl(${Math.floor(Math.random() * 360)}, 70%, 40%))`,
+
+  // Get localStorage key for this place's pattern
+  const getPatternStorageKey = (placeId: string) => `place-pattern-${placeId}`;
+
+  // Load saved pattern from localStorage or set random default
+  useEffect(() => {
+    const storageKey = getPatternStorageKey(place.id);
+    const savedPatternIndex = localStorage.getItem(storageKey);
+
+    if (savedPatternIndex !== null) {
+      setSelectedPatternIndex(parseInt(savedPatternIndex, 10));
+    } else {
+      // Set random pattern as default for new places
+      const randomIndex = Math.floor(Math.random() * patterns.length);
+      setSelectedPatternIndex(randomIndex);
+    }
+  }, [place.id]);
+
+  // Save pattern preference to localStorage
+  useEffect(() => {
+    if (selectedPatternIndex !== null) {
+      const storageKey = getPatternStorageKey(place.id);
+      localStorage.setItem(storageKey, selectedPatternIndex.toString());
+    }
+  }, [selectedPatternIndex, place.id]);
+
+  // Get the current pattern component
+  const CurrentPattern = useMemo(() => {
+    return patterns[selectedPatternIndex] || patterns[0];
+  }, [selectedPatternIndex]);
+
+  // Function to cycle to next pattern
+  const switchToNextPattern = () => {
+    setSelectedPatternIndex((prev) => (prev + 1) % patterns.length);
   };
-  
-  // Format price level
-  const getPriceLevel = () => {
-    if (!place.price_level) return null;
-    return Array(place.price_level).fill('$').join('');
+
+  const ratingInfo = getRatingLabel(place.rate_average);
+  const priceInfo = getPriceLevelLabel(place.price_level);
+  const openStatusColor = getOpenStatusColor(place.open_now);
+
+  const getDirectionsUrl = () => {
+    if (!place.location) return '#';
+    return `https://www.google.com/maps/dir/?api=1&destination=${place.location.lat},${place.location.lng}&destination_place_id=${encodeURIComponent(place.name)}`;
   };
-  
+
+  const hasMainImage = place.main_image;
+
   return (
     <div className="relative">
       {/* Cover image or placeholder */}
-      <div className="w-full h-64 md:h-80 lg:h-96 relative">
-        {place.main_image ? (
-          <Image 
-            src={place.main_image} 
+      <div className="w-full h-64 md:h-80 lg:h-96 relative overflow-hidden">
+        {hasMainImage ? (
+          <Image
+            src={place.main_image!}
             alt={place.name}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-700 hover:scale-105"
             priority
           />
         ) : (
-          <div 
-            className="w-full h-full flex items-center justify-center"
-            style={placeholderStyle}
-          >
-            <div className="text-white text-6xl opacity-30">
-              <Camera className="w-24 h-24" />
+          <div className="w-full h-full relative flex items-center justify-center bg-muted/20">
+            {/* SVG Pattern Background */}
+            <div className="absolute inset-0 opacity-30 [&>svg]:w-full [&>svg]:h-full [&>svg]:object-cover">
+              <CurrentPattern />
             </div>
+
+            {/* Overlay content */}
+            <div className="relative z-10 text-muted-foreground">
+              <Camera className="w-24 h-24 opacity-40" />
+            </div>
+
+            {/* Optional gradient overlay for better text readability */}
+            <div className="absolute inset-0 bg-gradient-to-br from-background/10 via-transparent to-background/20"></div>
           </div>
         )}
-        
+
         {/* Back button */}
         <div className="absolute top-4 left-4 z-10">
           <Link href="/">
-            <Button variant="secondary" size="sm" className="bg-background/80 backdrop-blur-sm">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="bg-white/90 dark:bg-black/60 backdrop-blur-sm hover:bg-white/100 dark:hover:bg-black/80 shadow-lg border-0"
+            >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Back
             </Button>
           </Link>
         </div>
-        
+
         {/* Action buttons */}
         <div className="absolute top-4 right-4 z-10 flex gap-2">
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-background/80 backdrop-blur-sm"
+          {/* Pattern Switcher Button - Only show when no main image */}
+          {!hasMainImage && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="bg-white/90 dark:bg-black/60 backdrop-blur-sm hover:bg-white/100 dark:hover:bg-black/80 shadow-lg border-0"
+              onClick={switchToNextPattern}
+              title={`Switch pattern (${selectedPatternIndex + 1}/${patterns.length})`}
+            >
+              <Palette className="h-4 w-4" />
+            </Button>
+          )}
+
+          <Button
+            variant="secondary"
+            size="sm"
+            className="bg-white/90 dark:bg-black/60 backdrop-blur-sm hover:bg-white/100 dark:hover:bg-black/80 shadow-lg border-0"
             onClick={toggleFavorite}
           >
-            <Heart 
+            <Heart
               className={cn(
-                "h-4 w-4 mr-1", 
-                isFavorite && "fill-red-500 text-red-500"
-              )} 
+                'h-4 w-4 mr-1 transition-colors',
+                isFavorite && 'fill-red-500 text-red-500'
+              )}
             />
             {isFavorite ? 'Saved' : 'Save'}
           </Button>
-          
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="bg-background/80 backdrop-blur-sm"
+
+          <Button
+            variant="secondary"
+            size="sm"
+            className="bg-white/90 dark:bg-black/60 backdrop-blur-sm hover:bg-white/100 dark:hover:bg-black/80 shadow-lg border-0"
           >
             <Share2 className="h-4 w-4 mr-1" />
             Share
           </Button>
         </div>
-        
-        {/* Gradient overlay */}
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-background to-transparent h-32"></div>
+
+        {/* Enhanced gradient overlay */}
+        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-background via-background/80 to-transparent h-40"></div>
       </div>
-      
+
       {/* Place info overlay */}
-      <div className="container mx-auto px-4 relative -mt-16 z-10">
-        <div className="flex flex-col md:flex-row md:items-end gap-4">
-          {/* Logo/icon */}
-          {place.logo && (
-            <div className="w-24 h-24 rounded-xl overflow-hidden border-4 border-background shadow-lg bg-background">
-              <Image 
-                src={place.logo} 
-                alt={`${place.name} logo`}
-                width={96}
-                height={96}
-                className="w-full h-full object-cover"
-              />
-            </div>
+      <div className="container mx-auto px-4 relative -mt-20 z-10">
+        <div
+          className={cn(
+            'flex flex-col md:flex-row md:items-end gap-6 rounded-2xl p-6 shadow-xl border border-primary/20',
+            getGlassBackground()
           )}
-          
-          {/* Title and basic info */}
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold">{place.name}</h1>
-            
-            {place.tagline && (
-              <p className="text-muted-foreground mt-1">{place.tagline}</p>
-            )}
-            
-            <div className="flex flex-wrap items-center gap-3 mt-2">
-              {/* Category */}
-              {place.category && (
-                <Badge variant="outline" className="text-xs">
-                  {place.category.name}
-                </Badge>
-              )}
-              
-              {/* Subcategory */}
-              {place.subcategory && (
-                <Badge variant="outline" className="text-xs">
-                  {place.subcategory.name}
-                </Badge>
-              )}
-              
-              {/* Location */}
-              <div className="flex items-center text-sm text-muted-foreground">
-                <MapPin className="h-3 w-3 mr-1" />
-                <span>
-                  {place.location?.street_address || 
-                   `${place.city?.name || ''}, ${place.region?.name || ''}`}
-                </span>
+        >
+          <div className="flex items-center gap-6 flex-1 relative">
+            {/* Logo */}
+            {place.logo && (
+              <div className="w-24 h-24 md:w-36 md:h-36  rounded-2xl overflow-hidden border-4 border-background shadow-2xl bg-background ring-4 ring-background/50 absolute md:static -top-16 -left-0 md:-left-6">
+                <Image
+                  src={place.logo}
+                  alt={`${place.name} logo`}
+                  width={112}
+                  height={112}
+                  className="w-full h-full object-cover"
+                />
               </div>
-              
-              {/* Rating */}
-              {place.rate_average && (
-                <div className="flex items-center">
-                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500 mr-1" />
-                  <span className="font-medium">{place.rate_average.toFixed(1)}</span>
-                  {place.rate_count && (
-                    <span className="text-muted-foreground text-sm ml-1">
-                      ({place.rate_count})
-                    </span>
-                  )}
-                </div>
+            )}
+
+            {/* Title and basic info */}
+            <div className="flex-1 mt-14 md:mt-0">
+              <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                {place.name}
+              </h1>
+
+              {place.tagline ? (
+                <p className="text-muted-foreground text-lg mb-4">
+                  {place.tagline}
+                </p>
+              ) : (
+                <p className="text-muted-foreground text-lg mb-4">
+                  {place.description.slice(0, 100)}...
+                </p>
               )}
-              
-              {/* Open status */}
-              {place.open_now !== undefined && place.open_now !== 'unknown' && (
-                <div className="flex items-center">
-                  <Clock className="h-4 w-4 mr-1" />
-                  <span className={place.open_now ? "text-green-600" : "text-red-600"}>
-                    {place.open_now ? 'Open now' : 'Closed'}
+
+              {/* Badges and info */}
+              <div className="flex flex-wrap items-center gap-3 mb-4">
+                {/* Category & Subcategory */}
+                {place.category && (
+                  <Badge
+                    variant="outline"
+                    className="text-sm font-medium px-3 py-1"
+                  >
+                    {place.category.name}
+                  </Badge>
+                )}
+
+                {place.subcategory && (
+                  <Badge
+                    variant="outline"
+                    className="text-sm font-medium px-3 py-1"
+                  >
+                    {place.subcategory.name}
+                  </Badge>
+                )}
+
+                {/* Location */}
+                <div
+                  className={cn(
+                    'flex items-center text-sm text-muted-foreground rounded-full px-3 py-1',
+                    getMutedBackground()
+                  )}
+                >
+                  <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                  <span className="truncate">
+                    {place.location?.street_address ||
+                      `${place.city?.name || ''}, ${place.region?.name || ''}`}
                   </span>
                 </div>
-              )}
-              
-              {/* Price level */}
-              {place.price_level && (
-                <div className="flex items-center">
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  <span>{getPriceLevel()}</span>
-                </div>
-              )}
+              </div>
+
+              {/* Rating, Status, and Price row */}
+              <div className="flex flex-wrap items-center gap-4 mb-4">
+                {/* Rating */}
+                {place.rate_average && (
+                  <div
+                    className={cn(
+                      'flex items-center gap-0 rounded-full px-3 py-1.5',
+                      getMutedBackground()
+                    )}
+                  >
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      <span className="font-semibold text-sm">
+                        {place.rate_average.toFixed(1)}
+                      </span>
+                      {place.rate_count && (
+                        <span className="text-muted-foreground text-xs">
+                          ({place.rate_count.toLocaleString()})
+                        </span>
+                      )}
+                    </div>
+                    {ratingInfo.label && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'text-xs px-2 py-0 border-0 ml-2',
+                          ratingInfo.color
+                        )}
+                      >
+                        {ratingInfo.label}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
+                {/* Open status */}
+                {place.open_now !== undefined &&
+                  place.open_now !== 'unknown' && (
+                    <div
+                      className={cn(
+                        'flex items-center gap-1 rounded-full px-3 py-1.5',
+                        getMutedBackground()
+                      )}
+                    >
+                      <Clock className="h-4 w-4 text-gray-500" />
+                      <span
+                        className={cn('font-medium text-sm', openStatusColor)}
+                      >
+                        {formatOpenStatus(place.open_now)}
+                      </span>
+                    </div>
+                  )}
+
+                {/* Price level */}
+                {place.price_level && priceInfo.symbol && (
+                  <div
+                    className={cn(
+                      'flex items-center gap-0 rounded-full px-3 py-1.5',
+                      getMutedBackground()
+                    )}
+                  >
+                    <span className={cn('text-sm font-bold', priceInfo.color)}>
+                      {priceInfo.symbol}
+                    </span>
+                    {priceInfo.label && (
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          'text-xs px-2 py-0 border-0 ml-2',
+                          priceInfo.color
+                        )}
+                      >
+                        {priceInfo.label}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-          
+
           {/* Quick action buttons */}
-          <div className="flex gap-2 mt-4 md:mt-0">
-            <Button className="bg-primary hover:bg-primary/90">
-              <MapPin className="h-4 w-4 mr-2" />
-              Get Directions
-            </Button>
+          <div className="flex gap-3 mt-4 md:mt-0 absolute  md:static bottom-4 right-4">
+            <a
+              href={getDirectionsUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button
+                size="sm"
+                className="bg-primary hover:bg-primary/90 shadow-lg px-6 py-2 text-sm font-medium"
+              >
+                <Navigation className="h-4 w-4 mr-2" />
+                Get Directions
+              </Button>
+            </a>
           </div>
         </div>
       </div>

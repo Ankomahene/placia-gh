@@ -8,6 +8,12 @@ import { Star, MapPin, Navigation, Heart, Clock } from 'lucide-react';
 import { convertMetersToKm } from '@/lib/utils';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import {
+  getRatingLabel,
+  getPriceLevelLabel,
+  getPlaceDetailsUrl,
+} from '@/lib/utils/place-utils';
 
 interface ChatPlaceCardProps {
   place: PlaceResultsSummary;
@@ -16,27 +22,6 @@ interface ChatPlaceCardProps {
   onClick?: () => void;
 }
 
-const getRatingLabel = (rating?: number) => {
-  if (!rating) return { label: '', color: 'text-muted-foreground' };
-
-  if (rating >= 4.5) {
-    return { label: 'High', color: 'text-green-600 dark:text-green-400' };
-  } else if (rating >= 4) {
-    return { label: 'Good', color: 'text-blue-600 dark:text-blue-400' };
-  } else if (rating >= 3) {
-    return { label: 'Fair', color: 'text-yellow-600 dark:text-yellow-400' };
-  } else if (rating >= 2) {
-    return { label: 'Low', color: 'text-red-600 dark:text-red-400' };
-  } else {
-    return { label: 'Poor', color: 'text-muted-foreground' };
-  }
-};
-
-const getPriceLevelSymbol = (priceLevel?: number) => {
-  if (!priceLevel) return '';
-  return '$'.repeat(priceLevel);
-};
-
 export function ChatPlaceCard({
   place,
   onHover,
@@ -44,10 +29,17 @@ export function ChatPlaceCard({
   onClick,
 }: ChatPlaceCardProps) {
   const ratingInfo = getRatingLabel(place.rate_average);
-  const priceSymbol = getPriceLevelSymbol(place.price_level);
+  const priceInfo = getPriceLevelLabel(place.price_level);
   const getDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.location.lng},${place.location.lat}`;
+  const placeDetailsUrl = getPlaceDetailsUrl(place);
 
   const hasRating = place.rate_average && place.rate_average > 0;
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
 
   return (
     <Card
@@ -58,7 +50,7 @@ export function ChatPlaceCard({
       )}
       onMouseEnter={() => onHover(place.id)}
       onMouseLeave={() => onHover(null)}
-      onClick={onClick}
+      onClick={handleCardClick}
     >
       <CardContent className="p-0">
         <div className="flex gap-4 p-4">
@@ -85,12 +77,14 @@ export function ChatPlaceCard({
               <Badge
                 className={cn(
                   'absolute top-1 right-1 text-xs',
-                  place.source === 'google'
+                  place.source === 'google' || place.source === 'google_places'
                     ? 'bg-blue-500/90 hover:bg-blue-500 text-white border-0'
                     : 'bg-green-500/90 hover:bg-green-500 text-white border-0'
                 )}
               >
-                {place.source === 'google' ? 'G' : 'L'}
+                {place.source === 'google' || place.source === 'google_places'
+                  ? 'G'
+                  : 'P'}
               </Badge>
 
               {/* Open Status */}
@@ -174,11 +168,19 @@ export function ChatPlaceCard({
                 </div>
               )}
 
-              {priceSymbol && (
+              {priceInfo.symbol && (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-green-600 dark:text-green-400">
-                    {priceSymbol}
+                    {priceInfo.symbol}
                   </span>
+                  {priceInfo.label && (
+                    <Badge
+                      variant="outline"
+                      className="text-xs px-2 py-0 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800"
+                    >
+                      {priceInfo.label}
+                    </Badge>
+                  )}
                 </div>
               )}
             </div>
@@ -197,11 +199,11 @@ export function ChatPlaceCard({
                   Directions
                 </Button>
               </a>
-              {onClick && (
-                <Button variant="outline" size="sm" onClick={onClick}>
+              <Link href={placeDetailsUrl} onClick={(e) => e.stopPropagation()}>
+                <Button variant="outline" size="sm">
                   View Details
                 </Button>
-              )}
+              </Link>
             </div>
           </div>
         </div>

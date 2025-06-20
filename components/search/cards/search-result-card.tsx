@@ -6,6 +6,13 @@ import { Star, MapPin, Clock, Navigation, Heart } from 'lucide-react';
 import { convertMetersToKm } from '@/lib/utils';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import {
+  getRatingLabel,
+  getPriceLevelLabel,
+  getOpenStatusBadgeColor,
+  getPlaceDetailsUrl,
+} from '@/lib/utils/place-utils';
 
 interface SearchResultCardProps {
   place: PlaceResultsSummary;
@@ -14,39 +21,6 @@ interface SearchResultCardProps {
   variant?: 'card' | 'list';
   onClick?: () => void;
 }
-
-const getRatingLabel = (rating?: number) => {
-  if (!rating) return { label: '', color: 'text-muted-foreground' };
-
-  if (rating >= 4.5) {
-    return { label: 'High', color: 'text-green-600 dark:text-green-400' };
-  } else if (rating >= 4) {
-    return { label: 'Good', color: 'text-blue-600 dark:text-blue-400' };
-  } else if (rating >= 3) {
-    return { label: 'Fair', color: 'text-yellow-600 dark:text-yellow-400' };
-  } else if (rating >= 2) {
-    return { label: 'Low', color: 'text-red-600 dark:text-red-400' };
-  } else {
-    return { label: 'Poor', color: 'text-muted-foreground' };
-  }
-};
-
-const getPriceLevelLabel = (priceLevel?: number) => {
-  if (!priceLevel) return { label: '', symbol: '' };
-
-  switch (priceLevel) {
-    case 4:
-      return { label: 'Very Expensive', symbol: '$$$$' };
-    case 3:
-      return { label: 'Expensive', symbol: '$$$' };
-    case 2:
-      return { label: 'Moderate', symbol: '$$' };
-    case 1:
-      return { label: 'Budget', symbol: '$' };
-    default:
-      return { label: '', symbol: '' };
-  }
-};
 
 export function SearchResultCard({
   place,
@@ -58,10 +32,17 @@ export function SearchResultCard({
   const ratingInfo = getRatingLabel(place.rate_average);
   const priceInfo = getPriceLevelLabel(place.price_level);
   const getDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.location.lng},${place.location.lat}`;
+  const placeDetailsUrl = getPlaceDetailsUrl(place);
 
   const isCardView = variant === 'card';
   const hasRating = place.rate_average && place.rate_average > 0;
   const hasPrice = place.price_level && place.price_level > 0;
+
+  const handleCardClick = () => {
+    if (onClick) {
+      onClick();
+    }
+  };
 
   const ImageSection = () => (
     <div
@@ -93,21 +74,21 @@ export function SearchResultCard({
       <Badge
         className={cn(
           'absolute top-2 right-2 text-xs',
-          place.source === 'google'
+          place.source === 'google' || place.source === 'google_places'
             ? 'bg-blue-500/90 hover:bg-blue-500 text-white border-0'
             : 'bg-green-500/90 hover:bg-green-500 text-white border-0'
         )}
       >
-        {place.source === 'google' ? 'G' : 'L'}
+        {place.source === 'google' || place.source === 'google_places'
+          ? 'G'
+          : 'P'}
       </Badge>
 
       {place.open_now !== undefined && place.open_now !== 'unknown' && (
         <Badge
           className={cn(
-            'absolute bottom-2 left-2 text-xs border-0',
-            place.open_now
-              ? 'bg-green-500/90 hover:bg-green-500 text-white'
-              : 'bg-red-500/90 hover:bg-red-500 text-white'
+            'absolute bottom-2 left-2 text-xs',
+            getOpenStatusBadgeColor(place.open_now)
           )}
         >
           <Clock className="w-3 h-3 mr-1" />
@@ -202,17 +183,18 @@ export function SearchResultCard({
           target="_blank"
           rel="noopener noreferrer"
           className="flex-1"
+          onClick={(e) => e.stopPropagation()}
         >
           <Button size="sm" className="w-full">
             <Navigation className="w-3 h-3 mr-2" />
             Directions
           </Button>
         </a>
-        {onClick && (
-          <Button variant="outline" size="sm" onClick={onClick}>
+        <Link href={placeDetailsUrl} onClick={(e) => e.stopPropagation()}>
+          <Button variant="outline" size="sm">
             View Details
           </Button>
-        )}
+        </Link>
       </div>
     </div>
   );
@@ -227,7 +209,7 @@ export function SearchResultCard({
       )}
       onMouseEnter={() => onHover(place.id)}
       onMouseLeave={() => onHover(null)}
-      onClick={onClick}
+      onClick={handleCardClick}
     >
       <CardContent className="p-0">
         {isCardView ? (

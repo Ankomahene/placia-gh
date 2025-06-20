@@ -1,19 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import Image from 'next/image';
-import { PlaceResults } from '@/types/place';
+import { PlaceImageField } from '@/components/place-form-components/place-image-field';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Upload, 
-  X, 
-  Image as ImageIcon,
-  Plus,
-  Camera,
-  User
-} from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -21,93 +9,94 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { useUser } from '@/hooks/use-user';
+import { createUserPhoto } from '@/lib/services/reviews-user-photos';
+import { PlaceResults } from '@/types/place';
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
+  Camera,
+  Edit2,
+  Image as ImageIcon,
+  Plus,
+  Save,
+  User,
+  ThumbsUp,
+} from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface PlacePhotosProps {
   place: PlaceResults;
+  userUploadedPhotos?: any[];
+  userPhotos?: any[];
   isLoggedIn: boolean;
 }
 
-// Mock user uploaded photos
-const mockUserPhotos = [
-  {
-    id: '1',
-    user: 'John Doe',
-    date: '2023-05-15',
-    comment: 'Beautiful interior design',
-    photos: [
-      'https://images.pexels.com/photos/1579739/pexels-photo-1579739.jpeg',
-      'https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg',
-    ],
-  },
-  {
-    id: '2',
-    user: 'Jane Smith',
-    date: '2023-06-10',
-    comment: 'Great food and presentation',
-    photos: [
-      'https://images.pexels.com/photos/958545/pexels-photo-958545.jpeg',
-      'https://images.pexels.com/photos/262978/pexels-photo-262978.jpeg',
-      'https://images.pexels.com/photos/67468/pexels-photo-67468.jpeg',
-    ],
-  },
-];
-
-export function PlacePhotos({ place, isLoggedIn }: PlacePhotosProps) {
+export function PlacePhotos({
+  place,
+  userUploadedPhotos = [],
+  userPhotos = [],
+  isLoggedIn,
+}: PlacePhotosProps) {
+  const router = useRouter();
+  const { user } = useUser();
   const [selectedTab, setSelectedTab] = useState('all');
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [photoComment, setPhotoComment] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
-  
+  const [uploadedImageUrl, setUploadedImageUrl] = useState('');
+  const [photoCaption, setPhotoCaption] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   // Combine official and user photos
   const allPhotos = [
     ...(place.gallery || []),
-    ...mockUserPhotos.flatMap(item => item.photos),
+    ...userUploadedPhotos.flatMap((photo) => photo.photos || []),
   ];
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      setSelectedFiles(prev => [...prev, ...filesArray]);
-      
-      // Create preview URLs
-      const newPreviewUrls = filesArray.map(file => URL.createObjectURL(file));
-      setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+
+  const handleSubmitPhoto = async () => {
+    if (!user) {
+      toast.error('Please log in to upload photos');
+      return;
+    }
+
+    if (!uploadedImageUrl) {
+      toast.error('Please upload an image first');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await createUserPhoto({
+        place_id: place.id,
+        photos: [uploadedImageUrl], // Store as array
+        comment: photoCaption.trim() || undefined,
+      });
+
+      toast.success('Photo uploaded successfully!');
+      setUploadedImageUrl('');
+      setPhotoCaption('');
+      setIsDialogOpen(false);
+      router.refresh();
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to upload photo'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
-  
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    
-    // Revoke the URL to avoid memory leaks
-    URL.revokeObjectURL(previewUrls[index]);
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-  };
-  
-  const handleSubmit = () => {
-    // In a real app, this would upload the photos to the server
-    console.log('Uploading photos:', selectedFiles);
-    console.log('Comment:', photoComment);
-    
-    // Reset form
-    setSelectedFiles([]);
-    setPhotoComment('');
-    setPreviewUrls([]);
-    setIsDialogOpen(false);
-  };
-  
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">Photos</h2>
-        
-        {isLoggedIn && (
+
+        {isLoggedIn ? (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -117,103 +106,91 @@ export function PlacePhotos({ place, isLoggedIn }: PlacePhotosProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
-                <DialogTitle>Upload Photos</DialogTitle>
+                <DialogTitle>Upload Photo</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                {/* File upload area */}
-                <div 
-                  className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => document.getElementById('photo-upload')?.click()}
-                >
-                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-1">
-                    Drag photos here or click to browse
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Supports JPG, PNG, GIF up to 10MB
-                  </p>
-                  <Input 
-                    id="photo-upload" 
-                    type="file" 
-                    accept="image/*" 
-                    multiple 
-                    className="hidden" 
-                    onChange={handleFileChange}
+                {/* Image upload using existing component */}
+                <PlaceImageField
+                  value={uploadedImageUrl}
+                  onChange={setUploadedImageUrl}
+                  label="Photo"
+                  placeholder="Upload your photo"
+                  variant="image"
+                />
+
+                {/* Caption input */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Caption{' '}
+                    <span className="text-muted-foreground">(Optional)</span>
+                  </label>
+                  <Textarea
+                    placeholder="Add a caption for your photo..."
+                    value={photoCaption}
+                    onChange={(e) => setPhotoCaption(e.target.value)}
+                    rows={3}
                   />
                 </div>
-                
-                {/* Preview selected files */}
-                {previewUrls.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2">
-                    {previewUrls.map((url, index) => (
-                      <div key={index} className="relative aspect-square rounded-md overflow-hidden">
-                        <Image 
-                          src={url} 
-                          alt={`Preview ${index}`} 
-                          fill
-                          className="object-cover"
-                        />
-                        <button 
-                          className="absolute top-1 right-1 bg-black/60 rounded-full p-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeFile(index);
-                          }}
-                        >
-                          <X className="h-3 w-3 text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {/* Comment input */}
-                <Textarea 
-                  placeholder="Add a comment about these photos..."
-                  value={photoComment}
-                  onChange={(e) => setPhotoComment(e.target.value)}
-                />
-                
+
                 <div className="flex justify-end gap-2">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsDialogOpen(false)}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      setUploadedImageUrl('');
+                      setPhotoCaption('');
+                    }}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </Button>
-                  <Button 
-                    onClick={handleSubmit}
-                    disabled={selectedFiles.length === 0}
+                  <Button
+                    onClick={handleSubmitPhoto}
+                    disabled={!uploadedImageUrl || isSubmitting}
                   >
-                    Upload
+                    <Save className="h-4 w-4 mr-2" />
+                    {isSubmitting ? 'Uploading...' : 'Upload Photo'}
                   </Button>
                 </div>
               </div>
             </DialogContent>
           </Dialog>
+        ) : (
+          <div className="flex gap-2">
+            <Link href="/auth/login">
+              <Button variant="outline" size="sm">
+                <Camera className="h-4 w-4 mr-2" />
+                Log in to upload
+              </Button>
+            </Link>
+          </div>
         )}
       </div>
-      
+
       {/* Photo tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="all">All Photos</TabsTrigger>
-          <TabsTrigger value="official">Official</TabsTrigger>
-          <TabsTrigger value="user">User Photos</TabsTrigger>
+          <TabsTrigger value="all">All Photos ({allPhotos.length})</TabsTrigger>
+          <TabsTrigger value="official">
+            Official ({place.gallery?.length || 0})
+          </TabsTrigger>
+          <TabsTrigger value="user">
+            User Photos ({userUploadedPhotos.length})
+          </TabsTrigger>
         </TabsList>
-        
+
         {/* All photos */}
         <TabsContent value="all" className="mt-4">
           {allPhotos.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {allPhotos.map((photo, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity"
                 >
-                  <Image 
-                    src={photo} 
-                    alt={`Photo ${index + 1}`} 
+                  <Image
+                    src={photo}
+                    alt={`Photo ${index + 1}`}
                     width={300}
                     height={300}
                     className="w-full h-full object-cover"
@@ -225,22 +202,32 @@ export function PlacePhotos({ place, isLoggedIn }: PlacePhotosProps) {
             <div className="text-center py-12 text-muted-foreground">
               <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
               <p>No photos available</p>
+              {isLoggedIn && (
+                <Button
+                  variant="outline"
+                  className="mt-4"
+                  onClick={() => setIsDialogOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add the first photo
+                </Button>
+              )}
             </div>
           )}
         </TabsContent>
-        
+
         {/* Official photos */}
         <TabsContent value="official" className="mt-4">
           {place.gallery && place.gallery.length > 0 ? (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {place.gallery.map((photo, index) => (
-                <div 
-                  key={index} 
+                <div
+                  key={index}
                   className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity"
                 >
-                  <Image 
-                    src={photo} 
-                    alt={`Official photo ${index + 1}`} 
+                  <Image
+                    src={photo}
+                    alt={`Official photo ${index + 1}`}
                     width={300}
                     height={300}
                     className="w-full h-full object-cover"
@@ -255,44 +242,97 @@ export function PlacePhotos({ place, isLoggedIn }: PlacePhotosProps) {
             </div>
           )}
         </TabsContent>
-        
+
         {/* User photos */}
         <TabsContent value="user" className="mt-4">
-          {mockUserPhotos.length > 0 ? (
+          {userUploadedPhotos.length > 0 ? (
             <div className="space-y-8">
-              {mockUserPhotos.map((item) => (
-                <div key={item.id} className="space-y-3">
+              {userUploadedPhotos.map((photo) => (
+                <div key={photo.id} className="space-y-3">
                   <div className="flex items-center gap-2">
                     <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center">
-                      <User className="h-4 w-4" />
+                      {photo.user?.avatar ? (
+                        <Image
+                          src={photo.user.avatar}
+                          alt={photo.user.full_name || 'User'}
+                          width={32}
+                          height={32}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <User className="h-4 w-4" />
+                      )}
                     </div>
                     <div>
-                      <p className="font-medium">{item.user}</p>
+                      <p className="font-medium">
+                        {photo.user?.full_name || 'Anonymous'}
+                      </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(item.date).toLocaleDateString()}
+                        {new Date(photo.created_at).toLocaleDateString()}
                       </p>
                     </div>
-                  </div>
-                  
-                  {item.comment && (
-                    <p className="text-sm text-muted-foreground">{item.comment}</p>
-                  )}
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {item.photos.map((photo, photoIndex) => (
-                      <div 
-                        key={photoIndex} 
-                        className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity"
+                    {/* Show edit button if this is user's own photo */}
+                    {user && photo.user_id === user.id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-auto"
+                        onClick={() => {
+                          // TODO: Implement photo editing
+                          toast.info('Photo editing coming soon!');
+                        }}
                       >
-                        <Image 
-                          src={photo} 
-                          alt={`User photo ${photoIndex + 1}`} 
-                          width={300}
-                          height={300}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ))}
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  {photo.comment && (
+                    <p className="text-sm text-muted-foreground">
+                      {photo.comment}
+                    </p>
+                  )}
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {(photo.photos || []).map(
+                      (photoUrl: string, index: number) => (
+                        <div
+                          key={index}
+                          className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity"
+                        >
+                          <Image
+                            src={photoUrl}
+                            alt={
+                              photo.comment ||
+                              `User uploaded photo ${index + 1}`
+                            }
+                            width={300}
+                            height={300}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                  {/* Likes section */}
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="p-2"
+                      onClick={() => {
+                        if (!user) {
+                          toast.error('Please log in to like photos');
+                          return;
+                        }
+                        // TODO: Implement togglePhotoLike
+                        toast.info('Photo likes coming soon!');
+                      }}
+                    >
+                      <ThumbsUp className="h-4 w-4 mr-1" />
+                      {photo.likes?.length || 0}
+                    </Button>
                   </div>
                 </div>
               ))}
@@ -301,15 +341,29 @@ export function PlacePhotos({ place, isLoggedIn }: PlacePhotosProps) {
             <div className="text-center py-12 text-muted-foreground">
               <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-20" />
               <p>No user photos yet</p>
-              {isLoggedIn && (
-                <Button 
-                  variant="outline" 
+              {isLoggedIn ? (
+                <Button
+                  variant="outline"
                   className="mt-4"
                   onClick={() => setIsDialogOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add the first photo
                 </Button>
+              ) : (
+                <div className="mt-4 space-y-2">
+                  <p className="text-sm">Log in to upload photos</p>
+                  <div className="flex gap-2 justify-center">
+                    <Link href="/auth/login">
+                      <Button variant="outline" size="sm">
+                        Log In
+                      </Button>
+                    </Link>
+                    <Link href="/auth/signup">
+                      <Button size="sm">Sign Up</Button>
+                    </Link>
+                  </div>
+                </div>
               )}
             </div>
           )}

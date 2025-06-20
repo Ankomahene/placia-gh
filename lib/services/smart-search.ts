@@ -367,7 +367,10 @@ export class SmartPlaceSearch {
           const geocoded = await geocodeLocation(locationName);
           searchLocation = { lat: geocoded.lat, lng: geocoded.lng };
         } catch (error) {
-          console.warn('Failed to geocode location for price search:', error);
+          console.warn(
+            'Failed to geocode location for price level search:',
+            error
+          );
         }
       }
 
@@ -405,7 +408,7 @@ export class SmartPlaceSearch {
         return {
           ...generalSearchResults,
           results: generalSearchResults.results.sort(
-            (a, b) => (b?.price_level || 0) - (a?.price_level || 0)
+            (a, b) => (a?.price_level || 1) - (b?.price_level || 1)
           ),
           executionTime: Date.now() - startTime,
           search_type: 'price_level',
@@ -419,6 +422,7 @@ export class SmartPlaceSearch {
         query,
         executionTime,
         search_type: 'price_level',
+        sort_order: order,
         pagination: {
           limit,
           offset,
@@ -434,6 +438,7 @@ export class SmartPlaceSearch {
         query,
         executionTime: Date.now() - startTime,
         search_type: 'price_level',
+        sort_order: order,
         pagination: {
           limit,
           offset,
@@ -493,13 +498,12 @@ export class SmartPlaceSearch {
       }));
 
       return {
-        success: true,
         results,
-        count: count || 0,
+        count: count || results.length,
+        success: true,
         query,
         executionTime,
         search_type: 'general',
-        sort_order: undefined, // General search doesn't have specific sort order
         pagination: {
           limit,
           offset,

@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { PlaceResultsSummary } from '@/types/place';
 import { useRef, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { getPlaceDetailsUrl } from '@/lib/utils/place-utils';
 
 interface MapSidebarProps {
   places: PlaceResultsSummary[];
@@ -156,6 +158,8 @@ export function MapSidebar({
                 ) : (
                   places.map((place, index) => {
                     const mapMarker = mapMarkers.find((m) => m.id === place.id);
+                    const placeDetailsUrl = getPlaceDetailsUrl(place);
+
                     return (
                       <motion.div
                         key={place.id}
@@ -212,7 +216,8 @@ export function MapSidebar({
                                   <h3 className="font-medium text-sm line-clamp-1">
                                     {place.name}
                                   </h3>
-                                  {place.source === 'google' ? (
+                                  {place.source === 'google' ||
+                                  place.source === 'google_places' ? (
                                     <Badge
                                       variant="outline"
                                       className="text-xs bg-blue-50 text-blue-700 border-blue-200 px-1 py-0"
@@ -224,7 +229,7 @@ export function MapSidebar({
                                       variant="outline"
                                       className="text-xs bg-green-50 text-green-700 border-green-200 px-1 py-0"
                                     >
-                                      L
+                                      P
                                     </Badge>
                                   )}
                                 </div>
@@ -272,15 +277,13 @@ export function MapSidebar({
                             </div>
 
                             <div className="flex items-center gap-2 mt-3">
-                              <div
+                              <Link
+                                href={placeDetailsUrl}
                                 className="text-xs cursor-pointer text-primary hover:underline flex-1"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onPlaceClick(place.id);
-                                }}
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 View details
-                              </div>
+                              </Link>
 
                               {onDirectionsRequest && (
                                 <Button
