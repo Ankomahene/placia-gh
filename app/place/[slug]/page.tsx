@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
 import { PlaceDetails } from '@/components/place-details/place-details';
 import { PlaceDetailsSkeleton } from '@/components/place-details/place-details-skeleton';
+import { mockPlaceDetails } from '@/lib/mock-place-details';
 
 interface PlacePageProps {
   params: {
@@ -11,29 +11,9 @@ interface PlacePageProps {
 }
 
 async function getPlaceBySlug(slug: string) {
-  const supabase = await createClient();
-  
-  const { data, error } = await supabase
-    .from('places')
-    .select(`
-      *,
-      category:category_id(id, name, slug, icon),
-      subcategory:subcategory_id(id, name, slug, icon),
-      type:type_id(id, name, slug, icon),
-      ownership:ownership_id(id, type, slug, icon),
-      country:country_id(id, name, emoji),
-      region:region_id(id, name),
-      city:city_id(id, name)
-    `)
-    .eq('slug', slug)
-    .eq('status', 'approved')
-    .single();
-
-  if (error || !data) {
-    return null;
-  }
-
-  return data;
+  // Instead of fetching from Supabase, use mock data
+  const place = mockPlaceDetails.find(p => p.slug === slug);
+  return place || null;
 }
 
 export default async function PlacePage({ params }: PlacePageProps) {
