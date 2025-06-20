@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { PlaceResults } from '@/types/place';
+import { useState, useEffect } from 'react';
+import { PlaceResults, PlaceReview } from '@/types/place';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,60 +13,48 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { mockPlaceReviews } from '@/lib/mock-place-reviews';
 
 interface PlaceReviewsProps {
   place: PlaceResults;
   isLoggedIn: boolean;
 }
 
-// Mock reviews data
-const mockReviews = [
-  {
-    id: '1',
-    user: {
-      name: 'John Doe',
-      avatar: 'https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg',
-    },
-    rating: 4.5,
-    date: '2023-05-15',
-    content: 'Great place! The staff was friendly and the service was excellent. Would definitely recommend to anyone looking for a good experience.',
-    likes: 12,
-    replies: 3,
-  },
-  {
-    id: '2',
-    user: {
-      name: 'Jane Smith',
-      avatar: 'https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg',
-    },
-    rating: 5,
-    date: '2023-06-22',
-    content: 'Absolutely loved it! The atmosphere was amazing and everything was perfect. One of the best experiences I\'ve had in a long time.',
-    likes: 8,
-    replies: 1,
-  },
-  {
-    id: '3',
-    user: {
-      name: 'Mike Johnson',
-      avatar: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg',
-    },
-    rating: 3,
-    date: '2023-07-10',
-    content: 'It was okay. The place is nice but the service could be better. Might give it another try in the future.',
-    likes: 2,
-    replies: 0,
-  },
-];
-
 export function PlaceReviews({ place, isLoggedIn }: PlaceReviewsProps) {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [hoveredStar, setHoveredStar] = useState(0);
+  const [reviews, setReviews] = useState<PlaceReview[]>([]);
+  
+  // Load mock reviews for this place
+  useEffect(() => {
+    if (place.slug && mockPlaceReviews[place.slug]) {
+      setReviews(mockPlaceReviews[place.slug]);
+    } else {
+      setReviews([]);
+    }
+  }, [place.slug]);
   
   const handleSubmitReview = () => {
     // In a real app, this would submit the review to the backend
     console.log('Submitting review:', { rating, reviewText });
+    
+    // Create a mock new review
+    const newReview: PlaceReview = {
+      id: `new-${Date.now()}`,
+      place_id: place.id,
+      user_id: 'current-user',
+      user_name: 'You',
+      rating: rating,
+      content: reviewText,
+      likes: 0,
+      created_at: new Date(),
+      updated_at: new Date()
+    };
+    
+    // Add to the reviews list
+    setReviews([newReview, ...reviews]);
+    
     // Reset form
     setRating(0);
     setReviewText('');
@@ -100,8 +88,10 @@ export function PlaceReviews({ place, isLoggedIn }: PlaceReviewsProps) {
           {/* Rating distribution bars */}
           <div className="space-y-2 w-full">
             {[5, 4, 3, 2, 1].map((num) => {
-              // Mock percentage for each rating
-              const percentage = Math.floor(Math.random() * 100);
+              // Calculate percentage based on mock reviews
+              const count = reviews.filter(r => Math.floor(r.rating) === num).length;
+              const percentage = reviews.length > 0 ? Math.floor((count / reviews.length) * 100) : 0;
+              
               return (
                 <div key={num} className="flex items-center gap-2">
                   <div className="flex items-center w-16">
@@ -186,18 +176,18 @@ export function PlaceReviews({ place, isLoggedIn }: PlaceReviewsProps) {
       <div className="space-y-6">
         <h3 className="font-semibold text-xl">Reviews</h3>
         
-        {mockReviews.length > 0 ? (
+        {reviews.length > 0 ? (
           <div className="space-y-6">
-            {mockReviews.map((review) => (
+            {reviews.map((review) => (
               <div key={review.id} className="border-b pb-6 last:border-0">
                 <div className="flex justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarImage src={review.user.avatar} alt={review.user.name} />
-                      <AvatarFallback>{review.user.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={review.user_avatar} alt={review.user_name} />
+                      <AvatarFallback>{review.user_name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <h4 className="font-medium">{review.user.name}</h4>
+                      <h4 className="font-medium">{review.user_name}</h4>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <div className="flex">
                           {[1, 2, 3, 4, 5].map((star) => (
@@ -213,7 +203,7 @@ export function PlaceReviews({ place, isLoggedIn }: PlaceReviewsProps) {
                           ))}
                         </div>
                         <span>•</span>
-                        <span>{new Date(review.date).toLocaleDateString()}</span>
+                        <span>{review.created_at.toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
@@ -229,7 +219,7 @@ export function PlaceReviews({ place, isLoggedIn }: PlaceReviewsProps) {
                   
                   <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                     <MessageSquare className="h-4 w-4" />
-                    <span>Reply ({review.replies})</span>
+                    <span>Reply</span>
                   </button>
                   
                   <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
