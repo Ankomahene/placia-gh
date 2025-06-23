@@ -209,7 +209,7 @@ export function SearchDrawer() {
         onPlaceHover={setHoveredPlaceId}
         onPlaceSelect={setSelectedPlaceId}
         isLoading={isSearching}
-        initialQuery={searchTerm}
+        initialQuery={chatSearchTerm}
       />
     );
   };

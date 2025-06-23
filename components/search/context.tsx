@@ -375,6 +375,8 @@ export const SearchContextProvider = ({
     const searchState = {
       // General search state
       searchTerm,
+      // Chat search state
+      chatSearchTerm,
       query: currentQuery,
       results: searchResults,
       viewMode,
@@ -394,6 +396,7 @@ export const SearchContextProvider = ({
     }
   }, [
     searchTerm,
+    chatSearchTerm,
     currentQuery,
     searchResults,
     viewMode,
@@ -424,6 +427,8 @@ export const SearchContextProvider = ({
 
       // Restore state
       if (searchState.searchTerm) setSearchTerm(searchState.searchTerm);
+      if (searchState.chatSearchTerm)
+        setChatSearchTerm(searchState.chatSearchTerm);
       if (searchState.query) setCurrentQuery(searchState.query);
       if (searchState.results) setSearchResults(searchState.results);
       if (searchState.viewMode) setViewMode(searchState.viewMode);
@@ -441,6 +446,7 @@ export const SearchContextProvider = ({
     }
   }, [
     setSearchTerm,
+    setChatSearchTerm,
     setCurrentQuery,
     setSearchResults,
     setViewMode,
@@ -471,7 +477,12 @@ export const SearchContextProvider = ({
 
   // Auto-save search state when relevant data changes
   useEffect(() => {
-    if (searchResults.length > 0 && currentQuery) {
+    // Save state if we have search results OR if we're in chat mode with a search term
+    const shouldSave =
+      (searchResults.length > 0 && currentQuery) ||
+      (searchMode === 'chat' && chatSearchTerm);
+
+    if (shouldSave) {
       saveSearchState();
     }
   }, [
@@ -479,6 +490,7 @@ export const SearchContextProvider = ({
     currentQuery,
     viewMode,
     searchMode,
+    chatSearchTerm,
     sortConfig,
     saveSearchState,
   ]);

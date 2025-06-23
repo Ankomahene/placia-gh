@@ -74,14 +74,13 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
 interface ChatProviderProps {
   children: ReactNode;
-  places: PlaceResultsSummary[];
+  places?: PlaceResultsSummary[];
   initialQuery: string;
   shouldAutoRun: boolean;
 }
 
 export function ChatProvider({
   children,
-  places,
   initialQuery,
   shouldAutoRun,
 }: ChatProviderProps) {
@@ -89,15 +88,7 @@ export function ChatProvider({
   const { chatSearchTerm } = useSearchContext();
 
   // Get user location using the custom hook
-  const {
-    latitude,
-    longitude,
-    address,
-    error: locationError,
-    loading: locationLoading,
-    accuracy,
-    source,
-  } = useLocation();
+  const { latitude, longitude } = useLocation();
 
   const [sessionId] = useState(() => {
     // Use sessionStorage to persist across page refreshes but clear when browser closes
