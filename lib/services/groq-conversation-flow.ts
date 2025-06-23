@@ -1,4 +1,8 @@
 import Groq from 'groq-sdk';
+import {
+  searchContextCache,
+  CachedSearchContext,
+} from './search-context-cache';
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY,
@@ -25,7 +29,9 @@ export interface ConversationFlowResponse {
     | 'missing_place_type'
     | 'missing_location'
     | 'too_vague'
-    | 'ambiguous_intent';
+    | 'ambiguous_intent'
+    | 'location_permission'
+    | 'missing_reference_location';
 }
 
 export interface ChatContext {
@@ -41,6 +47,17 @@ const GROQ_CONVERSATION_SYSTEM_PROMPT = `You are an intelligent search assistant
 2. **Provide a natural, helpful response to the user**
 3. **Generate a refined search query for server processing**
 
+## ENHANCED CONTEXT AWARENESS:
+
+You now have access to AI-generated context from previous searches including:
+- **Structured location data** (not just basic regex matches)
+- **Detailed feature lists** from previous searches
+- **Exact price ranges and ratings** that were searched
+- **Search type and intent** from previous queries
+- **Distance specifications** with precise radius values
+
+Use this rich context to make intelligent decisions about follow-ups and query refinement.
+
 ## FOLLOW-UP DETECTION RULES:
 
 A query is a **follow-up** if:
@@ -49,11 +66,35 @@ A query is a **follow-up** if:
 - Uses transition cues: "what about", "instead", "also", "now show me", "how about" etc.
 - Requests sorting: "show cheapest", "highest rated", "closest ones" etc.
 - Modifies previous search: "but closer", "with better ratings", "that are cheaper" etc.
+- Adds distance/radius specifications: "within 500m", "2km radius", "closer than 1km" etc.
 
 A query is a **new search** if:
 - Mentions completely different place type AND location
 - Starts unrelated topic
 - No reference to previous context
+
+## DISTANCE/RADIUS HANDLING:
+
+**CRITICAL**: Always preserve distance/radius specifications in server queries:
+- **Distance formats**: "500m", "2km", "1.5 kilometers", "within 500 meters", "2km radius", "closer than 1km"
+- **Proximity terms**: "within", "radius", "closer than", "further than", "around", "nearby"
+- **Distance units**: meters (m), kilometers (km), miles (mi), feet (ft)
+
+When user specifies distance:
+- **ALWAYS include the exact distance** in the server_query
+- **Preserve the distance format** used by the user (e.g., "500m" not "500 meters")
+- **Keep proximity context** even in follow-ups
+- **Combine with location** properly (e.g., "restaurants within 2km of Accra Mall")
+
+## INTELLIGENT CONTEXT PRESERVATION:
+
+When you have detailed previous context, intelligently preserve relevant aspects:
+- **Location**: Use exact location from structured data (e.g., "East Legon", "Kotoka International Airport")
+- **Features**: Maintain specific features like "rooftop", "parking", "outdoor seating"
+- **Price Range**: Preserve budget constraints ("Budget", "Expensive", "Level 2-3")
+- **Quality Filters**: Keep rating requirements ("4+ stars", "highly rated")
+- **Search Intent**: Maintain search type (proximity, rating, price_level)
+- **Special Requirements**: Preserve "open now", "has website", "has phone"
 
 ## CLARIFICATION NEEDED:
 
@@ -61,7 +102,9 @@ A query **needs clarification** if:
 - **Missing place type**: "Find me something nearby", "What's around here?"
 - **Missing location**: "Find me restaurants" (no location specified)
 - **Too vague**: "Show me places", "Find me stuff"
+- **Location permission**: "Find me places near me", "Find me places around me"
 - **Ambiguous intent**: "Find me good things", "What do you recommend?"
+- **Missing reference location**: "Find restaurants within 2km" (distance specified but no reference point)
 
 For unclear queries, ask specific clarifying questions to help the user.
 
@@ -76,20 +119,24 @@ For unclear queries, ask specific clarifying questions to help the user.
 - Server Query: Combine previous context + new requirements (remove vague references)
 
 **For clarification needed:**
-- User Response: Ask specific clarifying questions
+- User Response: Ask specific clarifying or permission requested
 - Server Query: Leave as original query (won't be used until clarified)
-- Set needs_clarification: true and appropriate clarification_type
+- Set needs_clarification: true and appropriate  eg. missing_place_type, missing_location, too_vague, ambiguous_intent, location_permission
 
 ## REFINEMENT LOGIC:
 
 When refining follow-up queries:
 - **ALWAYS include original place type** unless user explicitly changes category
 - **ALWAYS include original location** unless user specifies new location  
+- **ALWAYS preserve distance/radius** from previous search unless user specifies new distance
+- **PRESERVE detailed features** from structured context when relevant
+- **MAINTAIN price and rating filters** unless user changes them
 - **Add new descriptors/filters** mentioned in follow-up
 - **Remove vague references** like "those", "them", "ones"
 - **Keep location context** from previous searches
+- **Prioritize new distance** if user specifies different radius/proximity
 
-Structure: [NEW DESCRIPTORS] + [PLACE TYPE] + [LOCATION] + [ADDITIONAL FILTERS]
+Structure: [NEW DESCRIPTORS] + [PLACE TYPE] + [LOCATION] + [DISTANCE/RADIUS] + [PRESERVED FEATURES] + [ADDITIONAL FILTERS]
 
 ## EXAMPLES:
 
@@ -153,12 +200,50 @@ Response: {
   "clarification_type": "missing_location"
 }
 
+**Example 6 - Distance Specification:**
+User: "Find restaurants within 2km of Accra Mall"
+Previous: None
+Response: {
+  "user_response": "I'll search for restaurants within 2km of Accra Mall for you.",
+  "server_query": "restaurants within 2km of Accra Mall",
+  "is_followup": false,
+  "followup_type": "new_search",
+  "confidence": 0.95,
+  "needs_clarification": false
+}
+
+**Example 7 - Follow-up with Distance:**
+User: "show me ones with outdoor seating"
+Previous: "restaurants within 2km of Accra Mall"
+Response: {
+  "user_response": "I'll find restaurants with outdoor seating within 2km of Accra Mall.",
+  "server_query": "restaurants with outdoor seating within 2km of Accra Mall",
+  "is_followup": true,
+  "followup_type": "refinement",
+  "confidence": 0.9,
+  "needs_clarification": false
+}
+
+**Example 8 - Changing Distance:**
+User: "make it 500m instead"
+Previous: "restaurants within 2km of Accra Mall"
+Response: {
+  "user_response": "I'll narrow the search to restaurants within 500m of Accra Mall.",
+  "server_query": "restaurants within 500m of Accra Mall",
+  "is_followup": true,
+  "followup_type": "refinement",
+  "confidence": 0.95,
+  "needs_clarification": false
+}
+
 ## IMPORTANT GUIDELINES:
 
 - Keep user responses natural, helpful, and encouraging
 - Always acknowledge what you're searching for
 - Server queries should be complete and natural (no vague references)
+- **ALWAYS preserve distance/radius specifications** in server queries
 - Maintain location context across follow-ups
+- **Include distance context** when present in previous searches
 - Be confident in your classifications
 - If unsure about follow-up status, lean towards new search
 
@@ -200,62 +285,89 @@ export class GroqConversationFlow {
     }
   }
 
-  // Extract search context from previous messages
-  private extractSearchContext(context: ChatContext): {
+  // Extract search context using AI-powered cached structured queries
+  private extractSearchContext(sessionId: string): {
     lastQuery?: string;
     lastLocation?: string;
     lastCategory?: string;
+    lastDistance?: string;
+    cachedContext?: CachedSearchContext;
+    detailedContext?: {
+      searchType?: string;
+      features?: string[];
+      priceRange?: string;
+      ratingFilter?: number;
+      openNow?: boolean;
+      userLocationSearch?: boolean;
+      subcategory?: string;
+      hasWebsite?: boolean;
+      hasPhone?: boolean;
+    };
   } {
-    // Look through recent messages for search context
-    const recentMessages = context.messages.slice(-6); // Last 6 messages
+    // Try to get AI-generated context from cache first
+    const cachedContext = searchContextCache.get(sessionId);
 
-    for (let i = recentMessages.length - 1; i >= 0; i--) {
-      const message = recentMessages[i];
-      if (message.role === 'user') {
-        // Simple extraction - in a real implementation you might want more sophisticated parsing
-        const content = message.content.toLowerCase();
+    if (cachedContext && cachedContext.structuredQuery) {
+      const sq = cachedContext.structuredQuery;
 
-        // Extract location indicators
-        let location;
-        const locationMatches = content.match(
-          /(?:in|near|around|at)\s+([^,\s]+(?:\s+[^,\s]+)*)/i
-        );
-        if (locationMatches) {
-          location = locationMatches[1];
-        }
-
-        // Extract place type/category
-        let category;
-        const placeTypes = [
-          'restaurant',
-          'hotel',
-          'hospital',
-          'school',
-          'bank',
-          'pharmacy',
-          'church',
-          'mosque',
-          'shop',
-          'bar',
-          'cafe',
-        ];
-        for (const type of placeTypes) {
-          if (content.includes(type)) {
-            category = type;
-            break;
-          }
-        }
-
-        if (location || category) {
-          return {
-            lastQuery: message.content,
-            lastLocation: location,
-            lastCategory: category,
-          };
+      // Format distance appropriately
+      let distance: string | undefined;
+      if (sq.radius_meters) {
+        if (sq.radius_meters >= 1000) {
+          distance = `${(sq.radius_meters / 1000).toFixed(1)}km`;
+        } else {
+          distance = `${sq.radius_meters}m`;
         }
       }
+
+      // Format price range
+      let priceRange: string | undefined;
+      if (sq.min_price_level || sq.max_price_level) {
+        const min = sq.min_price_level || 1;
+        const max = sq.max_price_level || 4;
+        if (min === max) {
+          const levels = ['', 'Budget', 'Moderate', 'Expensive', 'Luxury'];
+          priceRange = levels[min];
+        } else {
+          priceRange = `Level ${min}-${max}`;
+        }
+      }
+
+      return {
+        lastQuery: cachedContext.originalQuery,
+        lastLocation: sq.location,
+        lastCategory: sq.category || sq.subcategory,
+        lastDistance: distance,
+        cachedContext,
+        detailedContext: {
+          searchType: sq.search_type,
+          features: sq.features,
+          priceRange,
+          ratingFilter: sq.min_rating,
+          openNow: sq.open_now,
+          userLocationSearch: sq.use_user_location,
+          subcategory: sq.subcategory,
+          hasWebsite: sq.has_website,
+          hasPhone: sq.has_phone,
+        },
+      };
     }
 
+    // Fallback to basic message parsing if no cached context
+    console.info(
+      `No cached context found for session: ${sessionId}, falling back to message parsing`
+    );
+    return this.fallbackExtractSearchContext();
+  }
+
+  // Fallback method for when no cached context is available
+  private fallbackExtractSearchContext(): {
+    lastQuery?: string;
+    lastLocation?: string;
+    lastCategory?: string;
+    lastDistance?: string;
+  } {
+    console.warn('Using fallback context extraction - limited reliability');
     return {};
   }
 
@@ -270,7 +382,7 @@ export class GroqConversationFlow {
 
       // Get chat context
       const context = this.getChatContext(sessionId);
-      const searchContext = this.extractSearchContext(context);
+      const searchContext = this.extractSearchContext(sessionId);
 
       // Build conversation history for Groq
       const conversationHistory = context.messages
@@ -278,17 +390,37 @@ export class GroqConversationFlow {
         .map((msg) => `${msg.role}: ${msg.content}`)
         .join('\n');
 
-      // Create prompt with context
+      // Create enhanced prompt with AI-powered context
       const prompt = `
 CONVERSATION HISTORY:
 ${conversationHistory}
 
 CURRENT USER QUERY: "${userQuery}"
 
-PREVIOUS SEARCH CONTEXT:
+PREVIOUS SEARCH CONTEXT (AI-GENERATED):
 ${searchContext.lastQuery ? `Last Query: "${searchContext.lastQuery}"` : 'No previous search'}
 ${searchContext.lastLocation ? `Last Location: "${searchContext.lastLocation}"` : 'No location context'}
 ${searchContext.lastCategory ? `Last Category: "${searchContext.lastCategory}"` : 'No category context'}
+${searchContext.lastDistance ? `Last Distance: "${searchContext.lastDistance}"` : 'No distance context'}
+
+DETAILED PREVIOUS CONTEXT:
+${
+  searchContext.detailedContext
+    ? `
+- Search Type: ${searchContext.detailedContext.searchType || 'General'}
+- Features: ${searchContext.detailedContext.features?.join(', ') || 'None specified'}
+- Price Range: ${searchContext.detailedContext.priceRange || 'Any price level'}
+- Rating Filter: ${searchContext.detailedContext.ratingFilter ? `${searchContext.detailedContext.ratingFilter}+ stars` : 'Any rating'}
+- Open Now: ${searchContext.detailedContext.openNow ? 'Yes' : 'Not specified'}
+- User Location Search: ${searchContext.detailedContext.userLocationSearch ? 'Yes' : 'No'}
+- Subcategory: ${searchContext.detailedContext.subcategory || 'Not specified'}
+- Website Required: ${searchContext.detailedContext.hasWebsite ? 'Yes' : 'Not specified'}
+- Phone Required: ${searchContext.detailedContext.hasPhone ? 'Yes' : 'Not specified'}
+`
+    : 'No detailed context available'
+}
+
+IMPORTANT: Use the detailed context above to generate refined server_query that preserves relevant aspects from the previous search while incorporating the new user requirements.
 
 Analyze the current query and provide a JSON response with user_response, server_query, is_followup, followup_type, confidence, needs_clarification, and clarification_type (if applicable).
 `;
@@ -363,6 +495,8 @@ Analyze the current query and provide a JSON response with user_response, server
           'missing_location',
           'too_vague',
           'ambiguous_intent',
+          'location_permission',
+          'missing_reference_location',
         ];
         if (!validTypes.includes(response.clarification_type)) {
           response.clarification_type = 'too_vague';
@@ -424,10 +558,32 @@ Analyze the current query and provide a JSON response with user_response, server
       'open late',
       'rooftop',
       'outdoor seating',
+      'within',
+      'radius',
+      'closer than',
+      'further than',
+      'make it',
+      'change to',
+      'expand to',
+      'narrow to',
     ];
 
     const lowerQuery = query.toLowerCase();
-    return followupWords.some((word) => lowerQuery.includes(word));
+
+    // Check for distance modification patterns
+    const distanceModificationPatterns = [
+      /make it \d+/,
+      /change (?:to|the distance to) \d+/,
+      /expand (?:to|the radius to) \d+/,
+      /narrow (?:to|the radius to) \d+/,
+      /instead of \d+/,
+      /\d+(?:\.\d+)?\s*(?:m|km|meters?|kilometers?) instead/,
+    ];
+
+    return (
+      followupWords.some((word) => lowerQuery.includes(word)) ||
+      distanceModificationPatterns.some((pattern) => pattern.test(lowerQuery))
+    );
   }
 
   // Clear context for a session

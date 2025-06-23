@@ -11,18 +11,19 @@
  * - Clarification handling for ambiguous queries
  */
 
+import { PlaceResultsSummary } from '@/types/place';
 import React, {
   createContext,
-  useContext,
-  useState,
-  useRef,
-  useEffect,
   ReactNode,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
 } from 'react';
-import { PlaceResultsSummary } from '@/types/place';
-import { mockChatMessages, ChatMessage } from '../../mock-data';
-// Remove direct import - we'll use API route instead
-// import { processConversationSearch } from '@/lib/services/groq-conversation-integration';
+import { useSearchContext } from '../../hooks/use-search-context';
+import { useLocation } from '@/hooks/use-location';
+import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { ChatMessage } from '../../mock-data';
 
 interface ChatContextType {
   // Chat state
@@ -30,21 +31,33 @@ interface ChatContextType {
   inputValue: string;
   isTyping: boolean;
   showFilters: boolean;
-  isRecording: boolean;
-  isListening: boolean;
   sessionId: string;
   userLocation?: { lat: number; lng: number };
+
+  // Speech recognition state
+  speechRecognition: {
+    isSupported: boolean;
+    isListening: boolean;
+    transcript: string;
+    interimTranscript: string;
+    confidence: number;
+    error: string | null;
+  };
 
   // Actions
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
   setInputValue: React.Dispatch<React.SetStateAction<string>>;
   setIsTyping: React.Dispatch<React.SetStateAction<boolean>>;
   setShowFilters: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsRecording: React.Dispatch<React.SetStateAction<boolean>>;
-  setIsListening: React.Dispatch<React.SetStateAction<boolean>>;
   setUserLocation: React.Dispatch<
     React.SetStateAction<{ lat: number; lng: number } | undefined>
   >;
+
+  // Speech recognition actions
+  startVoiceRecording: () => void;
+  stopVoiceRecording: () => void;
+  cancelVoiceRecording: () => void;
+  resetVoiceTranscript: () => void;
 
   // Methods
   handleSendMessage: () => Promise<void>;
@@ -62,14 +75,30 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined);
 interface ChatProviderProps {
   children: ReactNode;
   places: PlaceResultsSummary[];
-  initialQuery?: string;
+  initialQuery: string;
+  shouldAutoRun: boolean;
 }
 
 export function ChatProvider({
   children,
   places,
   initialQuery,
+  shouldAutoRun,
 }: ChatProviderProps) {
+  // Get chat search term from search context
+  const { chatSearchTerm } = useSearchContext();
+
+  // Get user location using the custom hook
+  const {
+    latitude,
+    longitude,
+    address,
+    error: locationError,
+    loading: locationLoading,
+    accuracy,
+    source,
+  } = useLocation();
+
   const [sessionId] = useState(() => {
     // Use sessionStorage to persist across page refreshes but clear when browser closes
     if (typeof window !== 'undefined') {
@@ -123,34 +152,29 @@ export function ChatProvider({
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [userLocation, setUserLocation] = useState<
     { lat: number; lng: number } | undefined
   >();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Get user location if available
+  // Flag to track if recording was manually cancelled
+  const wasCancelledRef = useRef(false);
+
+  // Initialize speech recognition hook
+  const speechRecognition = useSpeechRecognition({
+    language: 'en-US',
+    continuous: true,
+    interimResults: true,
+    confidenceThreshold: 0.5,
+    silenceTimeout: 5000,
+  });
+
+  // Update userLocation when coordinates are available from the hook
   useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      navigator.geolocation &&
-      !userLocation
-    ) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.log('Location access denied or unavailable:', error);
-        },
-        { timeout: 10000 }
-      );
+    if (latitude != null && longitude != null) {
+      setUserLocation({ lat: latitude, lng: longitude });
     }
-  }, [userLocation]);
+  }, [latitude, longitude]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -176,13 +200,18 @@ export function ChatProvider({
 
     const sessionKey = `chat_initial_query_${sessionId}`;
 
-    // Check if we have an initial query to process
-    // Only process if we have an initial query, no messages, and it hasn't been processed yet
-    if (initialQuery && messages.length === 0) {
+    // Process if we have shouldAutoRun flag and an initial query
+    if (shouldAutoRun && initialQuery) {
       const alreadyProcessed = sessionStorage.getItem(sessionKey);
 
-      // Check if this exact query was already processed OR if messages were just cleared
+      // Check if this exact query was already processed
       if (!alreadyProcessed || alreadyProcessed !== initialQuery) {
+        // If this is a new query different from what's cached, clear old messages first
+        if (alreadyProcessed && alreadyProcessed !== initialQuery) {
+          setMessages([]);
+          localStorage.removeItem(`chat_messages_${sessionId}`);
+        }
+
         // Additional check: don't process if localStorage was just cleared (indicating user cleared chat)
         const wasJustCleared = sessionStorage.getItem(
           `chat_cleared_${sessionId}`
@@ -256,6 +285,7 @@ export function ChatProvider({
               body: JSON.stringify({
                 query: conversationResult.server_query,
                 userLocation,
+                sessionId,
                 useInitialQuery: true,
               }),
             });
@@ -313,7 +343,7 @@ export function ChatProvider({
         processInitialQuery();
       }
     }
-  }, [initialQuery, messages.length, sessionId, userLocation]);
+  }, [shouldAutoRun, initialQuery, sessionId, userLocation]);
 
   const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
@@ -357,8 +387,6 @@ export function ChatProvider({
 
       const conversationResult = conversationData.data;
 
-      console.log('conversationResult', conversationResult);
-
       // Step 2: Create assistant message with Groq response
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -384,6 +412,7 @@ export function ChatProvider({
         body: JSON.stringify({
           query: conversationResult.server_query,
           userLocation,
+          sessionId,
           useInitialQuery: true,
         }),
       });
@@ -445,23 +474,87 @@ export function ChatProvider({
     }
   };
 
-  const handleVoiceRecording = () => {
-    if (isRecording) {
-      // Stop recording
-      setIsRecording(false);
-      setIsListening(false);
-      // Here you would stop the actual recording and process the audio
-      // For now, we'll just simulate adding text
-      setTimeout(() => {
-        setInputValue('Find me luxury hotels in Accra');
-      }, 500);
-    } else {
-      // Start recording
-      setIsRecording(true);
-      setIsListening(true);
-      // Here you would start the actual audio recording
+  // Speech recognition methods
+  const startVoiceRecording = () => {
+    wasCancelledRef.current = false; // Reset cancellation flag
+    speechRecognition.resetTranscript();
+    speechRecognition.startListening();
+  };
+
+  const stopVoiceRecording = () => {
+    wasCancelledRef.current = false; // Not a cancellation, normal stop
+    speechRecognition.stopListening();
+    // Add the final transcript to input if available
+    if (speechRecognition.transcript.trim()) {
+      setInputValue(speechRecognition.transcript.trim());
     }
   };
+
+  const cancelVoiceRecording = () => {
+    wasCancelledRef.current = true; // Mark as cancelled
+    speechRecognition.resetTranscript(); // Clear transcript first
+    speechRecognition.stopListening(); // Then stop listening
+    setInputValue(''); // Clear any existing input
+  };
+
+  const resetVoiceTranscript = () => {
+    speechRecognition.resetTranscript();
+  };
+
+  const handleVoiceRecording = () => {
+    if (speechRecognition.isListening) {
+      stopVoiceRecording();
+    } else {
+      startVoiceRecording();
+    }
+  };
+
+  // Auto-update input with speech recognition results
+  useEffect(() => {
+    if (
+      speechRecognition.transcript &&
+      !speechRecognition.isListening &&
+      !wasCancelledRef.current
+    ) {
+      setInputValue(speechRecognition.transcript.trim());
+    }
+  }, [speechRecognition.transcript, speechRecognition.isListening]);
+
+  // Auto-search when speech recognition stops with content (due to timeout)
+  useEffect(() => {
+    const transcript = speechRecognition.transcript.trim();
+
+    // Only auto-search if:
+    // 1. Not currently listening (stopped)
+    // 2. Have transcript content
+    // 3. Not currently typing/searching
+    // 4. Input field matches the transcript (meaning it was just populated)
+    // 5. Was NOT manually cancelled
+    if (
+      !speechRecognition.isListening &&
+      transcript &&
+      !isTyping &&
+      inputValue.trim() === transcript &&
+      !wasCancelledRef.current
+    ) {
+      // Small delay to ensure the UI has updated and user can see the transcript
+      const timeoutId = setTimeout(() => {
+        console.log(
+          '🔍 Auto-searching after voice recording completed:',
+          transcript
+        );
+        handleSendMessage();
+      }, 800); // Slightly longer delay for better UX
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    speechRecognition.isListening,
+    speechRecognition.transcript,
+    isTyping,
+    inputValue,
+    handleSendMessage,
+  ]);
 
   const handleLoadMore = async (messageId: string) => {
     const message = messages.find((msg) => msg.id === messageId);
@@ -519,19 +612,31 @@ export function ChatProvider({
     inputValue,
     isTyping,
     showFilters,
-    isRecording,
-    isListening,
     sessionId,
     userLocation,
+
+    // Speech recognition state
+    speechRecognition: {
+      isSupported: speechRecognition.isSupported,
+      isListening: speechRecognition.isListening,
+      transcript: speechRecognition.transcript,
+      interimTranscript: speechRecognition.interimTranscript,
+      confidence: speechRecognition.confidence,
+      error: speechRecognition.error,
+    },
 
     // Setters
     setMessages,
     setInputValue,
     setIsTyping,
     setShowFilters,
-    setIsRecording,
-    setIsListening,
     setUserLocation,
+
+    // Speech recognition actions
+    startVoiceRecording,
+    stopVoiceRecording,
+    cancelVoiceRecording,
+    resetVoiceTranscript,
 
     // Methods
     handleSendMessage,

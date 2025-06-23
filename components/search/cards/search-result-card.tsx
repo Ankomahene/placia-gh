@@ -2,7 +2,7 @@ import { PlaceResultsSummary } from '@/types/place';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, MapPin, Clock, Navigation, Heart } from 'lucide-react';
+import { Star, MapPin, Clock, Navigation, Heart, Eye } from 'lucide-react';
 import { convertMetersToKm } from '@/lib/utils';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,8 @@ import {
   getOpenStatusBadgeColor,
   getPlaceDetailsUrl,
 } from '@/lib/utils/place-utils';
+import { SafeImage } from '@/components/ui/safe-image';
+import { useSearchContext } from '../hooks/use-search-context';
 
 interface SearchResultCardProps {
   place: PlaceResultsSummary;
@@ -29,6 +31,7 @@ export function SearchResultCard({
   variant = 'card',
   onClick,
 }: SearchResultCardProps) {
+  const { setNavigationSource, searchMode } = useSearchContext();
   const ratingInfo = getRatingLabel(place.rate_average);
   const priceInfo = getPriceLevelLabel(place.price_level);
   const getDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.location.lng},${place.location.lat}`;
@@ -42,6 +45,12 @@ export function SearchResultCard({
     if (onClick) {
       onClick();
     }
+  };
+
+  const handleViewDetails = () => {
+    // Track navigation source based on current search mode
+    const source = searchMode === 'chat' ? 'chat_search' : 'general_search';
+    setNavigationSource(source);
   };
 
   const ImageSection = () => (
@@ -190,7 +199,16 @@ export function SearchResultCard({
             Directions
           </Button>
         </a>
-        <Link href={placeDetailsUrl} onClick={(e) => e.stopPropagation()}>
+        <Link
+          href={placeDetailsUrl}
+          onClick={(e) => {
+            e.stopPropagation();
+            // Track navigation source based on current search mode
+            const source =
+              searchMode === 'chat' ? 'chat_search' : 'general_search';
+            setNavigationSource(source);
+          }}
+        >
           <Button variant="outline" size="sm">
             View Details
           </Button>

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Bot, Mic, Search, Sparkles, Zap } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { MapPreview } from './map-preview';
 import { useSearchContext } from './search/hooks/use-search-context';
 
@@ -28,13 +28,47 @@ const floatingElements = [
 export default function HeroSection() {
   const {
     searchTerm,
+    chatSearchTerm,
     previousSearchTerm,
     setSearchTerm,
+    setChatSearchTerm,
     onSearch,
+    onChatSearch,
     userLocation,
     performSearch,
     setSearchMode,
+    restoreSearchState,
+    getNavigationSource,
+    setIsOpenSearchWindow,
+    setNavigationSource,
   } = useSearchContext();
+
+  // Check for cached search state on mount and restore if needed
+  useEffect(() => {
+    const navigationSource = getNavigationSource();
+    const shouldRestore = sessionStorage.getItem('placia_restore_search');
+
+    if (
+      navigationSource === 'general_search' ||
+      navigationSource === 'chat_search' ||
+      shouldRestore
+    ) {
+      // User returned from place details, restore search state
+      const restored = restoreSearchState();
+      if (restored) {
+        setSearchMode(navigationSource === 'chat_search' ? 'chat' : 'general');
+        setIsOpenSearchWindow(true);
+        // Clear the navigation source and restore flag after using them
+        sessionStorage.removeItem('placia_navigation_source');
+        sessionStorage.removeItem('placia_restore_search');
+      }
+    }
+  }, [
+    getNavigationSource,
+    restoreSearchState,
+    setSearchMode,
+    setIsOpenSearchWindow,
+  ]);
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -50,12 +84,14 @@ export default function HeroSection() {
   const handleChatSearch = async () => {
     if (searchTerm.trim()) {
       setSearchMode('chat');
-      onSearch(searchTerm);
+      setChatSearchTerm(searchTerm);
+      onChatSearch(searchTerm);
     }
   };
 
   const handleExampleClick = async (query: string) => {
     setSearchTerm(query);
+    setNavigationSource('home');
   };
 
   return (
@@ -160,19 +196,19 @@ export default function HeroSection() {
                   className="rounded-lg px-8 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
                   disabled={!searchTerm.trim()}
                 >
-                  <Search className="h-5 w-5 mr-2" />
+                  <Search className="h-5 w-5 mr-1" />
                   Search
-                  <Zap className="h-4 w-4 ml-2" />
+                  {/* <Zap className="h-4 w-4 ml-2" /> */}
                 </Button>
                 <Button
                   type="button"
                   onClick={handleChatSearch}
                   size="lg"
                   variant="outline"
-                  className="rounded-lg px-6 py-6 border-primary/20 hover:bg-primary/5 hover:border-primary/30"
+                  className="rounded-lg px-6 py-6 bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/40"
                   disabled={!searchTerm.trim()}
                 >
-                  <Bot className="h-5 w-5 mr-2" />
+                  <Bot className="h-5 w-5 mr-1" />
                   Chat
                 </Button>
               </form>

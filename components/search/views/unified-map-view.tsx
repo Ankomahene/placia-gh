@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback, useEffect } from 'react';
+import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { Loader2, Globe, Map as MapIcon } from 'lucide-react';
@@ -77,7 +77,7 @@ interface UnifiedMapViewProps {
 }
 
 export function UnifiedMapView({
-  places,
+  places: rawPlaces,
   hoveredPlaceId,
   selectedPlaceId,
   onPlaceHover,
@@ -97,6 +97,20 @@ export function UnifiedMapView({
 
   // Get user location using the hook
   const { latitude, longitude } = useLocation();
+
+  // Client-side deduplication as safety net
+  const places = useMemo(() => {
+    const seenIds = new Set<string>();
+    const deduplicatedPlaces = rawPlaces.filter((place) => {
+      if (seenIds.has(place.id)) {
+        return false;
+      }
+      seenIds.add(place.id);
+      return true;
+    });
+
+    return deduplicatedPlaces;
+  }, [rawPlaces]);
 
   const handleMapPinHover = useCallback(
     (placeId: string | null) => {

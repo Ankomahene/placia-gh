@@ -1,5 +1,11 @@
 import { useLocation } from '@/hooks/use-location';
-import { createContext, useState, useCallback, useMemo } from 'react';
+import {
+  createContext,
+  useState,
+  useCallback,
+  useMemo,
+  useEffect,
+} from 'react';
 import { ViewMode, SearchMode, SortConfig, SortingCapabilities } from './types';
 import { PlaceResultsSummary } from '@/types/place';
 import {
@@ -35,49 +41,67 @@ interface SmartSearchResult {
 }
 
 interface ISearchContext {
-  // Input state
+  // Input state - separated for general and chat
   searchTerm: string;
+  chatSearchTerm: string;
   previousSearchTerm: string;
   setSearchTerm: (query: string) => void;
+  setChatSearchTerm: (query: string) => void;
   setPreviousSearchTerm: (query: string) => void;
   onSearch: (query: string) => void;
+  onChatSearch: (query: string) => void;
   isOpenSearchWindow: boolean;
   setIsOpenSearchWindow: (isOpen: boolean) => void;
   userLocation: { lat: number; lng: number };
+  shouldAutoRunChat: boolean;
+  setShouldAutoRunChat: (should: boolean) => void;
 
-  // View state
-  viewMode: ViewMode;
-  setViewMode: (viewMode: ViewMode) => void;
-  searchMode: SearchMode;
-  setSearchMode: (searchMode: SearchMode) => void;
-  hoveredPlaceId: string | null;
-  setHoveredPlaceId: (placeId: string | null) => void;
-  selectedPlaceId: string | null;
-  setSelectedPlaceId: (placeId: string | null) => void;
-
-  // Search state
-  currentQuery: string;
+  // Search functionality
+  query: string;
   isSearching: boolean;
-  searchResults: PlaceResultsSummary[];
+  results: PlaceResultsSummary[];
+  viewMode: ViewMode;
+  searchMode: SearchMode;
+  hoveredPlaceId: string | null;
+  selectedPlaceId: string | null;
   hasMore: boolean;
+  sortConfig: SortConfig;
+  sortingCapabilities: SortingCapabilities;
+  performSearch: (
+    query: string,
+    location: { lat: number; lng: number }
+  ) => Promise<void>;
+  search: (
+    query: string,
+    location: { lat: number; lng: number }
+  ) => Promise<void>;
+  loadMore: (location: { lat: number; lng: number }) => Promise<void>;
+  setViewMode: (mode: ViewMode) => void;
+  setSearchMode: (mode: SearchMode) => void;
+  setHoveredPlaceId: (id: string | null) => void;
+  setSelectedPlaceId: (id: string) => void;
+  setSortConfig: (config: SortConfig) => void;
+
+  // Cache management
+  saveSearchState: () => void;
+  restoreSearchState: () => boolean;
+  clearSearchCache: () => void;
+  setNavigationSource: (
+    source: 'home' | 'general_search' | 'chat_search'
+  ) => void;
+  getNavigationSource: () => string | null;
 
   // Complete search result objects
   googleSearchResult: GoogleSearchResult | null;
   smartSearchResult: SmartSearchResult | null;
 
-  // Sorting state
-  sortConfig: SortConfig;
-  setSortConfig: (config: SortConfig) => void;
-  sortingCapabilities: SortingCapabilities;
-  sortedResults: PlaceResultsSummary[];
-
-  // Search actions
-  performSearch: (
-    query: string,
-    userLocation?: { lat: number; lng: number }
-  ) => Promise<void>;
-  loadMore: (userLocation?: { lat: number; lng: number }) => Promise<void>;
-  clearResults: () => void;
+  // Search state
+  currentQuery: string;
+  searchResults: PlaceResultsSummary[];
+  pagination: {
+    nextGooglePageToken: string | undefined | null;
+    nextSmartSearchOffset: number | undefined | null;
+  };
 }
 
 export const SearchContext = createContext<ISearchContext | null>(null);
@@ -88,8 +112,10 @@ export const SearchContextProvider = ({
   children: React.ReactNode;
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [chatSearchTerm, setChatSearchTerm] = useState('');
   const [previousSearchTerm, setPreviousSearchTerm] = useState('');
   const [isOpenSearchWindow, setIsOpenSearchWindow] = useState(false);
+  const [shouldAutoRunChat, setShouldAutoRunChat] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [searchMode, setSearchMode] = useState<SearchMode>('general');
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
@@ -177,6 +203,18 @@ export const SearchContextProvider = ({
         setIsOpenSearchWindow(true);
       }
       setPreviousSearchTerm(query);
+    },
+    [isOpenSearchWindow]
+  );
+
+  const onChatSearch = useCallback(
+    (query: string) => {
+      if (!isOpenSearchWindow) {
+        setIsOpenSearchWindow(true);
+      }
+      setChatSearchTerm(query);
+      setPreviousSearchTerm(query);
+      setShouldAutoRunChat(true);
     },
     [isOpenSearchWindow]
   );
@@ -326,51 +364,221 @@ export const SearchContextProvider = ({
     });
   }, []);
 
+  // Session storage keys
+  const SEARCH_CACHE_KEY = 'placia_search_state';
+  const NAVIGATION_SOURCE_KEY = 'placia_navigation_source';
+
+  // Save search state to session storage
+  const saveSearchState = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const searchState = {
+      // General search state
+      searchTerm,
+      query: currentQuery,
+      results: searchResults,
+      viewMode,
+      searchMode,
+      sortConfig,
+      hasMore,
+      // Cache timestamp for expiration
+      timestamp: Date.now(),
+      // User location
+      userLocation,
+    };
+
+    try {
+      sessionStorage.setItem(SEARCH_CACHE_KEY, JSON.stringify(searchState));
+    } catch (error) {
+      console.warn('Failed to save search state to session storage:', error);
+    }
+  }, [
+    searchTerm,
+    currentQuery,
+    searchResults,
+    viewMode,
+    searchMode,
+    sortConfig,
+    hasMore,
+    userLocation,
+  ]);
+
+  // Restore search state from session storage
+  const restoreSearchState = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+
+    try {
+      const cached = sessionStorage.getItem(SEARCH_CACHE_KEY);
+      if (!cached) return false;
+
+      const searchState = JSON.parse(cached);
+
+      // Check if cache is not too old (24 hours)
+      const cacheAge = Date.now() - (searchState.timestamp || 0);
+      const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+      if (cacheAge > maxAge) {
+        sessionStorage.removeItem(SEARCH_CACHE_KEY);
+        return false;
+      }
+
+      // Restore state
+      if (searchState.searchTerm) setSearchTerm(searchState.searchTerm);
+      if (searchState.query) setCurrentQuery(searchState.query);
+      if (searchState.results) setSearchResults(searchState.results);
+      if (searchState.viewMode) setViewMode(searchState.viewMode);
+      if (searchState.searchMode) setSearchMode(searchState.searchMode);
+      if (searchState.sortConfig) setSortConfig(searchState.sortConfig);
+      if (searchState.hasMore !== undefined) setHasMore(searchState.hasMore);
+
+      return true;
+    } catch (error) {
+      console.warn(
+        'Failed to restore search state from session storage:',
+        error
+      );
+      return false;
+    }
+  }, [
+    setSearchTerm,
+    setCurrentQuery,
+    setSearchResults,
+    setViewMode,
+    setSearchMode,
+    setSortConfig,
+    setHasMore,
+  ]);
+
+  // Clear search cache
+  const clearSearchCache = useCallback(() => {
+    if (typeof window === 'undefined') return;
+    sessionStorage.removeItem(SEARCH_CACHE_KEY);
+  }, []);
+
+  // Navigation source tracking
+  const setNavigationSource = useCallback(
+    (source: 'home' | 'general_search' | 'chat_search') => {
+      if (typeof window === 'undefined') return;
+      sessionStorage.setItem(NAVIGATION_SOURCE_KEY, source);
+    },
+    []
+  );
+
+  const getNavigationSource = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+    return sessionStorage.getItem(NAVIGATION_SOURCE_KEY);
+  }, []);
+
+  // Auto-save search state when relevant data changes
+  useEffect(() => {
+    if (searchResults.length > 0 && currentQuery) {
+      saveSearchState();
+    }
+  }, [
+    searchResults,
+    currentQuery,
+    viewMode,
+    searchMode,
+    sortConfig,
+    saveSearchState,
+  ]);
+
+  const contextValue = useMemo(() => {
+    return {
+      // Input state - separated for general and chat
+      searchTerm,
+      chatSearchTerm,
+      previousSearchTerm,
+      isOpenSearchWindow,
+      userLocation,
+      setSearchTerm,
+      setChatSearchTerm,
+      setPreviousSearchTerm,
+      onSearch,
+      onChatSearch,
+      setIsOpenSearchWindow,
+      shouldAutoRunChat,
+      setShouldAutoRunChat,
+
+      // Search functionality
+      query: currentQuery,
+      isSearching,
+      results: searchResults,
+      viewMode,
+      searchMode,
+      hoveredPlaceId,
+      selectedPlaceId,
+      hasMore,
+      sortConfig,
+      sortingCapabilities,
+      performSearch,
+      search: performSearch,
+      loadMore,
+      setViewMode,
+      setSearchMode,
+      setHoveredPlaceId,
+      setSelectedPlaceId,
+      setSortConfig,
+
+      // Cache management
+      saveSearchState,
+      restoreSearchState,
+      clearSearchCache,
+      setNavigationSource,
+      getNavigationSource,
+
+      // Complete search result objects
+      googleSearchResult,
+      smartSearchResult,
+
+      // Search state
+      currentQuery,
+      searchResults,
+      pagination,
+    };
+  }, [
+    searchTerm,
+    chatSearchTerm,
+    previousSearchTerm,
+    isOpenSearchWindow,
+    userLocation,
+    setSearchTerm,
+    setChatSearchTerm,
+    setPreviousSearchTerm,
+    onSearch,
+    onChatSearch,
+    setIsOpenSearchWindow,
+    shouldAutoRunChat,
+    setShouldAutoRunChat,
+    currentQuery,
+    isSearching,
+    searchResults,
+    viewMode,
+    searchMode,
+    hoveredPlaceId,
+    selectedPlaceId,
+    hasMore,
+    sortConfig,
+    sortingCapabilities,
+    performSearch,
+    loadMore,
+    setViewMode,
+    setSearchMode,
+    setHoveredPlaceId,
+    setSelectedPlaceId,
+    setSortConfig,
+    saveSearchState,
+    restoreSearchState,
+    clearSearchCache,
+    setNavigationSource,
+    getNavigationSource,
+    googleSearchResult,
+    smartSearchResult,
+    pagination,
+  ]);
+
   return (
-    <SearchContext.Provider
-      value={{
-        // Input state
-        searchTerm,
-        previousSearchTerm,
-        isOpenSearchWindow,
-        userLocation,
-        setSearchTerm,
-        setPreviousSearchTerm,
-        onSearch,
-        setIsOpenSearchWindow,
-
-        // View state
-        viewMode,
-        searchMode,
-        hoveredPlaceId,
-        selectedPlaceId,
-        setViewMode,
-        setSearchMode,
-        setHoveredPlaceId,
-        setSelectedPlaceId,
-
-        // Search state
-        currentQuery,
-        isSearching,
-        searchResults,
-        hasMore,
-
-        // Complete search result objects
-        googleSearchResult,
-        smartSearchResult,
-
-        // Sorting state
-        sortConfig,
-        setSortConfig,
-        sortingCapabilities,
-        sortedResults,
-
-        // Search actions
-        performSearch,
-        loadMore,
-        clearResults,
-      }}
-    >
+    <SearchContext.Provider value={contextValue}>
       {children}
     </SearchContext.Provider>
   );

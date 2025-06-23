@@ -8,23 +8,46 @@ export async function POST(request: NextRequest) {
   try {
     const { query, sessionId } = await request.json();
 
-    if (!query || !sessionId) {
+    if (!query) {
       return NextResponse.json(
-        { error: 'Query and sessionId are required' },
+        { success: false, error: 'Query is required' },
         { status: 400 }
       );
     }
 
-    const response = await processQueryWithGroq(sessionId, query);
+    if (!sessionId) {
+      return NextResponse.json(
+        { success: false, error: 'Session ID is required' },
+        { status: 400 }
+      );
+    }
+
+    console.log(
+      `Processing Groq conversation flow for session: ${sessionId}, query: "${query}"`
+    );
+
+    const result = await processQueryWithGroq(sessionId, query);
+
+    console.log(`Groq conversation result:`, {
+      is_followup: result.is_followup,
+      followup_type: result.followup_type,
+      confidence: result.confidence,
+      needs_clarification: result.needs_clarification,
+      server_query: result.server_query,
+    });
 
     return NextResponse.json({
       success: true,
-      data: response,
+      data: result,
     });
   } catch (error) {
-    console.error('Error in Groq conversation flow:', error);
+    console.error('Groq conversation flow API error:', error);
     return NextResponse.json(
-      { error: 'Failed to process conversation flow' },
+      {
+        success: false,
+        error: 'An error occurred during conversation processing.',
+        details: error instanceof Error ? error.message : String(error),
+      },
       { status: 500 }
     );
   }

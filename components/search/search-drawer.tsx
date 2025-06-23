@@ -21,6 +21,7 @@ import { SearchLoadingSpinner } from './components/search-loading-spinner';
 import { SearchSorting } from './components/search-sorting';
 import { useSearch } from './hooks/use-search';
 import { useSearchContext } from './hooks/use-search-context';
+import { SearchMode } from './types';
 import { CardView } from './views/card-view';
 import { ListView } from './views/list-view';
 import { UnifiedMapView } from './views/unified-map-view';
@@ -49,18 +50,27 @@ export function SearchDrawer() {
 
   const {
     searchTerm,
+    chatSearchTerm,
     userLocation,
     isOpenSearchWindow,
     setSearchTerm,
+    setChatSearchTerm,
     onSearch,
     setIsOpenSearchWindow,
   } = useSearchContext();
 
+  // Helper to determine current search mode for TypeScript
+  const isChatMode = searchMode === 'chat';
+  const currentTerm = isChatMode ? chatSearchTerm : searchTerm;
+  const setCurrentTerm = isChatMode ? setChatSearchTerm : setSearchTerm;
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchTerm.trim() && searchTerm !== query) {
-      onSearch(searchTerm);
-      await search(searchTerm, userLocation);
+    const currentSearchTerm =
+      (searchMode as string) === 'chat' ? chatSearchTerm : searchTerm;
+    if (currentSearchTerm.trim() && currentSearchTerm !== query) {
+      onSearch(currentSearchTerm);
+      await search(currentSearchTerm, userLocation);
     }
   };
 
@@ -291,8 +301,8 @@ export function SearchDrawer() {
                           type="text"
                           placeholder="Search for places in Ghana..."
                           className="pr-12"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
+                          value={currentTerm}
+                          onChange={(e) => setCurrentTerm(e.target.value)}
                         />
                         <Button
                           type="button"
@@ -306,7 +316,7 @@ export function SearchDrawer() {
                       <Button
                         type="submit"
                         className="px-6"
-                        disabled={!searchTerm.trim()}
+                        disabled={!currentTerm.trim()}
                       >
                         <Search className="h-4 w-4 mr-2" />
                         Search

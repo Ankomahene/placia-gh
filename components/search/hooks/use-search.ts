@@ -28,7 +28,6 @@ export function useSearch() {
     sortConfig,
     setSortConfig,
     sortingCapabilities,
-    sortedResults,
 
     // Search actions
     performSearch,
@@ -38,7 +37,7 @@ export function useSearch() {
   return {
     query: currentQuery,
     isSearching,
-    results: sortedResults, // Use sorted results instead of raw results
+    results: searchResults, // Use searchResults directly
     rawResults: searchResults, // Expose raw results for debugging
     viewMode,
     searchMode,

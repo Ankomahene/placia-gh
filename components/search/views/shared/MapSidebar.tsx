@@ -162,7 +162,7 @@ export function MapSidebar({
 
                     return (
                       <motion.div
-                        key={place.id}
+                        key={`${place.id}-${index}-${place.source || 'unknown'}`}
                         ref={(el) => {
                           cardRefs.current[place.id] = el;
                         }}

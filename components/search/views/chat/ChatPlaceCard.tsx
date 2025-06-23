@@ -9,6 +9,7 @@ import { convertMetersToKm } from '@/lib/utils';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useSearchContext } from '../../hooks/use-search-context';
 import {
   getRatingLabel,
   getPriceLevelLabel,
@@ -28,6 +29,7 @@ export function ChatPlaceCard({
   isSelected,
   onClick,
 }: ChatPlaceCardProps) {
+  const { setNavigationSource } = useSearchContext();
   const ratingInfo = getRatingLabel(place.rate_average);
   const priceInfo = getPriceLevelLabel(place.price_level);
   const getDirectionsUrl = `https://www.google.com/maps/dir/?api=1&destination=${place.location.lng},${place.location.lat}`;
@@ -53,7 +55,7 @@ export function ChatPlaceCard({
       onClick={handleCardClick}
     >
       <CardContent className="p-0">
-        <div className="flex gap-4 p-4">
+        <div className="flex gap-4 p-4 relative">
           {/* Image */}
           <div className="rounded-md overflow-hidden">
             <div className="relative w-24 h-24 bg-muted flex-shrink-0 overflow-hidden">
@@ -125,7 +127,7 @@ export function ChatPlaceCard({
 
             {/* Description */}
             {(place.description || place.location.street_address) && (
-              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+              <p className="text-sm text-muted-foreground line-clamp-1 mb-3">
                 {place.description || place.location.street_address}
               </p>
             )}
@@ -145,7 +147,7 @@ export function ChatPlaceCard({
             </div>
 
             {/* Rating and Price */}
-            <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex items-center justify-between gap-4 mb-4 wrap">
               {hasRating && (
                 <div className="flex items-center gap-2">
                   <div className="flex items-center gap-1">
@@ -186,7 +188,7 @@ export function ChatPlaceCard({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 absolute bottom-[-5px] right-4 mt-1">
               <a
                 href={getDirectionsUrl}
                 target="_blank"
@@ -199,7 +201,14 @@ export function ChatPlaceCard({
                   Directions
                 </Button>
               </a>
-              <Link href={placeDetailsUrl} onClick={(e) => e.stopPropagation()}>
+              <Link
+                href={placeDetailsUrl}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Track navigation source for chat search
+                  setNavigationSource('chat_search');
+                }}
+              >
                 <Button variant="outline" size="sm">
                   View Details
                 </Button>

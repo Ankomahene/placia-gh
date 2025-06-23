@@ -77,7 +77,7 @@ Extract the following information from user queries:
 
 12. **has_phone**: true if contact information or phone is important.
 
-13. **use_user_location**: true for user proximity queries ("near me", "around me", "within X distance from me").
+13. **use_user_location**: true for user proximity queries ("near me", "around me", "within X distance from me", 'near or around user location').
 
 14. **region**: Country code if mentioned (eg, "Ghana/Accra" = "GH", "United States/New York" = "US").
 

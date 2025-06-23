@@ -19,7 +19,11 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/use-user';
-import { createReview, updateReview } from '@/lib/services/reviews-user-photos';
+import {
+  createReview,
+  updateReview,
+  toggleReviewLike,
+} from '@/lib/services/reviews-user-photos';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
@@ -57,6 +61,7 @@ export function PlaceReviews({
   const [reviews, setReviews] = useState<PlaceReview[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [likingReviews, setLikingReviews] = useState<Set<string>>(new Set());
 
   // Check if user already has a review
   const hasExistingReview = !!userReview;
@@ -109,6 +114,14 @@ export function PlaceReviews({
     }));
   };
 
+  // Calculate combined rating statistics
+  const [combinedStats, setCombinedStats] = useState({
+    average: place.rate_average || 0,
+    count: place.rate_count || 0,
+    googleCount: 0,
+    platformCount: place.rate_count || 0,
+  });
+
   // Load reviews (Google and platform reviews from database only)
   useEffect(() => {
     // Get Google reviews from other_details if available
@@ -133,8 +146,131 @@ export function PlaceReviews({
 
     setReviews(allReviews);
 
+    // Calculate combined rating statistics with proper counts
+    const googleReviewSamples = transformedGoogleReviews.length; // Only 5 samples from API
+    const platformCount = transformedPlatformReviews.length;
+
+    // Check if this is a Google place (has Google data)
+    const isGooglePlace =
+      place.source === 'google_places_details' || place.google_place_id;
+
+    if (isGooglePlace && place.rate_average && place.rate_count) {
+      // For Google places: Use Google's actual total count and rating, plus platform reviews
+      const googleTotalCount = place.rate_count; // Google's actual total review count
+      const platformTotalCount = platformCount;
+      const combinedTotalCount = googleTotalCount + platformTotalCount;
+
+      if (platformCount > 0) {
+        // Calculate weighted average including platform reviews
+        const googleTotalRating = place.rate_average * googleTotalCount;
+        const platformTotalRating = transformedPlatformReviews.reduce(
+          (sum, review) => sum + review.rating,
+          0
+        );
+        const combinedAverage =
+          (googleTotalRating + platformTotalRating) / combinedTotalCount;
+
+        setCombinedStats({
+          average: combinedAverage,
+          count: combinedTotalCount,
+          googleCount: googleTotalCount,
+          platformCount: platformTotalCount,
+        });
+      } else {
+        // Only Google reviews
+        setCombinedStats({
+          average: place.rate_average,
+          count: googleTotalCount,
+          googleCount: googleTotalCount,
+          platformCount: 0,
+        });
+      }
+    } else if (platformCount > 0) {
+      // Platform-only place or no Google data
+      const platformAverage =
+        transformedPlatformReviews.reduce(
+          (sum, review) => sum + review.rating,
+          0
+        ) / platformCount;
+
+      setCombinedStats({
+        average: platformAverage,
+        count: platformCount,
+        googleCount: 0,
+        platformCount: platformCount,
+      });
+    } else {
+      // Fallback to stored values
+      setCombinedStats({
+        average: place.rate_average || 0,
+        count: place.rate_count || 0,
+        googleCount: 0,
+        platformCount: place.rate_count || 0,
+      });
+    }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [place.other_details, place.id, platformReviews]);
+  }, [
+    place.other_details,
+    place.id,
+    platformReviews,
+    place.rate_average,
+    place.rate_count,
+  ]);
+
+  const handleToggleLike = async (reviewId: string) => {
+    if (!user) {
+      toast.error('Please log in to like reviews');
+      return;
+    }
+
+    // Don't allow liking Google reviews (they don't support likes)
+    if (reviewId.startsWith('google-')) {
+      toast.info('Google reviews cannot be liked');
+      return;
+    }
+
+    // Prevent multiple simultaneous requests
+    if (likingReviews.has(reviewId)) {
+      return;
+    }
+
+    setLikingReviews((prev) => new Set(prev).add(reviewId));
+
+    try {
+      await toggleReviewLike(reviewId, user.id);
+
+      // Update the local state optimistically
+      setReviews((prevReviews) =>
+        prevReviews.map((review) => {
+          if (review.id === reviewId) {
+            const currentLikes = review.likes || [];
+            const hasLiked = currentLikes.includes(user.id);
+
+            return {
+              ...review,
+              likes: hasLiked
+                ? currentLikes.filter((id) => id !== user.id)
+                : [...currentLikes, user.id],
+            };
+          }
+          return review;
+        })
+      );
+
+      // Refresh to get updated data from server
+      router.refresh();
+    } catch (error) {
+      console.error('Error toggling review like:', error);
+      toast.error('Failed to update like');
+    } finally {
+      setLikingReviews((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(reviewId);
+        return newSet;
+      });
+    }
+  };
 
   const handleSubmitReview = async () => {
     if (!user) {
@@ -192,7 +328,7 @@ export function PlaceReviews({
       <div className="flex flex-col md:flex-row gap-6 items-start md:items-center">
         <div className="text-center">
           <div className="text-5xl font-bold">
-            {place.rate_average?.toFixed(1) || '0.0'}
+            {combinedStats.average.toFixed(1)}
           </div>
           <div className="flex items-center justify-center mt-2">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -200,7 +336,7 @@ export function PlaceReviews({
                 key={star}
                 className={cn(
                   'h-5 w-5',
-                  star <= (place.rate_average || 0)
+                  star <= combinedStats.average
                     ? 'text-yellow-500 fill-yellow-500'
                     : 'text-gray-300'
                 )}
@@ -208,7 +344,13 @@ export function PlaceReviews({
             ))}
           </div>
           <div className="text-sm text-muted-foreground mt-1">
-            {place.rate_count || 0} reviews
+            {combinedStats.count} reviews
+            {combinedStats.googleCount > 0 && (
+              <span className="text-xs block">
+                ({combinedStats.platformCount} platform +{' '}
+                {combinedStats.googleCount} Google)
+              </span>
+            )}
           </div>
         </div>
 
@@ -259,11 +401,7 @@ export function PlaceReviews({
                   : 'Write a Review'}
             </h3>
             {userReview && !isEditing && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
+              <Button variant="outline" size="sm" onClick={startEditing}>
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit
               </Button>
@@ -339,7 +477,7 @@ export function PlaceReviews({
                 {isEditing && (
                   <Button
                     variant="outline"
-                    onClick={() => setIsEditing(false)}
+                    onClick={cancelEditing}
                     disabled={isSubmitting}
                   >
                     <X className="h-4 w-4 mr-2" />
@@ -487,17 +625,32 @@ export function PlaceReviews({
                   <div className="flex gap-4 mt-3">
                     {!isGoogleReview && (
                       <>
-                        <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                          <ThumbsUp className="h-4 w-4" />
-                          <span>Helpful ({review.likes})</span>
+                        <button
+                          onClick={() => handleToggleLike(review.id)}
+                          disabled={likingReviews.has(review.id) || !isLoggedIn}
+                          className={cn(
+                            'flex items-center gap-1 text-sm transition-colors',
+                            !isLoggedIn && 'cursor-not-allowed opacity-50',
+                            likingReviews.has(review.id) && 'opacity-50',
+                            review.likes?.includes(user?.id || '')
+                              ? 'text-blue-600 hover:text-blue-700'
+                              : 'text-muted-foreground hover:text-foreground'
+                          )}
+                        >
+                          <ThumbsUp
+                            className={cn(
+                              'h-4 w-4',
+                              review.likes?.includes(user?.id || '') &&
+                                'fill-current'
+                            )}
+                          />
+                          <span>{review.likes?.length || 0}</span>
                         </button>
 
-                        <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                          <MessageSquare className="h-4 w-4" />
-                          <span>Reply</span>
-                        </button>
-
-                        <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                        <button
+                          disabled
+                          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+                        >
                           <Flag className="h-4 w-4" />
                           <span>Report</span>
                         </button>

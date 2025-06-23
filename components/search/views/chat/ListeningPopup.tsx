@@ -6,9 +6,10 @@ import { Mic } from 'lucide-react';
 import { useChatContext } from './ChatContext';
 
 export function ListeningPopup() {
-  const { isListening, handleVoiceRecording } = useChatContext();
+  const { speechRecognition, handleVoiceRecording, cancelVoiceRecording } =
+    useChatContext();
 
-  if (!isListening) return null;
+  if (!speechRecognition.isListening) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t p-4 z-50">
@@ -33,18 +34,74 @@ export function ListeningPopup() {
             ))}
           </div>
         </div>
-        <p className="text-sm font-medium mb-1">Listening...</p>
-        <p className="text-xs text-muted-foreground mb-3">
-          Speak clearly about the places you&apos;re looking for
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleVoiceRecording}
-          className="text-xs"
-        >
-          Stop Recording
-        </Button>
+
+        {speechRecognition.error ? (
+          <>
+            <p className="text-sm font-medium mb-1 text-red-600">Error</p>
+            <p className="text-xs text-red-500 mb-3 text-center max-w-md">
+              {speechRecognition.error}
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm font-medium mb-1">Listening...</p>
+            <p className="text-xs text-muted-foreground mb-3">
+              Speak your search query clearly. I'll automatically search after 5
+              seconds of silence, or click "Stop & Search" to search
+              immediately.
+            </p>
+          </>
+        )}
+
+        {/* Live transcript display */}
+        {(speechRecognition.transcript ||
+          speechRecognition.interimTranscript) && (
+          <div className="bg-muted/50 rounded-lg p-3 mb-3 text-center max-w-md">
+            <p className="text-sm">
+              <span className="font-medium text-foreground">
+                {speechRecognition.transcript}
+              </span>
+              <span className="text-muted-foreground italic">
+                {speechRecognition.interimTranscript}
+              </span>
+            </p>
+            {speechRecognition.confidence > 0 && (
+              <div className="mt-2 flex items-center gap-2 justify-center">
+                <span className="text-xs text-muted-foreground">
+                  Confidence:
+                </span>
+                <div className="w-20 bg-muted rounded-full h-1">
+                  <div
+                    className="bg-green-500 h-1 rounded-full transition-all duration-300"
+                    style={{ width: `${speechRecognition.confidence * 100}%` }}
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {Math.round(speechRecognition.confidence * 100)}%
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleVoiceRecording}
+            className="text-xs"
+          >
+            Stop & Search
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={cancelVoiceRecording}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Cancel
+          </Button>
+        </div>
       </div>
     </div>
   );

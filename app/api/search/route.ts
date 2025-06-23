@@ -3,6 +3,7 @@ import { googlePlaceSearch } from '@/lib/services/google/places';
 import { smartPlaceSearch } from '@/lib/services/smart-search';
 import { PlaceResultsSummary } from '@/types/place';
 import { parseNaturalLanguageQuery } from '@/lib/services';
+import { searchContextCache } from '@/lib/services/search-context-cache';
 
 export async function POST(request: Request) {
   try {
@@ -12,12 +13,14 @@ export async function POST(request: Request) {
       googlePageToken,
       smartSearchOffset,
       useInitialQuery,
+      sessionId,
     }: {
       query: string;
       userLocation?: { lat: number; lng: number };
       googlePageToken?: string;
       smartSearchOffset?: number;
       useInitialQuery?: boolean;
+      sessionId?: string;
     } = await request.json();
 
     if (!query) {
@@ -36,6 +39,16 @@ export async function POST(request: Request) {
       undefined,
       useInitialQuery
     );
+
+    // Cache the structured query for this session to improve future context extraction
+    if (sessionId && structuredQuery) {
+      searchContextCache.set(sessionId, {
+        structuredQuery,
+        timestamp: new Date(),
+        originalQuery: query,
+        userLocation,
+      });
+    }
 
     // Run both searches in parallel
     const [googleResult, smartSearchResult] = await Promise.all([
@@ -70,48 +83,56 @@ export async function POST(request: Request) {
         : [],
     };
 
-    // Interleave the results for a better user experience
+    // Interleave and deduplicate the results for a better user experience
     const combinedPlaces: PlaceResultsSummary[] = [];
+    const seenIds = new Set<string>();
     let i = 0;
     let j = 0;
+
     while (
       i < smartSearchResultWithSource.results.length ||
       j < googleResultWithSource.results.length
     ) {
+      // Add from Placia (prioritize local data)
       if (i < smartSearchResultWithSource.results.length) {
-        combinedPlaces.push(smartSearchResultWithSource.results[i++]);
+        const place = smartSearchResultWithSource.results[i++];
+        if (!seenIds.has(place.id)) {
+          seenIds.add(place.id);
+          combinedPlaces.push(place);
+        }
       }
+
+      // Add from Google (if not already added)
       if (j < googleResultWithSource.results.length) {
-        combinedPlaces.push(googleResultWithSource.results[j++]);
+        const place = googleResultWithSource.results[j++];
+        if (!seenIds.has(place.id)) {
+          seenIds.add(place.id);
+          combinedPlaces.push(place);
+        }
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        // Combined places for backward compatibility
-        places: combinedPlaces,
-
-        // Complete search result objects
-        googleSearchResult: googleResultWithSource,
-        smartSearchResult: smartSearchResultWithSource,
-
-        // Pagination tokens for backward compatibility
-        nextGooglePageToken: googleResult.nextPageToken,
-        nextSmartSearchOffset:
-          smartSearchResult.pagination?.hasMore && smartSearchResult.success
-            ? smartSearchResult.pagination.offset +
-              smartSearchResult.pagination.limit
+    return NextResponse.json(
+      {
+        success: true,
+        data: {
+          places: combinedPlaces,
+          googleSearchResult: googleResultWithSource,
+          smartSearchResult: smartSearchResultWithSource,
+          nextGooglePageToken: googleResultWithSource.nextPageToken || null,
+          nextSmartSearchOffset: smartSearchResultWithSource.pagination?.hasMore
+            ? (smartSearchOffset || 0) +
+              combinedPlaces.filter((p) => p.source === 'placia').length
             : null,
+        },
       },
-    });
+      { status: 200 }
+    );
   } catch (error) {
-    console.error('Combined search API error:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'An error occurred during the search.',
-        details: error instanceof Error ? error.message : String(error),
+        error: error instanceof Error ? error.message : 'An error occurred',
       },
       { status: 500 }
     );

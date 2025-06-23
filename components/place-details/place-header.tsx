@@ -11,14 +11,13 @@ import {
   MapPin,
   Star,
   Clock,
-  DollarSign,
   Camera,
   ChevronLeft,
   Navigation,
   Palette,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   getRatingLabel,
   getPriceLevelLabel,
@@ -33,9 +32,46 @@ interface PlaceHeaderProps {
   place: PlaceResults;
 }
 
+// Session storage utilities
+const SEARCH_CACHE_KEY = 'placia_search_state';
+const NAVIGATION_SOURCE_KEY = 'placia_navigation_source';
+
+const getNavigationSource = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem(NAVIGATION_SOURCE_KEY);
+};
+
+const restoreSearchState = (): boolean => {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const cached = sessionStorage.getItem(SEARCH_CACHE_KEY);
+    if (!cached) return false;
+
+    const searchState = JSON.parse(cached);
+
+    // Check if cache is not too old (24 hours)
+    const cacheAge = Date.now() - (searchState.timestamp || 0);
+    const maxAge = 24 * 60 * 60 * 1000; // 24 hours
+
+    if (cacheAge > maxAge) {
+      sessionStorage.removeItem(SEARCH_CACHE_KEY);
+      return false;
+    }
+
+    // Store the search state for the home page to restore
+    sessionStorage.setItem('placia_restore_search', 'true');
+    return true;
+  } catch (error) {
+    console.warn('Failed to restore search state from session storage:', error);
+    return false;
+  }
+};
+
 export function PlaceHeader({ place }: PlaceHeaderProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [selectedPatternIndex, setSelectedPatternIndex] = useState<number>(0);
+  const router = useRouter();
 
   const toggleFavorite = () => {
     setIsFavorite(!isFavorite);
@@ -74,6 +110,27 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
   // Function to cycle to next pattern
   const switchToNextPattern = () => {
     setSelectedPatternIndex((prev) => (prev + 1) % patterns.length);
+  };
+
+  // Smart navigation handler using session storage directly
+  const handleSmartNavigation = () => {
+    const navigationSource = getNavigationSource();
+
+    if (
+      navigationSource === 'general_search' ||
+      navigationSource === 'chat_search'
+    ) {
+      // User came from search, check if we can restore search state
+      const canRestore = restoreSearchState();
+      if (canRestore) {
+        // Navigate to home and let the hero section handle restoration
+        router.push('/');
+        return;
+      }
+    }
+
+    // Default navigation - just go back to home
+    router.push('/');
   };
 
   const ratingInfo = getRatingLabel(place.rate_average);
@@ -116,18 +173,17 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
           </div>
         )}
 
-        {/* Back button */}
+        {/* Smart Back button */}
         <div className="absolute top-4 left-4 z-10">
-          <Link href="/">
-            <Button
-              variant="secondary"
-              size="sm"
-              className="bg-white/90 dark:bg-black/60 backdrop-blur-sm hover:bg-white/100 dark:hover:bg-black/80 shadow-lg border-0"
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back
-            </Button>
-          </Link>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="bg-white/90 dark:bg-black/60 backdrop-blur-sm hover:bg-white/100 dark:hover:bg-black/80 shadow-lg border-0"
+            onClick={handleSmartNavigation}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Back
+          </Button>
         </div>
 
         {/* Action buttons */}
@@ -185,7 +241,7 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
           <div className="flex items-center gap-6 flex-1 relative">
             {/* Logo */}
             {place.logo && (
-              <div className="w-24 h-24 md:w-36 md:h-36  rounded-2xl overflow-hidden border-4 border-background shadow-2xl bg-background ring-4 ring-background/50 absolute md:static -top-16 -left-0 md:-left-6">
+              <div className="w-24 h-24 md:w-36 md:h-36 rounded-2xl overflow-hidden border-4 border-background shadow-2xl bg-background ring-4 ring-background/50 absolute md:static -top-16 -left-0 md:-left-6">
                 <Image
                   src={place.logo}
                   alt={`${place.name} logo`}
@@ -207,9 +263,11 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
                   {place.tagline}
                 </p>
               ) : (
-                <p className="text-muted-foreground text-lg mb-4">
-                  {place.description.slice(0, 100)}...
-                </p>
+                place.description && (
+                  <p className="text-muted-foreground text-lg mb-4">
+                    {place.description.slice(0, 100)}...
+                  </p>
+                )
               )}
 
               {/* Badges and info */}
@@ -330,7 +388,7 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
           </div>
 
           {/* Quick action buttons */}
-          <div className="flex gap-3 mt-4 md:mt-0 absolute  md:static bottom-4 right-4">
+          <div className="flex gap-3 mt-4 md:mt-0 absolute md:static bottom-4 right-4">
             <a
               href={getDirectionsUrl()}
               target="_blank"

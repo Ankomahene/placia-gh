@@ -178,6 +178,39 @@ export async function createUserPhoto(data: {
   return photo;
 }
 
+export async function updateUserPhoto(
+  photoId: string,
+  data: {
+    comment?: string;
+  }
+): Promise<any> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data: photo, error } = await supabase
+    .from('user_uploaded_photos')
+    .update({
+      comment: data.comment,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', photoId)
+    .eq('user_id', user.id) // Ensure user can only edit their own photos
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating user photo:', error);
+    throw error;
+  }
+
+  return photo;
+}
+
 export async function togglePhotoLike(
   photoId: string,
   userId: string

@@ -12,7 +12,11 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { useUser } from '@/hooks/use-user';
-import { createUserPhoto } from '@/lib/services/reviews-user-photos';
+import {
+  createUserPhoto,
+  togglePhotoLike,
+  updateUserPhoto,
+} from '@/lib/services/reviews-user-photos';
 import { PlaceResults } from '@/types/place';
 import {
   Camera,
@@ -22,12 +26,15 @@ import {
   Save,
   User,
   ThumbsUp,
+  X,
+  ZoomIn,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 interface PlacePhotosProps {
   place: PlaceResults;
@@ -49,6 +56,11 @@ export function PlacePhotos({
   const [uploadedImageUrl, setUploadedImageUrl] = useState('');
   const [photoCaption, setPhotoCaption] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null);
+  const [editingPhoto, setEditingPhoto] = useState<any | null>(null);
+  const [editCaption, setEditCaption] = useState('');
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false);
+  const [likingPhotos, setLikingPhotos] = useState<Set<string>>(new Set());
 
   // Combine official and user photos
   const allPhotos = [
@@ -89,6 +101,67 @@ export function PlacePhotos({
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleTogglePhotoLike = async (photoId: string) => {
+    if (!user) {
+      toast.error('Please log in to like photos');
+      return;
+    }
+
+    // Prevent multiple simultaneous requests
+    if (likingPhotos.has(photoId)) {
+      return;
+    }
+
+    setLikingPhotos((prev) => new Set(prev).add(photoId));
+
+    try {
+      await togglePhotoLike(photoId, user.id);
+      toast.success('Photo liked');
+      router.refresh();
+    } catch (error) {
+      console.error('Error toggling photo like:', error);
+      toast.error('Failed to update like');
+    } finally {
+      setLikingPhotos((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(photoId);
+        return newSet;
+      });
+    }
+  };
+
+  const startEditingPhoto = (photo: any) => {
+    setEditingPhoto(photo);
+    setEditCaption(photo.comment || '');
+    setIsEditingPhoto(true);
+  };
+
+  const handleEditPhoto = async () => {
+    if (!editingPhoto || !user) return;
+
+    setIsSubmitting(true);
+
+    try {
+      await updateUserPhoto(editingPhoto.id, { comment: editCaption });
+      toast.success('Photo updated successfully!');
+      setIsEditingPhoto(false);
+      setEditingPhoto(null);
+      setEditCaption('');
+      router.refresh();
+    } catch (error) {
+      console.error('Error updating photo:', error);
+      toast.error('Failed to update photo');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const cancelEditingPhoto = () => {
+    setIsEditingPhoto(false);
+    setEditingPhoto(null);
+    setEditCaption('');
   };
 
   return (
@@ -167,6 +240,68 @@ export function PlacePhotos({
         )}
       </div>
 
+      {/* Photo Preview Modal */}
+      <Dialog open={!!previewPhoto} onOpenChange={() => setPreviewPhoto(null)}>
+        <DialogContent className="max-w-4xl w-full p-2">
+          <div className="relative">
+            {previewPhoto && (
+              <Image
+                src={previewPhoto}
+                alt="Photo preview"
+                width={1000}
+                height={600}
+                className="w-full h-auto max-h-[80vh] object-contain rounded-lg"
+              />
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 bg-black/50 hover:bg-black/70 text-white"
+              onClick={() => setPreviewPhoto(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Photo Edit Modal */}
+      <Dialog open={isEditingPhoto} onOpenChange={cancelEditingPhoto}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Photo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">
+                Caption{' '}
+                <span className="text-muted-foreground">(Optional)</span>
+              </label>
+              <Textarea
+                placeholder="Update your photo caption..."
+                value={editCaption}
+                onChange={(e) => setEditCaption(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={cancelEditingPhoto}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleEditPhoto} disabled={isSubmitting}>
+                <Save className="h-4 w-4 mr-2" />
+                {isSubmitting ? 'Updating...' : 'Update Photo'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Photo tabs */}
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-3">
@@ -186,7 +321,8 @@ export function PlacePhotos({
               {allPhotos.map((photo, index) => (
                 <div
                   key={index}
-                  className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity"
+                  className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity relative group"
+                  onClick={() => setPreviewPhoto(photo)}
                 >
                   <Image
                     src={photo}
@@ -195,6 +331,9 @@ export function PlacePhotos({
                     height={300}
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -223,7 +362,8 @@ export function PlacePhotos({
               {place.gallery.map((photo, index) => (
                 <div
                   key={index}
-                  className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity"
+                  className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity relative group"
+                  onClick={() => setPreviewPhoto(photo)}
                 >
                   <Image
                     src={photo}
@@ -232,6 +372,9 @@ export function PlacePhotos({
                     height={300}
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                    <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
               ))}
             </div>
@@ -277,10 +420,7 @@ export function PlacePhotos({
                         variant="ghost"
                         size="sm"
                         className="ml-auto"
-                        onClick={() => {
-                          // TODO: Implement photo editing
-                          toast.info('Photo editing coming soon!');
-                        }}
+                        onClick={() => startEditingPhoto(photo)}
                       >
                         <Edit2 className="h-4 w-4" />
                       </Button>
@@ -298,7 +438,8 @@ export function PlacePhotos({
                       (photoUrl: string, index: number) => (
                         <div
                           key={index}
-                          className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity"
+                          className="aspect-square rounded-lg overflow-hidden border cursor-pointer hover:opacity-90 transition-opacity relative group"
+                          onClick={() => setPreviewPhoto(photoUrl)}
                         >
                           <Image
                             src={photoUrl}
@@ -310,6 +451,9 @@ export function PlacePhotos({
                             height={300}
                             className="w-full h-full object-cover"
                           />
+                          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+                            <ZoomIn className="h-6 w-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
                         </div>
                       )
                     )}
@@ -317,22 +461,27 @@ export function PlacePhotos({
 
                   {/* Likes section */}
                   <div className="flex items-center gap-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="p-2"
-                      onClick={() => {
-                        if (!user) {
-                          toast.error('Please log in to like photos');
-                          return;
-                        }
-                        // TODO: Implement togglePhotoLike
-                        toast.info('Photo likes coming soon!');
-                      }}
+                    <button
+                      onClick={() => handleTogglePhotoLike(photo.id)}
+                      disabled={likingPhotos.has(photo.id) || !isLoggedIn}
+                      className={cn(
+                        'flex items-center gap-1 text-sm transition-colors',
+                        !isLoggedIn && 'cursor-not-allowed opacity-50',
+                        likingPhotos.has(photo.id) && 'opacity-50',
+                        photo.likes?.includes(user?.id || '')
+                          ? 'text-blue-600 hover:text-blue-700'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
                     >
-                      <ThumbsUp className="h-4 w-4 mr-1" />
-                      {photo.likes?.length || 0}
-                    </Button>
+                      <ThumbsUp
+                        className={cn(
+                          'h-4 w-4',
+                          photo.likes?.includes(user?.id || '') &&
+                            'fill-current'
+                        )}
+                      />
+                      <span>{photo.likes?.length || 0}</span>
+                    </button>
                   </div>
                 </div>
               ))}
