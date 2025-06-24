@@ -8,6 +8,7 @@ export interface MaplibreMarker {
   image?: string;
   address?: string;
   distance?: string;
+  source?: string;
 }
 
 export interface MaplibreMapClientProps {

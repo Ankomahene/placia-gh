@@ -196,6 +196,7 @@ export function UnifiedMapView({
         address:
           place.location.name || place.formatted_address || place.vicinity,
         distance: `${distance} km`,
+        source: place.source,
       };
     });
   };

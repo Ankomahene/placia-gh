@@ -26,7 +26,7 @@ export function SpeechListeningPopup({
   onStopAndSearch,
   onCancel,
   className = '',
-  description = 'Speak your search query clearly. I\'ll automatically search after 5 seconds of silence, or click "Stop & Search" to search immediately.',
+  description = 'Speak your search query clearly. I\'ll automatically search after 3 seconds of silence, or click "Stop & Search" to search immediately.',
 }: SpeechListeningPopupProps) {
   if (!speechRecognition.isListening) return null;
 

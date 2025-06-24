@@ -683,33 +683,38 @@ export const mockChatMessages = [
   },
 ];
 
+interface ConversationAnalysis {
+  is_followup: boolean;
+  followup_type: string;
+  confidence: number;
+}
+
+interface UserLocation {
+  latitude: number;
+  longitude: number;
+  address: string | null;
+}
+
+interface MessageMetadata {
+  // Search-related fields
+  count?: number;
+  executionTime?: number;
+  searchQuery?: string;
+  filters?: string[];
+  hasMore?: boolean;
+  allResults?: PlaceResultsSummary[];
+  conversationAnalysis?: ConversationAnalysis;
+
+  // Location-related fields
+  show_user_location?: boolean;
+  userLocation?: UserLocation;
+}
+
 export interface ChatMessage {
   id: string;
   type: 'user' | 'bot';
   content: string;
   timestamp: Date;
   searchResults?: PlaceResultsSummary[];
-  metadata?: {
-    count: number;
-    executionTime: number;
-    searchQuery: string;
-    filters?: string[];
-    hasMore?: boolean;
-    allResults?: PlaceResultsSummary[]; // Store all results for client-side pagination
-    conversationAnalysis?: {
-      is_followup: boolean;
-      followup_type:
-        | 'refinement'
-        | 'category_change'
-        | 'new_search'
-        | 'clarification_needed';
-      confidence: number;
-      needs_clarification?: boolean;
-      clarification_type?:
-        | 'missing_place_type'
-        | 'missing_location'
-        | 'too_vague'
-        | 'ambiguous_intent';
-    };
-  };
+  metadata?: MessageMetadata;
 }

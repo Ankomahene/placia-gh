@@ -388,14 +388,15 @@ export function MaplibreMapClient({
         >
           <PlacePopup
             name={popupInfo.marker.name}
+            placeId={popupInfo.marker.id}
             image={popupInfo.marker.image}
             address={popupInfo.marker.address}
             rating={popupInfo.marker.rating}
             isOpen={popupInfo.marker.isOpen}
             distance={popupInfo.marker.distance}
+            source={popupInfo.marker.source}
             onViewDetails={() => {
               handleMarkerClick(popupInfo.marker);
-              setNavigationSource?.('general_search');
             }}
           />
         </Popup>

@@ -1,9 +1,11 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 
 interface PlacePopupProps {
   name: string;
+  placeId: string;
   image?: string;
   address?: string;
   rating?: number;
@@ -12,10 +14,12 @@ interface PlacePopupProps {
   onViewDetails: () => void;
   className?: string;
   style?: React.CSSProperties;
+  source?: string;
 }
 
 export function PlacePopup({
   name,
+  placeId,
   image,
   address,
   rating,
@@ -24,7 +28,16 @@ export function PlacePopup({
   onViewDetails,
   className = '',
   style,
+  source = 'platform',
 }: PlacePopupProps) {
+  // Determine the source - if source is 'google' or 'google_places', use 'google', otherwise use 'platform'
+  const placeSource =
+    source === 'google' || source === 'google_places'
+      ? 'google'
+      : source === 'placia'
+        ? 'platform'
+        : source;
+
   return (
     <div className={`custom-popup ${className}`} style={style}>
       <div
@@ -92,14 +105,16 @@ export function PlacePopup({
           </div>
         </div>
 
-        <button
+        <Link
+          href={`/place/${placeId}?source=${placeSource}`}
           className="custom-popup-button"
+          style={{ color: 'white', width: '100%' }}
           onClick={() => {
             onViewDetails();
           }}
         >
           View Details
-        </button>
+        </Link>
       </div>
     </div>
   );

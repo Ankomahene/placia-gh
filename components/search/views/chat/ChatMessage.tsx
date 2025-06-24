@@ -4,7 +4,7 @@ import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Bot, User, Clock, MoreHorizontal } from 'lucide-react';
+import { Bot, User, Clock, MoreHorizontal, MapPin } from 'lucide-react';
 import { ChatMessage as ChatMessageType } from '../../mock-data';
 import { ChatPlaceCard } from './ChatPlaceCard';
 import { useChatContext } from './ChatContext';
@@ -75,25 +75,45 @@ export function ChatMessage({
             <p className="text-sm leading-relaxed">{message.content}</p>
             {message.metadata && (
               <div className="space-y-2 mt-2 pt-2 border-t border-border/20">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-3 h-3 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">
-                    Showing {message.metadata.count} results
-                  </span>
-                  {message.metadata.filters && (
-                    <div className="flex gap-1 ml-2">
-                      {message.metadata.filters.map((filter, index) => (
-                        <Badge
-                          key={index}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {filter}
-                        </Badge>
-                      ))}
+                {/* Location Display */}
+                {message.metadata.show_user_location &&
+                  message.metadata.userLocation && (
+                    <div className="flex items-center gap-2 p-2 bg-primary/5 rounded-md">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">
+                          Your Current Location
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {message.metadata.userLocation.address ||
+                            `${message.metadata.userLocation.latitude.toFixed(6)}, ${message.metadata.userLocation.longitude.toFixed(6)}`}
+                        </p>
+                      </div>
                     </div>
                   )}
-                </div>
+
+                {/* Search Results Info */}
+                {message.metadata.count !== undefined && (
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      Showing {message.metadata.count} results
+                    </span>
+                    {message.metadata.filters && (
+                      <div className="flex gap-1 ml-2">
+                        {message.metadata.filters.map((filter, index) => (
+                          <Badge
+                            key={index}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {filter}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Conversation Analysis */}
                 {message.metadata.conversationAnalysis && (

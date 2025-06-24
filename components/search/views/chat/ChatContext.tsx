@@ -157,7 +157,7 @@ export function ChatProvider({
     continuous: true,
     interimResults: true,
     confidenceThreshold: 0.5,
-    silenceTimeout: 5000,
+    silenceTimeout: 3000,
   });
 
   // Update userLocation when coordinates are available from the hook
@@ -305,31 +305,75 @@ export function ChatProvider({
 
       const conversationResult = conversationData.data;
 
-      // Step 2: Create assistant message with Groq response
+      // Step 2: Create assistant message
+      const locationData =
+        latitude != null && longitude != null
+          ? {
+              latitude: Number(latitude),
+              longitude: Number(longitude),
+              address: null,
+            }
+          : null;
+
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         type: 'bot',
         content: conversationResult.user_response,
         timestamp: new Date(),
+        metadata: conversationResult.requesting_location_permission
+          ? undefined
+          : conversationResult.show_user_location && locationData
+            ? {
+                show_user_location: true,
+                userLocation: locationData,
+              }
+            : undefined,
       };
+
+      // If we need to show location and have coordinates, try to get the address
+      if (
+        !conversationResult.requesting_location_permission &&
+        conversationResult.show_user_location &&
+        locationData &&
+        assistantMessage.metadata?.userLocation
+      ) {
+        try {
+          const response = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}&zoom=16&addressdetails=1`,
+            { signal: AbortSignal.timeout(5000) }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            const address =
+              data.display_name?.split(',').slice(0, 3).join(',') || null;
+            assistantMessage.metadata.userLocation.address = address;
+          }
+        } catch (error) {
+          console.error('Failed to get address:', error);
+        }
+      }
 
       setMessages((prev) => [...prev, assistantMessage]);
 
-      // Step 3: If clarification is needed, don't search
+      // Step 3: If clarification needed, stop here
       if (conversationResult.needs_clarification) {
         setIsTyping(false);
         return;
       }
 
-      // Step 4: Perform search with refined query
+      // Step 4: Perform search
       const searchResponse = await fetch('/api/search', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: conversationResult.server_query,
-          userLocation,
+          userLocation: locationData
+            ? {
+                lat: locationData.latitude,
+                lng: locationData.longitude,
+              }
+            : undefined,
           sessionId,
           useInitialQuery: true,
         }),
@@ -339,7 +383,6 @@ export function ChatProvider({
         const searchData = await searchResponse.json();
 
         if (searchData.success && searchData.data.places.length > 0) {
-          // Step 5: Create search results message
           const searchResultsMessage: ChatMessage = {
             id: (Date.now() + 2).toString(),
             type: 'bot',
@@ -358,19 +401,26 @@ export function ChatProvider({
                 followup_type: conversationResult.followup_type,
                 confidence: conversationResult.confidence,
               },
+              ...(assistantMessage.metadata?.userLocation && {
+                show_user_location: true,
+                userLocation: assistantMessage.metadata.userLocation,
+              }),
             },
           };
-
           setMessages((prev) => [...prev, searchResultsMessage]);
         } else {
-          // No results found
           const noResultsMessage: ChatMessage = {
             id: (Date.now() + 2).toString(),
             type: 'bot',
             content: `I couldn't find any places matching "${conversationResult.server_query}". Try being more specific or asking for a different type of place.`,
             timestamp: new Date(),
+            metadata: assistantMessage.metadata?.userLocation
+              ? {
+                  show_user_location: true,
+                  userLocation: assistantMessage.metadata.userLocation,
+                }
+              : undefined,
           };
-
           setMessages((prev) => [...prev, noResultsMessage]);
         }
       }
@@ -459,12 +509,53 @@ export function ChatProvider({
             const conversationResult = conversationData.data;
 
             // Step 2: Create assistant message
+            const locationData =
+              latitude != null && longitude != null
+                ? {
+                    latitude: Number(latitude),
+                    longitude: Number(longitude),
+                    address: null,
+                  }
+                : null;
+
             const assistantMessage: ChatMessage = {
               id: (Date.now() + 1).toString(),
               type: 'bot',
               content: conversationResult.user_response,
               timestamp: new Date(),
+              metadata: conversationResult.requesting_location_permission
+                ? undefined
+                : conversationResult.show_user_location && locationData
+                  ? {
+                      show_user_location: true,
+                      userLocation: locationData,
+                    }
+                  : undefined,
             };
+
+            // If we need to show location and have coordinates, try to get the address
+            if (
+              !conversationResult.requesting_location_permission &&
+              conversationResult.show_user_location &&
+              locationData &&
+              assistantMessage.metadata?.userLocation
+            ) {
+              try {
+                const response = await fetch(
+                  `https://nominatim.openstreetmap.org/reverse?format=json&lat=${locationData.latitude}&lon=${locationData.longitude}&zoom=16&addressdetails=1`,
+                  { signal: AbortSignal.timeout(5000) }
+                );
+
+                if (response.ok) {
+                  const data = await response.json();
+                  const address =
+                    data.display_name?.split(',').slice(0, 3).join(',') || null;
+                  assistantMessage.metadata.userLocation.address = address;
+                }
+              } catch (error) {
+                console.error('Failed to get address:', error);
+              }
+            }
 
             setMessages((prev) => [...prev, assistantMessage]);
 
@@ -480,7 +571,12 @@ export function ChatProvider({
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 query: conversationResult.server_query,
-                userLocation,
+                userLocation: locationData
+                  ? {
+                      lat: locationData.latitude,
+                      lng: locationData.longitude,
+                    }
+                  : undefined,
                 sessionId,
                 useInitialQuery: true,
               }),
@@ -502,12 +598,16 @@ export function ChatProvider({
                     searchQuery: conversationResult.server_query,
                     filters: ['relevant', 'ai-refined'],
                     hasMore: searchData.data.places.length > 6,
-                    allResults: searchData.data.places, // Store all results for client-side pagination
+                    allResults: searchData.data.places,
                     conversationAnalysis: {
                       is_followup: conversationResult.is_followup,
                       followup_type: conversationResult.followup_type,
                       confidence: conversationResult.confidence,
                     },
+                    ...(assistantMessage.metadata?.userLocation && {
+                      show_user_location: true,
+                      userLocation: assistantMessage.metadata.userLocation,
+                    }),
                   },
                 };
                 setMessages((prev) => [...prev, searchResultsMessage]);
@@ -517,6 +617,12 @@ export function ChatProvider({
                   type: 'bot',
                   content: `I couldn't find any places matching "${conversationResult.server_query}". Try being more specific or asking for a different type of place.`,
                   timestamp: new Date(),
+                  metadata: assistantMessage.metadata?.userLocation
+                    ? {
+                        show_user_location: true,
+                        userLocation: assistantMessage.metadata.userLocation,
+                      }
+                    : undefined,
                 };
                 setMessages((prev) => [...prev, noResultsMessage]);
               }

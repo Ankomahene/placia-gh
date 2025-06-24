@@ -7,6 +7,7 @@ import L from 'leaflet';
 import { useMap, useMapEvents } from 'react-leaflet';
 import { PlacePopup, popupStyles } from './shared';
 import ReactDOMServer from 'react-dom/server';
+import Link from 'next/link';
 
 // Dynamically import react-leaflet components
 const MapContainer = dynamic(
@@ -35,6 +36,7 @@ interface MapMarker {
   image?: string;
   address?: string;
   distance?: string;
+  source?: string;
 }
 
 interface SearchMapClientProps {
@@ -571,92 +573,19 @@ export function SearchMapClient({
               autoPan={false}
               keepInView={false}
             >
-              <div className="custom-popup">
-                <div
-                  className="custom-popup-image"
-                  style={{
-                    backgroundImage: marker.image
-                      ? `url(${marker.image})`
-                      : 'linear-gradient(135deg, hsl(262 83% 58%), hsl(262 83% 48%))',
-                  }}
-                >
-                  {marker.distance && (
-                    <div
-                      style={{
-                        position: 'absolute',
-                        top: '8px',
-                        right: '8px',
-                        background: 'rgba(0,0,0,0.7)',
-                        color: 'white',
-                        padding: '4px 8px',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        fontWeight: '500',
-                      }}
-                    >
-                      {marker.distance}
-                    </div>
-                  )}
-                </div>
-                <div className="custom-popup-content">
-                  <div className="custom-popup-title">{marker.name}</div>
-                  {marker.address && (
-                    <div className="custom-popup-address">
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      {marker.address}
-                    </div>
-                  )}
-
-                  <div className="custom-popup-meta">
-                    <div className="custom-popup-rating">
-                      {marker.rating && (
-                        <>
-                          <span className="custom-popup-rating-star">★</span>
-                          <span style={{ fontWeight: '500' }}>
-                            {marker.rating}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    <div className="custom-popup-status">
-                      <div
-                        className="custom-popup-status-dot"
-                        style={{
-                          backgroundColor: marker.isOpen
-                            ? '#10b981'
-                            : '#ef4444',
-                        }}
-                      />
-                      <span
-                        style={{
-                          color: marker.isOpen ? '#10b981' : '#ef4444',
-                          fontWeight: '500',
-                        }}
-                      >
-                        {marker.isOpen ? 'Open' : 'Closed'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    className="custom-popup-button"
-                    onClick={() => {
-                      onMarkerClick(marker.id);
-                      setNavigationSource?.('general_search');
-                    }}
-                  >
-                    View Details
-                  </button>
-                </div>
-              </div>
+              <PlacePopup
+                name={marker.name}
+                placeId={marker.id}
+                image={marker.image}
+                address={marker.address}
+                rating={marker.rating}
+                isOpen={marker.isOpen}
+                distance={marker.distance}
+                source={marker.source}
+                onViewDetails={() => {
+                  onMarkerClick(marker.id);
+                }}
+              />
             </Popup>
           </Marker>
         );

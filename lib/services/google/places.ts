@@ -1028,7 +1028,7 @@ function transformGoogleSearchResultsToSummaries(
       price_level: place.priceLevel,
       open_now: place.openNow,
       tags: place.types || [],
-      source: 'google_places',
+      source: 'google',
       google_place_types: place.types,
       formatted_address: place.formattedAddress,
       vicinity: place.vicinity,

@@ -49,7 +49,7 @@ export default function HeroSection() {
     continuous: true,
     interimResults: true,
     confidenceThreshold: 0.5,
-    silenceTimeout: 5000,
+    silenceTimeout: 3000,
   });
 
   const wasCancelledRef = useRef(false);
@@ -379,7 +379,7 @@ export default function HeroSection() {
         speechRecognition={speechRecognition}
         onStopAndSearch={stopVoiceRecording}
         onCancel={cancelVoiceRecording}
-        description="Speak your search query clearly. I'll automatically search after 5 seconds of silence, or click 'Stop & Search' to search immediately."
+        description="Speak your search query clearly. I'll automatically search after 3 seconds of silence, or click 'Stop & Search' to search immediately."
       />
     </section>
   );

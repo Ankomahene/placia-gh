@@ -31,7 +31,11 @@ export interface ConversationFlowResponse {
     | 'too_vague'
     | 'ambiguous_intent'
     | 'location_permission'
-    | 'missing_reference_location';
+    | 'missing_reference_location'
+    | 'greeting'
+    | 'current_location_query';
+  show_user_location?: boolean;
+  requesting_location_permission?: boolean;
 }
 
 export interface ChatContext {
@@ -105,6 +109,10 @@ A query **needs clarification** if:
 - **Location permission**: "Find me places near me", "Find me places around me"
 - **Ambiguous intent**: "Find me good things", "What do you recommend?"
 - **Missing reference location**: "Find restaurants within 2km" (distance specified but no reference point)
+- **Greeting statements**: When user starts with greetings like "hello", "hi", "hey", "good morning" etc., respond warmly and ask what they'd like to search for
+- **Current location queries**: When user asks about their current location (e.g. "where am I?", "what's my location?"). 
+  If they don't specify what places to find around them, set needs_clarification to true and clarification_type to 'current_location_query' and show_user_location to true.
+  If they specify what places to find around them, set needs_clarification to false and show_user_location to true.
 
 For unclear queries, ask specific clarifying questions to help the user.
 
@@ -121,7 +129,7 @@ For unclear queries, ask specific clarifying questions to help the user.
 **For clarification needed:**
 - User Response: Ask specific clarifying or permission requested
 - Server Query: Leave as original query (won't be used until clarified)
-- Set needs_clarification: true and appropriate  eg. missing_place_type, missing_location, too_vague, ambiguous_intent, location_permission
+- Set needs_clarification: true and set appropriate clarification_type eg. missing_place_type, missing_location, too_vague, ambiguous_intent, location_permission, missing_reference_location, greeting
 
 ## REFINEMENT LOGIC:
 
@@ -236,6 +244,48 @@ Response: {
   "needs_clarification": false
 }
 
+**Example 9 - Current Location Query (Initial Request):**
+User: "What is my current location?"
+Previous: None
+Response: {
+  "user_response": "I can help you with that! To show you your current location, I need permission to access your location. Would you like to allow me to do so?",
+  "server_query": "what is my current location",
+  "is_followup": false,
+  "followup_type": "clarification_needed",
+  "confidence": 0.95,
+  "needs_clarification": true,
+  "clarification_type": "location_permission",
+  "requesting_location_permission": true
+}
+
+**Example 10 - Current Location Query (After Permission):**
+User: "yes"
+Previous: "What is my current location?"
+Response: {
+  "user_response": "Here is your current location.",
+  "server_query": "",
+  "is_followup": true,
+  "followup_type": "refinement",
+  "confidence": 0.95,
+  "needs_clarification": true,
+  "clarification_type": "current_location_query",
+  "show_user_location": true
+}
+
+  **Example 11 - Show Current Location again:**
+User: "show me my current location again"
+Previous: "Here is your current location."
+Response: {
+  "user_response": "Here is your current location again.",
+  "server_query": "",
+  "is_followup": true,
+  "followup_type": "refinement",
+  "confidence": 0.95,
+  "needs_clarification": true,
+  "clarification_type": "current_location_query",
+  "show_user_location": true
+}
+
 ## IMPORTANT GUIDELINES:
 
 - Keep user responses natural, helpful, and encouraging
@@ -246,6 +296,7 @@ Response: {
 - **Include distance context** when present in previous searches
 - Be confident in your classifications
 - If unsure about follow-up status, lean towards new search
+- If the user asks to show their current location or show current location again, always set show_user_location to true and needs_clarification to false.
 
 NB: When the user requests for a location near them or around their current location, let them know the you will use their current location to search for places for them if their location is enabled or allowed.
 
@@ -510,6 +561,8 @@ Analyze the current query and provide a JSON response with user_response, server
       if (response.server_query && response.server_query !== userQuery) {
         context.lastSearchQuery = response.server_query;
       }
+
+      console.log('response', response);
 
       return response;
     } catch (error) {

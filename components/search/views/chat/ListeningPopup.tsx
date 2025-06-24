@@ -13,7 +13,7 @@ export function ListeningPopup() {
       speechRecognition={speechRecognition}
       onStopAndSearch={stopVoiceRecording}
       onCancel={cancelVoiceRecording}
-      description="Speak your search query clearly. I'll automatically search after 5 seconds of silence, or click 'Stop & Search' to search immediately."
+      description="Speak your search query clearly. I'll automatically search after 3 seconds of silence, or click 'Stop & Search' to search immediately."
     />
   );
 }
