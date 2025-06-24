@@ -109,7 +109,7 @@ A query **needs clarification** if:
 - **Location permission**: "Find me places near me", "Find me places around me"
 - **Ambiguous intent**: "Find me good things", "What do you recommend?"
 - **Missing reference location**: "Find restaurants within 2km" (distance specified but no reference point)
-- **Greeting statements**: When user starts with greetings like "hello", "hi", "hey", "good morning" etc., respond warmly and ask what they'd like to search for
+- **Greeting statements**: When user starts with greetings like "hello", "hi", "hey", "good morning" etc., without any other context, respond warmly and ask what they'd like to search for. set needs_clarification to true and clarification_type to 'greeting' in this case.
 - **Current location queries**: When user asks about their current location (e.g. "where am I?", "what's my location?"). 
   If they don't specify what places to find around them, set needs_clarification to true and clarification_type to 'current_location_query' and show_user_location to true.
   If they specify what places to find around them, set needs_clarification to false and show_user_location to true.

@@ -12,6 +12,9 @@ import { PlaceContact } from './place-contact';
 import { PlaceChat } from './place-chat';
 import { PlaceHours } from './place-hours';
 import { useUser } from '@/hooks/use-user';
+import { Button } from '@/components/ui/button';
+import { Bot } from 'lucide-react';
+import { PlaceSummaryDrawer } from './place-summary-drawer';
 
 interface PlaceDetailsProps {
   place: PlaceResults;
@@ -30,6 +33,7 @@ export function PlaceDetails({
 }: PlaceDetailsProps) {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState('info');
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   return (
     <div className="flex flex-col">
@@ -40,6 +44,18 @@ export function PlaceDetails({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main content area */}
           <div className="lg:col-span-2 space-y-6">
+            {/* AI Summary Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={() => setIsSummaryOpen(true)}
+                variant="outline"
+                className="gap-2"
+              >
+                <Bot className="h-4 w-4" />
+                AI Summary & Q&A
+              </Button>
+            </div>
+
             {/* Tabs for different sections */}
             <PlaceTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -88,6 +104,13 @@ export function PlaceDetails({
           </div>
         </div>
       </div>
+
+      {/* AI Summary Drawer */}
+      <PlaceSummaryDrawer
+        place={place}
+        isOpen={isSummaryOpen}
+        onClose={() => setIsSummaryOpen(false)}
+      />
     </div>
   );
 }

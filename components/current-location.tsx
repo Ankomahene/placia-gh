@@ -66,10 +66,15 @@ export function CurrentLocation() {
     <div className="flex items-center gap-1">
       <Badge
         variant="outline"
-        className="flex items-center gap-1 bg-primary/5 hover:bg-primary/10"
+        className="flex items-center gap-1 bg-primary/5 hover:bg-primary/10 w-[250px] truncate"
       >
         <MapPin className="h-3 w-3 text-primary" />
-        <span className="text-xs">{address || 'Location not found'}</span>
+        <span
+          className="text-xs w-full truncate"
+          title={address || 'Location not found'}
+        >
+          {address || 'Location not found'}
+        </span>
       </Badge>
       <Button
         variant="ghost"

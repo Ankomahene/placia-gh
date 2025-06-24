@@ -10,6 +10,7 @@ import { MapPreview } from './map-preview';
 import { useSearchContext } from './search/hooks/use-search-context';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
 import { SpeechListeningPopup } from './speech-listening-popup';
+import Image from 'next/image';
 
 const exampleSearches = [
   'Affordable schools in my area',
@@ -234,12 +235,29 @@ export default function HeroSection() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center mb-12">
           {/* AI Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-6 animate-fade-in">
-            <Bot className="h-4 w-4 text-primary" />
+          <div className="relative inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/5 via-blue-500/5 to-purple-500/5 border border-primary/20 mb-6 animate-fade-in backdrop-blur-sm">
+            {/* <Bot className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-primary">
               AI-Powered Search
-            </span>
-            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+            </span> */}
+            <div className="relative flex items-center gap-3">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 blur-xl rounded-full scale-150 animate-pulse-slow"></div>
+                <Image
+                  src="/bolt-3d.png"
+                  alt="Bolt 3d logo"
+                  width={40}
+                  height={40}
+                  className="relative z-10 hover:scale-110 transition-transform duration-300"
+                />
+              </div>
+              <div className="flex items-center gap-2 pl-1">
+                <span className="text-sm font-medium bg-gradient-to-r from-primary via-blue-500 to-purple-500 bg-clip-text text-transparent animate-gradient-text hover:scale-105 transition-transform duration-300">
+                  Proudly built with bolt.new
+                </span>
+                <Sparkles className="h-4 w-4 text-primary animate-pulse" />
+              </div>
+            </div>
           </div>
 
           {/* Main heading */}
@@ -303,12 +321,11 @@ export default function HeroSection() {
                 <Button
                   type="submit"
                   size="lg"
-                  className="rounded-lg px-8 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
+                  className="rounded-lg px-6 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
                   disabled={!searchInput.trim()}
                 >
-                  <Search className="h-5 w-5 mr-1" />
-                  Search
-                  {/* <Zap className="h-4 w-4 ml-2" /> */}
+                  <Search className="h-5 w-5 md:mr-1" />
+                  <span className="hidden md:block">Search</span>
                 </Button>
                 <Button
                   type="button"
@@ -318,8 +335,8 @@ export default function HeroSection() {
                   className="rounded-lg px-6 py-6 bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/40"
                   disabled={!searchInput.trim()}
                 >
-                  <Bot className="h-5 w-5 mr-1" />
-                  Chat
+                  <Bot className="h-5 w-5 md:mr-1" />
+                  <span className="hidden md:block">Chat</span>
                 </Button>
               </form>
             </Card>

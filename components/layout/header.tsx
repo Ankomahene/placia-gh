@@ -42,7 +42,7 @@ export default function Header() {
           <CurrentLocation />
         </div>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="flex items-center gap-2">
           <ThemeToggle />
           {user ? (
             <UserMenu
@@ -51,7 +51,7 @@ export default function Header() {
               }}
             />
           ) : (
-            <div className="flex items-center gap-2">
+            <div className="hidden md:flex items-center gap-2">
               <Link href="/auth/login">
                 <Button variant="outline" size="sm">
                   Sign In
@@ -65,10 +65,6 @@ export default function Header() {
         </div>
 
         <div className="flex items-center md:hidden gap-3">
-          <CurrentLocation />
-
-          <ThemeToggle />
-
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -78,14 +74,23 @@ export default function Header() {
             </SheetTrigger>
             <SheetContent side="right">
               <div className="flex flex-col gap-4 mt-8 p-8">
-                <Link href="/auth/login">
-                  <Button variant="outline" className="w-full">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link href="/auth/signup">
-                  <Button className="w-full">Sign Up</Button>
-                </Link>
+                <p className="text-sm text-muted-foreground">
+                  You current location
+                </p>
+                <CurrentLocation />
+
+                {!user && (
+                  <div className="flex items-center gap-2">
+                    <Link href="/auth/login" className="w-full">
+                      <Button variant="outline" className="w-full">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link href="/auth/signup" className="w-full">
+                      <Button className="w-full">Sign Up</Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </SheetContent>
           </Sheet>
