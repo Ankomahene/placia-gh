@@ -20,6 +20,7 @@ export function MaplibreMapClient({
   hoverSource,
   center = { lat: 5.6037, lng: -0.187 }, // Default to Accra, Ghana
   zoom = 12,
+  setNavigationSource,
 }: MaplibreMapClientProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -392,7 +393,10 @@ export function MaplibreMapClient({
             rating={popupInfo.marker.rating}
             isOpen={popupInfo.marker.isOpen}
             distance={popupInfo.marker.distance}
-            onViewDetails={() => handleMarkerClick(popupInfo.marker)}
+            onViewDetails={() => {
+              handleMarkerClick(popupInfo.marker);
+              setNavigationSource?.('general_search');
+            }}
           />
         </Popup>
       )}

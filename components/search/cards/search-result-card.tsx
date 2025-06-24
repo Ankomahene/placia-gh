@@ -203,10 +203,7 @@ export function SearchResultCard({
           href={placeDetailsUrl}
           onClick={(e) => {
             e.stopPropagation();
-            // Track navigation source based on current search mode
-            const source =
-              searchMode === 'chat' ? 'chat_search' : 'general_search';
-            setNavigationSource(source);
+            handleViewDetails();
           }}
         >
           <Button variant="outline" size="sm">

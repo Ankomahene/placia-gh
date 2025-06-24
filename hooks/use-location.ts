@@ -33,7 +33,7 @@
  * - Shared across all components using the hook
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 interface LocationState {
   latitude: number | null;
@@ -158,7 +158,7 @@ async function detectLocationProgressive(): Promise<LocationState> {
       return location;
     } catch (error) {
       // Continue to next strategy
-      console.log(`Location strategy ${strategy.source} failed:`, error);
+      console.error(`Location strategy ${strategy.source} failed:`, error);
     }
   }
 
@@ -209,7 +209,7 @@ function attemptGeolocation(options: {
             }
           } catch {
             // Address lookup failed, but we still have coordinates
-            console.log(
+            console.error(
               'Address lookup failed, continuing with coordinates only'
             );
           }
@@ -246,6 +246,8 @@ function attemptGeolocation(options: {
 }
 
 export function useLocation() {
+  const queryClient = useQueryClient();
+
   const {
     data: location,
     error,
@@ -271,11 +273,24 @@ export function useLocation() {
     retryDelay: 2000,
   });
 
+  // Force refetch by clearing all caches first
+  const forceRefetch = async () => {
+    // Clear both session storage cache and permission status
+    clearLocationCache();
+
+    // Invalidate and remove React Query cache
+    await queryClient.invalidateQueries({ queryKey: ['user-location'] });
+    queryClient.removeQueries({ queryKey: ['user-location'] });
+
+    // Force a fresh fetch
+    return await refetch();
+  };
+
   return {
     ...location,
     error: error instanceof Error ? error.message : null,
     loading: isLoading || isFetching,
-    refetch,
+    refetch: forceRefetch, // Use our custom refetch that clears all caches
   };
 }
 

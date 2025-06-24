@@ -92,7 +92,12 @@ export function PlacePopup({
           </div>
         </div>
 
-        <button className="custom-popup-button" onClick={onViewDetails}>
+        <button
+          className="custom-popup-button"
+          onClick={() => {
+            onViewDetails();
+          }}
+        >
           View Details
         </button>
       </div>

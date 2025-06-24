@@ -27,6 +27,9 @@ interface MapSidebarProps {
   onPlaceClick: (placeId: string) => void;
   onDirectionsRequest?: (placeId: string) => void;
   isLoading: boolean;
+  setNavigationSource: (
+    source: 'home' | 'general_search' | 'chat_search'
+  ) => void;
 }
 
 export function MapSidebar({
@@ -39,6 +42,7 @@ export function MapSidebar({
   onPlaceClick,
   onDirectionsRequest,
   isLoading,
+  setNavigationSource,
 }: MapSidebarProps) {
   const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -280,7 +284,10 @@ export function MapSidebar({
                               <Link
                                 href={placeDetailsUrl}
                                 className="text-xs cursor-pointer text-primary hover:underline flex-1"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setNavigationSource('general_search');
+                                }}
                               >
                                 View details
                               </Link>

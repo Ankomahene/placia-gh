@@ -21,4 +21,7 @@ export interface MaplibreMapClientProps {
   hoverSource?: 'card' | 'marker' | null;
   center?: { lat: number; lng: number };
   zoom?: number;
+  setNavigationSource?: (
+    source: 'home' | 'general_search' | 'chat_search'
+  ) => void;
 }

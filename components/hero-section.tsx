@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Bot, Mic, Search, Sparkles, Zap } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { MapPreview } from './map-preview';
 import { useSearchContext } from './search/hooks/use-search-context';
+import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { SpeechListeningPopup } from './speech-listening-popup';
 
 const exampleSearches = [
   'Affordable schools in my area',
@@ -27,8 +29,6 @@ const floatingElements = [
 
 export default function HeroSection() {
   const {
-    searchTerm,
-    chatSearchTerm,
     previousSearchTerm,
     setSearchTerm,
     setChatSearchTerm,
@@ -40,8 +40,109 @@ export default function HeroSection() {
     restoreSearchState,
     getNavigationSource,
     setIsOpenSearchWindow,
-    setNavigationSource,
   } = useSearchContext();
+  const [searchInput, setSearchInput] = useState('');
+
+  // Speech recognition functionality using the existing hook
+  const speechRecognition = useSpeechRecognition({
+    language: 'en-US',
+    continuous: true,
+    interimResults: true,
+    confidenceThreshold: 0.5,
+    silenceTimeout: 5000,
+  });
+
+  const wasCancelledRef = useRef(false);
+  const isActiveVoiceSessionRef = useRef(false);
+
+  // Reset speech recognition state when hero section mounts
+  useEffect(() => {
+    speechRecognition.resetTranscript();
+    wasCancelledRef.current = false;
+    isActiveVoiceSessionRef.current = false;
+  }, []);
+
+  // Speech recognition methods
+  const startVoiceRecording = () => {
+    wasCancelledRef.current = false;
+    isActiveVoiceSessionRef.current = true;
+    speechRecognition.resetTranscript();
+    speechRecognition.startListening();
+  };
+
+  const stopVoiceRecording = () => {
+    wasCancelledRef.current = false;
+    speechRecognition.stopListening();
+    if (speechRecognition.transcript.trim()) {
+      setSearchInput(speechRecognition.transcript.trim());
+    }
+    // Keep session active until auto-search completes or is cancelled
+  };
+
+  const cancelVoiceRecording = () => {
+    wasCancelledRef.current = true;
+    isActiveVoiceSessionRef.current = false;
+    speechRecognition.resetTranscript();
+    speechRecognition.stopListening();
+    setSearchInput('');
+  };
+
+  const handleVoiceRecording = () => {
+    if (speechRecognition.isListening) {
+      stopVoiceRecording();
+    } else {
+      startVoiceRecording();
+    }
+  };
+
+  // Auto-update input with speech recognition results
+  useEffect(() => {
+    if (
+      speechRecognition.transcript &&
+      !speechRecognition.isListening &&
+      !wasCancelledRef.current &&
+      isActiveVoiceSessionRef.current
+    ) {
+      setSearchInput(speechRecognition.transcript.trim());
+    }
+  }, [speechRecognition.transcript, speechRecognition.isListening]);
+
+  // Auto-search when speech recognition stops with content
+  useEffect(() => {
+    const transcript = speechRecognition.transcript.trim();
+
+    if (
+      !speechRecognition.isListening &&
+      transcript &&
+      searchInput.trim() === transcript &&
+      !wasCancelledRef.current &&
+      isActiveVoiceSessionRef.current // Only auto-search if we're in an active voice session
+    ) {
+      const timeoutId = setTimeout(async () => {
+        // Mark session as completed
+        isActiveVoiceSessionRef.current = false;
+
+        setSearchMode('general');
+        setSearchTerm(transcript);
+        onSearch(transcript);
+        if (transcript !== previousSearchTerm) {
+          await performSearch(transcript, userLocation);
+        }
+      }, 800);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    speechRecognition.isListening,
+    speechRecognition.transcript,
+    searchInput,
+    previousSearchTerm,
+    setSearchMode,
+    setSearchTerm,
+    onSearch,
+    performSearch,
+    userLocation,
+  ]);
 
   // Check for cached search state on mount and restore if needed
   useEffect(() => {
@@ -72,26 +173,26 @@ export default function HeroSection() {
 
   const handleSearch = async (e?: React.FormEvent) => {
     e?.preventDefault();
-    if (searchTerm.trim()) {
+    if (searchInput.trim()) {
       setSearchMode('general');
-      onSearch(searchTerm);
-      if (searchTerm !== previousSearchTerm) {
-        await performSearch(searchTerm, userLocation);
+      setSearchTerm(searchInput);
+      onSearch(searchInput);
+      if (searchInput !== previousSearchTerm) {
+        await performSearch(searchInput, userLocation);
       }
     }
   };
 
   const handleChatSearch = async () => {
-    if (searchTerm.trim()) {
+    if (searchInput.trim()) {
       setSearchMode('chat');
-      setChatSearchTerm(searchTerm);
-      onChatSearch(searchTerm);
+      setChatSearchTerm(searchInput);
+      onChatSearch(searchInput);
     }
   };
 
   const handleExampleClick = async (query: string) => {
-    setSearchTerm(query);
-    setNavigationSource('home');
+    setSearchInput(query);
   };
 
   return (
@@ -175,18 +276,27 @@ export default function HeroSection() {
                     type="text"
                     placeholder="e.g., 'Find me a good jollof restaurant near Accra Mall'"
                     className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary/50"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                   />
                   <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex gap-2">
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full"
+                      onClick={handleVoiceRecording}
+                      className={`h-8 w-8 rounded-full transition-colors duration-200 ${
+                        speechRecognition.isListening
+                          ? 'text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900'
+                          : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+                      }`}
                     >
                       <Mic className="h-4 w-4" />
-                      <span className="sr-only">Voice search</span>
+                      <span className="sr-only">
+                        {speechRecognition.isListening
+                          ? 'Stop voice search'
+                          : 'Start voice search'}
+                      </span>
                     </Button>
                   </div>
                 </div>
@@ -194,7 +304,7 @@ export default function HeroSection() {
                   type="submit"
                   size="lg"
                   className="rounded-lg px-8 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
-                  disabled={!searchTerm.trim()}
+                  disabled={!searchInput.trim()}
                 >
                   <Search className="h-5 w-5 mr-1" />
                   Search
@@ -206,7 +316,7 @@ export default function HeroSection() {
                   size="lg"
                   variant="outline"
                   className="rounded-lg px-6 py-6 bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/40"
-                  disabled={!searchTerm.trim()}
+                  disabled={!searchInput.trim()}
                 >
                   <Bot className="h-5 w-5 mr-1" />
                   Chat
@@ -263,6 +373,14 @@ export default function HeroSection() {
           <MapPreview />
         </div>
       </div>
+
+      {/* Speech Listening Popup */}
+      <SpeechListeningPopup
+        speechRecognition={speechRecognition}
+        onStopAndSearch={stopVoiceRecording}
+        onCancel={cancelVoiceRecording}
+        description="Speak your search query clearly. I'll automatically search after 5 seconds of silence, or click 'Stop & Search' to search immediately."
+      />
     </section>
   );
 }

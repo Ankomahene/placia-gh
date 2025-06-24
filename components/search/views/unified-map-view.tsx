@@ -10,6 +10,7 @@ import { PlaceResultsSummary } from '@/types/place';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useLocation } from '@/hooks/use-location';
 import { MapSidebar } from './shared/MapSidebar';
+import { useSearchContext } from '../hooks/use-search-context';
 
 // Dynamically import map components to avoid SSR issues
 const DynamicSearchMap = dynamic(
@@ -91,6 +92,7 @@ export function UnifiedMapView({
   );
   const [flyToMarkerId, setFlyToMarkerId] = useState<string | null>(null);
   const [directionsInfo, setDirectionsInfo] = useState<any>(null);
+  const { setNavigationSource } = useSearchContext();
 
   // Track hover source for popup behavior
   const hoverSourceRef = useRef<'card' | 'marker' | null>(null);
@@ -228,6 +230,7 @@ export function UnifiedMapView({
           flyToMarkerId={flyToMarkerId}
           isSidebarCollapsed={isSidebarCollapsed}
           hoverSource={hoverSourceRef.current}
+          setNavigationSource={setNavigationSource}
         />
       );
     }
@@ -242,6 +245,7 @@ export function UnifiedMapView({
         flyToMarkerId={flyToMarkerId}
         isSidebarCollapsed={isSidebarCollapsed}
         hoverSource={hoverSourceRef.current}
+        setNavigationSource={setNavigationSource}
       />
     );
   };
@@ -343,6 +347,7 @@ export function UnifiedMapView({
         onPlaceClick={handleCardClick}
         onDirectionsRequest={handleDirectionsRequest}
         isLoading={isLoading}
+        setNavigationSource={setNavigationSource}
       />
     </div>
   );

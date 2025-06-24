@@ -12,6 +12,14 @@ import { cn } from '@/lib/utils';
 export function CurrentLocation() {
   const { address, error, loading, refetch } = useLocation();
 
+  const handleRefetch = async () => {
+    try {
+      const result = await refetch();
+    } catch (err) {
+      console.error('❌ Location refetch failed:', err);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center gap-1">
@@ -45,7 +53,7 @@ export function CurrentLocation() {
           variant="ghost"
           size="icon"
           className="h-6 w-6"
-          onClick={() => refetch()}
+          onClick={handleRefetch}
           title="Locate me"
         >
           <Locate className="h-3 w-3" />
@@ -67,7 +75,7 @@ export function CurrentLocation() {
         variant="ghost"
         size="icon"
         className={cn('h-6 w-6', loading && 'animate-spin')}
-        onClick={() => refetch()}
+        onClick={handleRefetch}
         title="Locate me"
       >
         <Locate className="h-3 w-3" />

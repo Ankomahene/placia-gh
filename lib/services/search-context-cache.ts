@@ -34,7 +34,7 @@ class SearchContextCache {
     });
 
     if (cleanedCount > 0) {
-      console.log(`Cleaned up ${cleanedCount} expired search contexts`);
+      console.info(`Cleaned up ${cleanedCount} expired search contexts`);
     }
   }
 
@@ -50,7 +50,7 @@ class SearchContextCache {
       timestamp: new Date(), // Ensure fresh timestamp
     });
 
-    console.log(`Cached search context for session: ${sessionId}`);
+    console.info(`Cached search context for session: ${sessionId}`);
   }
 
   get(sessionId: string): CachedSearchContext | undefined {
@@ -63,7 +63,9 @@ class SearchContextCache {
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
       if (context.timestamp < thirtyMinutesAgo) {
         this.cache.delete(sessionId);
-        console.log(`🗑️ Expired and removed context for session: ${sessionId}`);
+        console.info(
+          `🗑️ Expired and removed context for session: ${sessionId}`
+        );
         return undefined;
       }
 
@@ -75,7 +77,7 @@ class SearchContextCache {
           ' minutes',
       });
     } else {
-      console.log(`❌ No cached context found for session: ${sessionId}`);
+      console.info(`❌ No cached context found for session: ${sessionId}`);
     }
 
     return context;
@@ -107,7 +109,7 @@ class SearchContextCache {
   // Log cache activity for debugging
   logCacheActivity() {
     const stats = this.getStats();
-    console.log('🔄 Search Context Cache Activity:', {
+    console.info('🔄 Search Context Cache Activity:', {
       totalSessions: stats.totalSessions,
       recentEntries: stats.cacheEntries.slice(-5), // Show last 5 entries
     });

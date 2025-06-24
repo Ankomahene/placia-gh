@@ -16,7 +16,7 @@ import {
   LayoutGrid,
   Bot,
 } from 'lucide-react';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { SearchLoadingSpinner } from './components/search-loading-spinner';
 import { SearchSorting } from './components/search-sorting';
 import { useSearch } from './hooks/use-search';
@@ -26,6 +26,8 @@ import { CardView } from './views/card-view';
 import { ListView } from './views/list-view';
 import { UnifiedMapView } from './views/unified-map-view';
 import { ChatView } from './views/chat';
+import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
+import { SpeechListeningPopup } from '@/components/speech-listening-popup';
 
 export function SearchDrawer() {
   const {
@@ -57,12 +59,111 @@ export function SearchDrawer() {
     setChatSearchTerm,
     onSearch,
     setIsOpenSearchWindow,
+    setNavigationSource,
   } = useSearchContext();
+
+  // Speech recognition functionality
+  const speechRecognition = useSpeechRecognition({
+    language: 'en-US',
+    continuous: true,
+    interimResults: true,
+    confidenceThreshold: 0.5,
+    silenceTimeout: 5000,
+  });
+
+  const wasCancelledRef = useRef(false);
+  const isActiveVoiceSessionRef = useRef(false);
 
   // Helper to determine current search mode for TypeScript
   const isChatMode = searchMode === 'chat';
   const currentTerm = isChatMode ? chatSearchTerm : searchTerm;
   const setCurrentTerm = isChatMode ? setChatSearchTerm : setSearchTerm;
+
+  // Speech recognition methods
+  const startVoiceRecording = () => {
+    wasCancelledRef.current = false;
+    isActiveVoiceSessionRef.current = true;
+    speechRecognition.resetTranscript();
+    speechRecognition.startListening();
+  };
+
+  const stopVoiceRecording = () => {
+    wasCancelledRef.current = false;
+    speechRecognition.stopListening();
+    if (speechRecognition.transcript.trim()) {
+      setCurrentTerm(speechRecognition.transcript.trim());
+    }
+  };
+
+  const cancelVoiceRecording = () => {
+    wasCancelledRef.current = true;
+    isActiveVoiceSessionRef.current = false;
+    speechRecognition.resetTranscript();
+    speechRecognition.stopListening();
+  };
+
+  const handleVoiceRecording = () => {
+    if (speechRecognition.isListening) {
+      stopVoiceRecording();
+    } else {
+      startVoiceRecording();
+    }
+  };
+
+  // Auto-update input with speech recognition results
+  useEffect(() => {
+    if (
+      speechRecognition.transcript &&
+      !speechRecognition.isListening &&
+      !wasCancelledRef.current &&
+      isActiveVoiceSessionRef.current
+    ) {
+      setCurrentTerm(speechRecognition.transcript.trim());
+    }
+  }, [
+    speechRecognition.transcript,
+    speechRecognition.isListening,
+    setCurrentTerm,
+  ]);
+
+  // Auto-search when speech recognition stops with content
+  useEffect(() => {
+    const transcript = speechRecognition.transcript.trim();
+
+    if (
+      !speechRecognition.isListening &&
+      transcript &&
+      currentTerm.trim() === transcript &&
+      !wasCancelledRef.current &&
+      isActiveVoiceSessionRef.current
+    ) {
+      const timeoutId = setTimeout(async () => {
+        // Mark session as completed
+        isActiveVoiceSessionRef.current = false;
+
+        onSearch(transcript);
+        await search(transcript, userLocation);
+      }, 800);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [
+    speechRecognition.isListening,
+    speechRecognition.transcript,
+    currentTerm,
+    onSearch,
+    search,
+    userLocation,
+  ]);
+
+  // Reset speech recognition state when search drawer opens
+  useEffect(() => {
+    if (isOpenSearchWindow) {
+      speechRecognition.resetTranscript();
+      wasCancelledRef.current = false;
+      isActiveVoiceSessionRef.current = false;
+    }
+  }, [isOpenSearchWindow]);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,6 +177,7 @@ export function SearchDrawer() {
 
   const handleClose = () => {
     setIsOpenSearchWindow(false);
+    setNavigationSource('home');
   };
 
   const renderViewToggle = () => (
@@ -308,9 +410,19 @@ export function SearchDrawer() {
                           type="button"
                           variant="ghost"
                           size="icon"
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          onClick={handleVoiceRecording}
+                          className={`absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 transition-colors duration-200 ${
+                            speechRecognition.isListening
+                              ? 'text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900'
+                              : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+                          }`}
                         >
                           <Mic className="h-4 w-4" />
+                          <span className="sr-only">
+                            {speechRecognition.isListening
+                              ? 'Stop voice search'
+                              : 'Start voice search'}
+                          </span>
                         </Button>
                       </div>
                       <Button
@@ -350,6 +462,14 @@ export function SearchDrawer() {
               </motion.div>
             </>
           )}
+
+          {/* Speech Listening Popup */}
+          <SpeechListeningPopup
+            speechRecognition={speechRecognition}
+            onStopAndSearch={stopVoiceRecording}
+            onCancel={cancelVoiceRecording}
+            description="Speak your search query clearly. I'll automatically search after 5 seconds of silence, or click 'Stop & Search' to search immediately."
+          />
         </motion.div>
       )}
     </AnimatePresence>

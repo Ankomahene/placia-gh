@@ -48,6 +48,9 @@ interface SearchMapClientProps {
   flyToMarkerId?: string | null;
   isSidebarCollapsed?: boolean;
   hoverSource?: 'card' | 'marker' | null;
+  setNavigationSource?: (
+    source: 'home' | 'general_search' | 'chat_search'
+  ) => void;
 }
 
 // Fix leaflet default icon issue
@@ -263,6 +266,7 @@ export function SearchMapClient({
   flyToMarkerId,
   isSidebarCollapsed,
   hoverSource,
+  setNavigationSource,
 }: SearchMapClientProps) {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -644,7 +648,10 @@ export function SearchMapClient({
 
                   <button
                     className="custom-popup-button"
-                    onClick={() => onMarkerClick(marker.id)}
+                    onClick={() => {
+                      onMarkerClick(marker.id);
+                      setNavigationSource?.('general_search');
+                    }}
                   >
                     View Details
                   </button>

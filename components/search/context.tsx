@@ -515,7 +515,7 @@ export const SearchContextProvider = ({
       // Search functionality
       query: currentQuery,
       isSearching,
-      results: searchResults,
+      results: sortedResults,
       viewMode,
       searchMode,
       hoveredPlaceId,
@@ -564,6 +564,7 @@ export const SearchContextProvider = ({
     setShouldAutoRunChat,
     currentQuery,
     isSearching,
+    sortedResults,
     searchResults,
     viewMode,
     searchMode,

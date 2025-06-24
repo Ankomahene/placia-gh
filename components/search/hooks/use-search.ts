@@ -17,6 +17,7 @@ export function useSearch() {
     // Search state
     currentQuery,
     isSearching,
+    results, // This contains the sorted results
     searchResults,
     hasMore,
 
@@ -37,7 +38,7 @@ export function useSearch() {
   return {
     query: currentQuery,
     isSearching,
-    results: searchResults, // Use searchResults directly
+    results, // Use sorted results from context
     rawResults: searchResults, // Expose raw results for debugging
     viewMode,
     searchMode,
