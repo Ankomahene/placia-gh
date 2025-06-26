@@ -40,6 +40,7 @@ interface PlaceFormViewProps {
 }
 
 export function PlaceFormView({ formData, updateFormData, errors }: PlaceFormViewProps) {
+  }
   const [activeTab, setActiveTab] = useState('basic');
   
   const { categories, isLoading: categoriesLoading } = useCategories();
