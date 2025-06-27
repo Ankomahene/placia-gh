@@ -22,7 +22,7 @@ import type { PlaceSubcategory } from '@/types/place';
 import { useDraggable } from '@dnd-kit/core';
 import { GripVerticalIcon, Grip, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useState } from 'react';
-import { SubcategoryForm } from '../place-manager/forms/SubcategoryForm';
+import { SubcategoryForm } from '../categories-manager/forms/SubcategoryForm';
 
 function DraggableSubcategory({
   subcategory,

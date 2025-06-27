@@ -194,7 +194,6 @@ export class GooglePlaceSearch {
 
     // Priority 1: If we have a location, search nearby first for better location-based results
     if (searchLocation) {
-      console.log('Rating: doing nearby search for', searchLocation);
       try {
         const nearbyResults = await nearbySearch(
           searchLocation,
@@ -214,7 +213,6 @@ export class GooglePlaceSearch {
         nextPageToken = searchResults.nextPageToken;
       }
     } else {
-      console.log('Rating: doing regular search');
       // Priority 2: Regular search without location constraint
       const searchResults = await searchGooglePlaces(
         structuredQuery,

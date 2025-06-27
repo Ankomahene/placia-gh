@@ -24,9 +24,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { usePlaceSubcategories } from '@/hooks/admin/use-place-subcategories';
-import { SubcategoryForm } from '../../place-manager/forms/SubcategoryForm';
+
 import type { PlaceSubcategory } from '@/types/place';
 import { toast } from 'sonner';
+import { SubcategoryForm } from '../../categories-manager/forms/SubcategoryForm';
 
 interface SubcategoriesManagerProps {
   search: string;

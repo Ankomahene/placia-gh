@@ -159,9 +159,9 @@ export interface Place {
   main_image?: string;
   gallery?: string[];
 
-  country_id: string; // Foreign Key to countries.id (int8)
-  region_id: string; // Foreign Key to regions.id (int8)
-  city_id: string; // Foreign Key to cities.id (int8)
+  country_id: string; // Foreign Key to countries.id (converted to int8 when saving)
+  region_id: string; // Foreign Key to regions.id (converted to int8 when saving)
+  city_id: string; // Foreign Key to cities.id (converted to int8 when saving)
   location: { lng: number; lat: number; name: string; street_address: string };
   town_id?: string;
 
