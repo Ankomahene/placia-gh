@@ -39,13 +39,19 @@ interface PlaceFormViewProps {
   errors: Record<string, string>;
 }
 
-export function PlaceFormView({ formData, updateFormData, errors }: PlaceFormViewProps) {
-  }
+export function PlaceFormView({
+  formData,
+  updateFormData,
+  errors,
+}: PlaceFormViewProps) {
   const [activeTab, setActiveTab] = useState('basic');
-  
-  const { categories, isLoading: categoriesLoading } = useCategories();
-  const { subcategories, isLoading: subcategoriesLoading } = useSubcategories(formData.category_id);
-  const { types, isLoading: typesLoading } = useTypes(formData.subcategory_id);
+
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
+  const { data: subcategories, isLoading: subcategoriesLoading } =
+    useSubcategories(formData.category_id);
+  const { data: types, isLoading: typesLoading } = useTypes(
+    formData.subcategory_id
+  );
   const { ownerships, isLoading: ownershipsLoading } = useOwnerships();
 
   return (

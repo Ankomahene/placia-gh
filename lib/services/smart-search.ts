@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/client';
 import type { PlaceResultsSummary } from '@/types/place';
-import { parseNaturalLanguageQuery } from './openai-search';
+import { parseNaturalLanguageQuery } from '.';
 import { geocodeLocation } from './google/places';
 import { StructuredSearchQuery } from '@/types/search';
 

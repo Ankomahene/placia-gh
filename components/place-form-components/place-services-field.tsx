@@ -15,7 +15,7 @@ interface Service {
 }
 
 interface PlaceServicesFieldProps {
-  value?: Service[];
+  value?: Service[] | null;
   onChange: (value: Service[]) => void;
   error?: string;
   className?: string;
@@ -35,16 +35,22 @@ export function PlaceServicesField({
   });
   const [isAddingNew, setIsAddingNew] = useState(false);
 
+  // Ensure value is always an array
+  const services = value || [];
+
   const addService = () => {
     if (newService.label.trim() && newService.icon.trim()) {
-      onChange([...value, { ...newService, label: newService.label.trim() }]);
+      onChange([
+        ...services,
+        { ...newService, label: newService.label.trim() },
+      ]);
       setNewService({ label: '', icon: '' });
       setIsAddingNew(false);
     }
   };
 
   const removeService = (index: number) => {
-    onChange(value.filter((_, i) => i !== index));
+    onChange(services.filter((_, i) => i !== index));
   };
 
   const updateService = (
@@ -52,7 +58,7 @@ export function PlaceServicesField({
     field: keyof Service,
     newValue: string
   ) => {
-    const updated = [...value];
+    const updated = [...services];
     updated[index] = { ...updated[index], [field]: newValue };
     onChange(updated);
   };
@@ -77,9 +83,9 @@ export function PlaceServicesField({
       </div>
 
       {/* Existing services */}
-      {value.length > 0 && (
+      {services.length > 0 && (
         <div className="space-y-3">
-          {value.map((service, index) => (
+          {services.map((service, index) => (
             <div
               key={index}
               className="flex gap-3 items-start p-3 border rounded-lg"
@@ -177,11 +183,11 @@ export function PlaceServicesField({
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       {/* Preview */}
-      {value.length > 0 && (
+      {services.length > 0 && (
         <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded">
           <strong>Preview:</strong>
           <div className="mt-2 flex flex-wrap gap-2">
-            {value.map((service, index) => (
+            {services.map((service, index) => (
               <div
                 key={index}
                 className="flex items-center gap-1 bg-background px-2 py-1 rounded border"

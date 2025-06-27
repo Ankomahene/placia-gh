@@ -11,6 +11,7 @@ import {
   Database,
   Heart,
   LayoutDashboard,
+  List,
   LogOut,
   MapPin,
   Menu,
@@ -74,9 +75,14 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
       icon: Users,
     },
     {
-      name: 'Place Manager',
-      href: '/admin/place-manager',
+      name: 'Places Manager',
+      href: '/admin/places-manager',
       icon: MapPin,
+    },
+    {
+      name: 'Categories Manager',
+      href: '/admin/categories-manager',
+      icon: List,
     },
     {
       name: 'Place Schema',

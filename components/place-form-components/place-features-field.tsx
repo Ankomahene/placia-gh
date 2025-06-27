@@ -15,7 +15,7 @@ interface Feature {
 }
 
 interface PlaceFeaturesFieldProps {
-  value?: Feature[];
+  value?: Feature[] | null;
   onChange: (value: Feature[]) => void;
   error?: string;
   className?: string;
@@ -35,16 +35,22 @@ export function PlaceFeaturesField({
   });
   const [isAddingNew, setIsAddingNew] = useState(false);
 
+  // Ensure value is always an array
+  const features = value || [];
+
   const addFeature = () => {
     if (newFeature.label.trim() && newFeature.icon.trim()) {
-      onChange([...value, { ...newFeature, label: newFeature.label.trim() }]);
+      onChange([
+        ...features,
+        { ...newFeature, label: newFeature.label.trim() },
+      ]);
       setNewFeature({ label: '', icon: '' });
       setIsAddingNew(false);
     }
   };
 
   const removeFeature = (index: number) => {
-    onChange(value.filter((_, i) => i !== index));
+    onChange(features.filter((_, i) => i !== index));
   };
 
   const updateFeature = (
@@ -52,7 +58,7 @@ export function PlaceFeaturesField({
     field: keyof Feature,
     newValue: string
   ) => {
-    const updated = [...value];
+    const updated = [...features];
     updated[index] = { ...updated[index], [field]: newValue };
     onChange(updated);
   };
@@ -77,9 +83,9 @@ export function PlaceFeaturesField({
       </div>
 
       {/* Existing features */}
-      {value.length > 0 && (
+      {features.length > 0 && (
         <div className="space-y-3">
-          {value.map((feature, index) => (
+          {features.map((feature, index) => (
             <div
               key={index}
               className="flex gap-3 items-start p-3 border rounded-lg"
@@ -177,11 +183,11 @@ export function PlaceFeaturesField({
       {error && <p className="text-sm text-red-500">{error}</p>}
 
       {/* Preview */}
-      {value.length > 0 && (
+      {features.length > 0 && (
         <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded">
           <strong>Preview:</strong>
           <div className="mt-2 flex flex-wrap gap-2">
-            {value.map((feature, index) => (
+            {features.map((feature, index) => (
               <div
                 key={index}
                 className="flex items-center gap-1 bg-background px-2 py-1 rounded border"

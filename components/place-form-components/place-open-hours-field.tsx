@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ interface OpenHour {
 }
 
 interface PlaceOpenHoursFieldProps {
-  value?: OpenHour[];
+  value?: OpenHour[] | null;
   onChange: (value: OpenHour[]) => void;
   error?: string;
   className?: string;
@@ -39,9 +39,17 @@ export function PlaceOpenHoursField({
   className,
   label = 'Opening Hours',
 }: PlaceOpenHoursFieldProps) {
+  // Ensure value is always an array
+  const hours = value || [];
+
   const [selectedDays, setSelectedDays] = useState<Set<string>>(
-    new Set(value.map((h) => h.day))
+    new Set(hours.map((h) => h.day))
   );
+
+  // Update selected days when value changes
+  useEffect(() => {
+    setSelectedDays(new Set(hours.map((h) => h.day)));
+  }, [hours]);
 
   const updateOpeningHours = (day: string, isChecked: boolean) => {
     const newSelectedDays = new Set(selectedDays);
@@ -49,12 +57,12 @@ export function PlaceOpenHoursField({
     if (isChecked) {
       newSelectedDays.add(day);
       // Add default hours for new day
-      const newHours = [...value, { day, from: '09:00', to: '17:00' }];
+      const newHours = [...hours, { day, from: '09:00', to: '17:00' }];
       onChange(newHours);
     } else {
       newSelectedDays.delete(day);
       // Remove hours for unchecked day
-      const newHours = value.filter((h) => h.day !== day);
+      const newHours = hours.filter((h) => h.day !== day);
       onChange(newHours);
     }
 
@@ -62,24 +70,24 @@ export function PlaceOpenHoursField({
   };
 
   const updateTimeRange = (day: string, field: 'from' | 'to', time: string) => {
-    const newHours = value.map((h) =>
+    const newHours = hours.map((h) =>
       h.day === day ? { ...h, [field]: time } : h
     );
     onChange(newHours);
   };
 
   const addTimeRange = (day: string) => {
-    const existingRanges = value.filter((h) => h.day === day);
+    const existingRanges = hours.filter((h) => h.day === day);
     const newRange = { day, from: '09:00', to: '17:00' };
-    onChange([...value, newRange]);
+    onChange([...hours, newRange]);
   };
 
   const removeTimeRange = (index: number) => {
-    const newHours = value.filter((_, i) => i !== index);
+    const newHours = hours.filter((_, i) => i !== index);
     onChange(newHours);
 
     // Update selected days if no more ranges for this day
-    const dayHours = value[index];
+    const dayHours = hours[index];
     const remainingForDay = newHours.filter((h) => h.day === dayHours.day);
     if (remainingForDay.length === 0) {
       const newSelectedDays = new Set(selectedDays);
@@ -89,7 +97,7 @@ export function PlaceOpenHoursField({
   };
 
   const getHoursForDay = (day: string) => {
-    return value.filter((h) => h.day === day);
+    return hours.filter((h) => h.day === day);
   };
 
   return (
@@ -136,12 +144,12 @@ export function PlaceOpenHoursField({
 
               {isSelected && dayHours.length > 0 && (
                 <div className="ml-6 space-y-2">
-                  {dayHours.map((hours, index) => {
-                    const globalIndex = value.findIndex(
+                  {dayHours.map((hourItem, index) => {
+                    const globalIndex = hours.findIndex(
                       (h) =>
-                        h.day === hours.day &&
-                        h.from === hours.from &&
-                        h.to === hours.to
+                        h.day === hourItem.day &&
+                        h.from === hourItem.from &&
+                        h.to === hourItem.to
                     );
 
                     return (
@@ -152,7 +160,7 @@ export function PlaceOpenHoursField({
                         <Clock className="h-4 w-4 text-muted-foreground" />
                         <Input
                           type="time"
-                          value={hours.from}
+                          value={hourItem.from}
                           onChange={(e) =>
                             updateTimeRange(day, 'from', e.target.value)
                           }
@@ -161,7 +169,7 @@ export function PlaceOpenHoursField({
                         <span className="text-muted-foreground">to</span>
                         <Input
                           type="time"
-                          value={hours.to}
+                          value={hourItem.to}
                           onChange={(e) =>
                             updateTimeRange(day, 'to', e.target.value)
                           }
@@ -196,21 +204,23 @@ export function PlaceOpenHoursField({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {value.length > 0 && (
+      {hours.length > 0 && (
         <div className="text-xs text-muted-foreground bg-muted/30 p-3 rounded">
           <strong>Preview:</strong>
-          <div className="mt-1 space-y-1">
-            {DAYS_OF_WEEK.map((day) => {
-              const dayHours = getHoursForDay(day);
-              if (dayHours.length === 0) return null;
-
-              return (
-                <div key={day}>
-                  <strong>{day}:</strong>{' '}
-                  {dayHours.map((h) => `${h.from} - ${h.to}`).join(', ')}
+          <div className="mt-2 space-y-1">
+            {DAYS_OF_WEEK.filter((day) => selectedDays.has(day)).map((day) => (
+              <div key={day} className="flex">
+                <span className="font-medium w-24">{day}:</span>
+                <div>
+                  {getHoursForDay(day).map((h, i) => (
+                    <span key={i}>
+                      {h.from} - {h.to}
+                      {i < getHoursForDay(day).length - 1 && ', '}
+                    </span>
+                  ))}
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -20,7 +20,7 @@ interface Social {
 }
 
 interface PlaceSocialsFieldProps {
-  value?: Social[];
+  value?: Social[] | null;
   onChange: (value: Social[]) => void;
   error?: string;
   className?: string;
@@ -53,10 +53,13 @@ export function PlaceSocialsField({
   });
   const [isAddingNew, setIsAddingNew] = useState(false);
 
+  // Ensure value is always an array
+  const socials = value || [];
+
   const addSocial = () => {
     if (newSocial.link.trim()) {
       onChange([
-        ...value,
+        ...socials,
         {
           platform_name: newSocial.platform_name || 'Other',
           link: newSocial.link.trim(),
@@ -68,7 +71,7 @@ export function PlaceSocialsField({
   };
 
   const removeSocial = (index: number) => {
-    onChange(value.filter((_, i) => i !== index));
+    onChange(socials.filter((_, i) => i !== index));
   };
 
   const updateSocial = (
@@ -76,7 +79,7 @@ export function PlaceSocialsField({
     field: keyof Social,
     newValue: string
   ) => {
-    const updated = [...value];
+    const updated = [...socials];
     updated[index] = { ...updated[index], [field]: newValue };
     onChange(updated);
   };
@@ -118,9 +121,9 @@ export function PlaceSocialsField({
       </div>
 
       {/* Existing socials */}
-      {value.length > 0 && (
+      {socials.length > 0 && (
         <div className="space-y-3">
-          {value.map((social, index) => (
+          {socials.map((social, index) => (
             <div
               key={index}
               className="flex gap-2 items-start p-3 border rounded-lg"
@@ -253,6 +256,13 @@ export function PlaceSocialsField({
       )}
 
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {socials.length === 0 && !isAddingNew && (
+        <p className="text-sm text-muted-foreground">
+          No social media links added yet. Add your social media profiles to
+          help visitors connect with you.
+        </p>
+      )}
     </div>
   );
 }

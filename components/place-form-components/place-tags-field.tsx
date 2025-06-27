@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { Plus, X } from 'lucide-react';
 
 interface PlaceTagsFieldProps {
-  value?: string[];
+  value?: string[] | null;
   onChange: (value: string[]) => void;
   error?: string;
   className?: string;
@@ -29,25 +29,28 @@ export function PlaceTagsField({
 }: PlaceTagsFieldProps) {
   const [newTag, setNewTag] = useState('');
 
+  // Ensure value is always an array
+  const tags = value || [];
+
   const addTag = () => {
     const trimmedTag = newTag.trim().toLowerCase();
-    if (trimmedTag && !value.includes(trimmedTag) && value.length < maxTags) {
-      onChange([...value, trimmedTag]);
+    if (trimmedTag && !tags.includes(trimmedTag) && tags.length < maxTags) {
+      onChange([...tags, trimmedTag]);
       setNewTag('');
     }
   };
 
   const removeTag = (index: number) => {
-    onChange(value.filter((_, i) => i !== index));
+    onChange(tags.filter((_, i) => i !== index));
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       addTag();
-    } else if (e.key === 'Backspace' && !newTag && value.length > 0) {
+    } else if (e.key === 'Backspace' && !newTag && tags.length > 0) {
       // Remove last tag when backspace is pressed on empty input
-      removeTag(value.length - 1);
+      removeTag(tags.length - 1);
     }
   };
 
@@ -57,7 +60,7 @@ export function PlaceTagsField({
         {label}
         <span className="text-muted-foreground ml-1">(Optional)</span>
         <span className="text-xs text-muted-foreground ml-2">
-          {value.length}/{maxTags}
+          {tags.length}/{maxTags}
         </span>
       </Label>
 
@@ -71,7 +74,7 @@ export function PlaceTagsField({
           onKeyDown={handleKeyDown}
           className={cn(error && 'border-red-500')}
           maxLength={30}
-          disabled={value.length >= maxTags}
+          disabled={tags.length >= maxTags}
         />
         <Button
           type="button"
@@ -80,8 +83,8 @@ export function PlaceTagsField({
           onClick={addTag}
           disabled={
             !newTag.trim() ||
-            value.includes(newTag.trim().toLowerCase()) ||
-            value.length >= maxTags
+            tags.includes(newTag.trim().toLowerCase()) ||
+            tags.length >= maxTags
           }
           className="shrink-0"
         >
@@ -90,9 +93,9 @@ export function PlaceTagsField({
       </div>
 
       {/* Display tags */}
-      {value.length > 0 && (
+      {tags.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {value.map((tag, index) => (
+          {tags.map((tag, index) => (
             <Badge
               key={index}
               variant="secondary"
@@ -108,13 +111,13 @@ export function PlaceTagsField({
 
       {error && <p className="text-sm text-red-500">{error}</p>}
 
-      {value.length === 0 && (
+      {tags.length === 0 && (
         <p className="text-sm text-muted-foreground">
           No tags added yet. Tags help users find your place more easily.
         </p>
       )}
 
-      {value.length >= maxTags && (
+      {tags.length >= maxTags && (
         <p className="text-sm text-amber-600">
           Maximum number of tags reached. Remove some tags to add new ones.
         </p>

@@ -1,5 +1,6 @@
 // Unified OpenAI Search Service
-export { parseNaturalLanguageQuery } from './openai-search';
+// export { parseNaturalLanguageQuery } from './openai-search';
+export { parseNaturalLanguageQuery } from './groq-search';
 
 // Google Places Services
 export {

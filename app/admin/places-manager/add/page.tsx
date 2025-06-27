@@ -1,109 +1,78 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, FileJson, FileSpreadsheet, FormInput, Loader2 } from 'lucide-react';
-import { PlaceFormView } from '@/components/admin/places/place-form-view';
-import { PlaceJsonView } from '@/components/admin/places/place-json-view';
-import { PlaceCsvView } from '@/components/admin/places/place-csv-view';
+import {
+  ArrowLeft,
+  Save,
+  FileJson,
+  FileSpreadsheet,
+  FormInput,
+} from 'lucide-react';
+import { PlaceFormView } from '@/components/admin/places-manager/place-form-view';
+import { PlaceJsonView } from '@/components/admin/places-manager/place-json-view';
+import { PlaceCsvView } from '@/components/admin/places-manager/place-csv-view';
 import { usePlaceForm } from '@/hooks/admin/use-place-form';
-import { usePlaceDetails } from '@/hooks/admin/use-place-details';
 import { toast } from 'sonner';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
 
-export default function EditPlacePage({ params }: { params: { id: string } }) {
+export default function AddPlacePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('form');
-  const { data: place, isLoading, error } = usePlaceDetails(params.id);
-  
-  const { 
-    formData, 
-    updateFormData, 
-    errors, 
-    isSubmitting, 
+  const {
+    formData,
+    updateFormData,
+    errors,
+    isSubmitting,
     savePlace,
     jsonData,
     csvData,
     updateFromJson,
     updateFromCsv,
-    setInitialData
   } = usePlaceForm();
-
-  useEffect(() => {
-    if (place) {
-      setInitialData(place);
-    }
-  }, [place, setInitialData]);
 
   const handleSave = async () => {
     try {
-      await savePlace(params.id);
-      toast.success('Place updated successfully!');
+      await savePlace();
+      toast.success('Place saved successfully!');
       router.push('/admin/places');
     } catch (error) {
-      toast.error('Failed to update place');
-      console.error('Update error:', error);
+      toast.error('Failed to save place');
+      console.error('Save error:', error);
     }
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        <div className="flex flex-col items-center gap-2">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-muted-foreground">Loading place details...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert variant="destructive" className="my-8">
-        <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Error loading place details: {error instanceof Error ? error.message : 'Unknown error'}
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="icon" 
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => router.push('/admin/places')}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">Edit Place</h1>
+            <h1 className="text-3xl font-bold">Add New Place</h1>
             <p className="text-muted-foreground mt-1">
-              {formData.name || 'Loading place details...'}
+              Create a new place in the system
             </p>
           </div>
         </div>
 
-        <Button 
-          onClick={handleSave} 
+        <Button
+          onClick={handleSave}
           disabled={isSubmitting}
           className="flex items-center gap-2"
         >
           {isSubmitting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Saving...
-            </>
+            <>Saving...</>
           ) : (
             <>
               <Save className="h-4 w-4" />
-              Save Changes
+              Save Place
             </>
           )}
         </Button>
@@ -126,24 +95,24 @@ export default function EditPlacePage({ params }: { params: { id: string } }) {
         </TabsList>
 
         <TabsContent value="form" className="mt-6">
-          <PlaceFormView 
-            formData={formData} 
-            updateFormData={updateFormData} 
+          <PlaceFormView
+            formData={formData}
+            updateFormData={updateFormData}
             errors={errors}
           />
         </TabsContent>
 
         <TabsContent value="json" className="mt-6">
-          <PlaceJsonView 
-            jsonData={jsonData} 
+          <PlaceJsonView
+            jsonData={jsonData}
             updateFromJson={updateFromJson}
             isSubmitting={isSubmitting}
           />
         </TabsContent>
 
         <TabsContent value="csv" className="mt-6">
-          <PlaceCsvView 
-            csvData={csvData} 
+          <PlaceCsvView
+            csvData={csvData}
             updateFromCsv={updateFromCsv}
             isSubmitting={isSubmitting}
           />

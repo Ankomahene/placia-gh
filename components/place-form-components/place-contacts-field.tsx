@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { Plus, X } from 'lucide-react';
 
 interface PlaceContactsFieldProps {
-  value?: string[];
+  value?: string[] | null;
   onChange: (value: string[]) => void;
   error?: string;
   className?: string;
@@ -26,19 +26,22 @@ export function PlaceContactsField({
 }: PlaceContactsFieldProps) {
   const [newContact, setNewContact] = useState('');
 
+  // Ensure value is always an array
+  const contacts = value || [];
+
   const addContact = () => {
     if (newContact.trim()) {
-      onChange([...value, newContact.trim()]);
+      onChange([...contacts, newContact.trim()]);
       setNewContact('');
     }
   };
 
   const removeContact = (index: number) => {
-    onChange(value.filter((_, i) => i !== index));
+    onChange(contacts.filter((_, i) => i !== index));
   };
 
   const updateContact = (index: number, newValue: string) => {
-    const updated = [...value];
+    const updated = [...contacts];
     updated[index] = newValue;
     onChange(updated);
   };
@@ -51,7 +54,7 @@ export function PlaceContactsField({
       </Label>
 
       {/* Existing contacts */}
-      {value.map((contact, index) => (
+      {contacts.map((contact, index) => (
         <div key={index} className="flex gap-2">
           <Input
             type="tel"

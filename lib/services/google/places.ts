@@ -1,4 +1,7 @@
-import { Client } from '@googlemaps/google-maps-services-js';
+import {
+  Client,
+  PlacesNearbyRanking,
+} from '@googlemaps/google-maps-services-js';
 import {
   StructuredSearchQuery,
   GooglePlaceSearchResult,
@@ -13,7 +16,7 @@ import {
   PlaceResultsSummary,
 } from '@/types/place';
 import slugify from 'slugify';
-import { parseNaturalLanguageQuery } from '../openai-search';
+import { parseNaturalLanguageQuery } from '..';
 
 const client = new Client({});
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY!;
@@ -90,7 +93,8 @@ export class GooglePlaceSearch {
     structuredQuery: StructuredSearchQuery,
     pageToken?: string
   ): Promise<SearchResult> {
-    const { user_location, location, query, sort_order } = structuredQuery;
+    const { user_location, location, query, sort_order, radius_meters } =
+      structuredQuery;
 
     let searchLocation: { lat: number; lng: number } | null = null;
 
@@ -109,7 +113,8 @@ export class GooglePlaceSearch {
       const { results, nextPageToken } = await nearbySearch(
         searchLocation,
         structuredQuery,
-        pageToken
+        pageToken,
+        PlacesNearbyRanking.distance
       );
 
       if (results.length === 0) {
@@ -125,6 +130,16 @@ export class GooglePlaceSearch {
           lng: place.location.lng,
         }),
       }));
+
+      if (radius_meters) {
+        // filter by radius_meters
+        placeSummaries = placeSummaries.filter(
+          (place) =>
+            place.distance &&
+            place.distance <= radius_meters &&
+            place.distance > 0
+        );
+      }
 
       if (sort_order === 'farthest_first') {
         placeSummaries.sort((a, b) => (b.distance || 0) - (a.distance || 0));
@@ -150,8 +165,14 @@ export class GooglePlaceSearch {
     structuredQuery: StructuredSearchQuery,
     pageToken?: string
   ): Promise<SearchResult> {
-    const { sort_order, query, use_user_location, user_location, location } =
-      structuredQuery;
+    const {
+      sort_order,
+      query,
+      use_user_location,
+      user_location,
+      location,
+      radius_meters,
+    } = structuredQuery;
 
     let results: any[];
     let nextPageToken: string | null | undefined;
@@ -162,6 +183,7 @@ export class GooglePlaceSearch {
       searchLocation = user_location;
     } else if (location) {
       try {
+        console.log('Rating: geocodeLocation for', location);
         searchLocation = await geocodeLocation(location);
       } catch (error) {
         console.warn(
@@ -172,11 +194,13 @@ export class GooglePlaceSearch {
 
     // Priority 1: If we have a location, search nearby first for better location-based results
     if (searchLocation) {
+      console.log('Rating: doing nearby search for', searchLocation);
       try {
         const nearbyResults = await nearbySearch(
           searchLocation,
           structuredQuery,
-          pageToken
+          pageToken,
+          PlacesNearbyRanking.prominence
         );
         results = nearbyResults.results;
         nextPageToken = nearbyResults.nextPageToken;
@@ -190,6 +214,7 @@ export class GooglePlaceSearch {
         nextPageToken = searchResults.nextPageToken;
       }
     } else {
+      console.log('Rating: doing regular search');
       // Priority 2: Regular search without location constraint
       const searchResults = await searchGooglePlaces(
         structuredQuery,
@@ -224,16 +249,24 @@ export class GooglePlaceSearch {
       );
     }
 
-    return {
-      results: placeSummaries.map((place) => ({
-        ...place,
-        ...(searchLocation && {
-          distance: this.getDistance(searchLocation, {
-            lat: place.location.lat,
-            lng: place.location.lng,
-          }),
+    let resultsWithDistance = placeSummaries.map((place) => ({
+      ...place,
+      ...(searchLocation && {
+        distance: this.getDistance(searchLocation, {
+          lat: place.location.lat,
+          lng: place.location.lng,
         }),
-      })),
+      }),
+    }));
+
+    if (radius_meters) {
+      resultsWithDistance = resultsWithDistance.filter(
+        (place) => place.distance && place.distance <= radius_meters
+      );
+    }
+
+    return {
+      results: resultsWithDistance,
       success: true,
       query,
       nextPageToken,
@@ -246,8 +279,14 @@ export class GooglePlaceSearch {
     structuredQuery: StructuredSearchQuery,
     pageToken?: string
   ): Promise<SearchResult> {
-    const { sort_order, query, use_user_location, user_location, location } =
-      structuredQuery;
+    const {
+      sort_order,
+      query,
+      use_user_location,
+      user_location,
+      location,
+      radius_meters,
+    } = structuredQuery;
 
     let results: any[];
     let nextPageToken: string | null | undefined;
@@ -272,7 +311,8 @@ export class GooglePlaceSearch {
         const nearbyResults = await nearbySearch(
           searchLocation,
           structuredQuery,
-          pageToken
+          pageToken,
+          PlacesNearbyRanking.distance
         );
         results = nearbyResults.results;
         nextPageToken = nearbyResults.nextPageToken;
@@ -311,25 +351,41 @@ export class GooglePlaceSearch {
 
     // Sort by price level based on sort_order
     if (sort_order === 'most_expensive_first') {
-      placeSummaries.sort(
-        (a, b) => (b.price_level || 0) - (a.price_level || 0)
-      );
+      placeSummaries.sort((a, b) => {
+        // Places without price_level go last
+        if (!a.price_level && b.price_level) return 1;
+        if (a.price_level && !b.price_level) return -1;
+        // Sort by price level if both have it
+        return (b.price_level || 0) - (a.price_level || 0);
+      });
     } else {
-      placeSummaries.sort(
-        (a, b) => (a.price_level || 0) - (b.price_level || 0)
+      placeSummaries.sort((a, b) => {
+        // Places without price_level go last
+        if (!a.price_level && b.price_level) return 1;
+        if (a.price_level && !b.price_level) return -1;
+        // Sort by price level if both have it
+        return (a.price_level || 0) - (b.price_level || 0);
+      });
+    }
+
+    let resultsWithDistance = placeSummaries.map((place) => ({
+      ...place,
+      ...(searchLocation && {
+        distance: this.getDistance(searchLocation, {
+          lat: place.location.lat,
+          lng: place.location.lng,
+        }),
+      }),
+    }));
+
+    if (radius_meters) {
+      resultsWithDistance = resultsWithDistance.filter(
+        (place) => place.distance && place.distance <= radius_meters
       );
     }
 
     return {
-      results: placeSummaries.map((place) => ({
-        ...place,
-        ...(searchLocation && {
-          distance: this.getDistance(searchLocation, {
-            lat: place.location.lat,
-            lng: place.location.lng,
-          }),
-        }),
-      })),
+      results: resultsWithDistance,
       success: true,
       query,
       nextPageToken,
@@ -401,7 +457,8 @@ export const googlePlaceSearch = new GooglePlaceSearch();
 export async function nearbySearch(
   location: { lat: number; lng: number },
   structuredQuery: StructuredSearchQuery,
-  pageToken?: string
+  pageToken?: string,
+  rankby?: PlacesNearbyRanking
 ): Promise<{
   results: GooglePlaceSearchResult[];
   nextPageToken?: string | null;
@@ -422,9 +479,17 @@ export async function nearbySearch(
       searchParams.pagetoken = pageToken;
     } else {
       searchParams.location = `${location.lat},${location.lng}`;
-      searchParams.radius = radius_meters;
       searchParams.keyword = query;
       searchParams.type = 'establishment';
+
+      // Handle rankby and radius parameters according to API requirements
+      if (rankby === PlacesNearbyRanking.distance) {
+        searchParams.rankby = rankby;
+        // When using rankby=distance, radius cannot be specified
+      } else {
+        // When not using rankby=distance, radius is required
+        searchParams.radius = Math.min(Math.max(1, radius_meters), 50000); // Ensure radius is between 1 and 50000
+      }
 
       if (min_rating) {
         searchParams.minprice = 0;
@@ -435,6 +500,8 @@ export async function nearbySearch(
         searchParams.opennow = true;
       }
     }
+
+    console.log('searchParams for nearby search', searchParams);
 
     const response = await client.placesNearby({
       params: searchParams,
@@ -673,29 +740,55 @@ export async function getPlaceDetails(placeId: string): Promise<PlaceResults> {
 }
 
 export async function geocodeLocation(
-  location: string
+  location: string,
+  region?: string
 ): Promise<{ lat: number; lng: number }> {
   try {
-    const response = await client.geocode({
+    // Attempt to find place via Google Places API
+    const placeResponse = await client.findPlaceFromText({
       params: {
         key: GOOGLE_API_KEY,
-        address: location,
+        input: location,
+        inputtype: 'textquery' as any,
+        fields: ['geometry'],
       },
     });
 
-    const results = response.data.results;
-    if (!results || results.length === 0) {
-      throw new Error('Location not found');
+    const placeCandidates = placeResponse.data.candidates;
+    if (placeCandidates && placeCandidates.length > 0) {
+      console.log('Place location', placeCandidates[0].geometry?.location);
+      const geometry = placeCandidates[0].geometry?.location;
+      if (geometry) {
+        return {
+          lat: geometry.lat,
+          lng: geometry.lng,
+        };
+      }
     }
 
-    const firstResult = results[0];
-    return {
-      lat: firstResult.geometry.location.lat,
-      lng: firstResult.geometry.location.lng,
-    };
+    // If no result from Places API, fallback to Geocoding API
+    const geocodeResponse = await client.geocode({
+      params: {
+        key: GOOGLE_API_KEY,
+        address: location,
+        region: region?.toLowerCase(),
+        ...(region && { components: `country:${region}` }),
+      },
+    });
+
+    const geoResults = geocodeResponse.data.results;
+    if (geoResults && geoResults.length > 0) {
+      const location = geoResults[0].geometry.location;
+      return {
+        lat: location.lat,
+        lng: location.lng,
+      };
+    }
+
+    throw new Error('No location data found from either API');
   } catch (error) {
     console.error('Error geocoding location:', error);
-    throw new Error('Failed to geocode location');
+    throw new Error('Failed to geocode location with fallback');
   }
 }
 

@@ -95,10 +95,10 @@ Extract the following information from user queries:
 {"query": "budget friendly restaurants", "location": "Kotoka international airport", "category": "Food & Dining", "subcategory": "Restaurant", "search_type": "price_level", "min_price_level": 1, "max_price_level": 1, "radius_meters": 5000, "type": "restaurant", "tags": ["restaurant", "budget", "affordable"]}
 
 "Rooftop restaurants open late in Osu" →
-{"query": "rooftop restaurants open late", "location": "Osu", "features": ["rooftop", "open late"], "category": "Food & Dining", "subcategory": "Restaurant", "search_type": "general", "type": "restaurant", "tags": ["restaurant", "rooftop", "late night"]}
+{"query": "rooftop restaurants open late", "location": "Osu", "region": "GH", "radius_meters": 5000, "features": ["rooftop", "open late"], "category": "Food & Dining", "subcategory": "Restaurant", "search_type": "general", "type": "restaurant", "tags": ["restaurant", "rooftop", "late night"]}
 
 "24-hour pharmacies with parking near me" →
-{"query": "24-hour pharmacies", "features": ["24-hour", "parking"], "category": "Healthcare", "subcategory": "Pharmacy", "search_type": "proximity", "radius_meters": 2000, "use_user_location": true, "open_now": true, "type": "pharmacy", "tags": ["pharmacy", "24-hour", "parking"]}
+{"query": "24-hour pharmacies", "features": ["24-hour", "parking"], "category": "Healthcare", "subcategory": "Pharmacy", "search_type": "proximity", "radius_meters": 3000, "use_user_location": true, "open_now": true, "type": "pharmacy", "tags": ["pharmacy", "24-hour", "parking"]}
 
 **IMPORTANT:**
 - Always return valid JSON

@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlacesTable } from '@/components/admin/places/places-table';
-import { PlacesImport } from '@/components/admin/places/places-import';
+import { PlacesTable } from '@/components/admin/places-manager/places-table';
+import { PlacesImport } from '@/components/admin/places-manager/places-import';
 import { Button } from '@/components/ui/button';
 import { Plus, FileUp, Table } from 'lucide-react';
 import Link from 'next/link';

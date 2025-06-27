@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
-import { PlaceResultsSummary } from '@/types/place';
+import { PlaceResults } from '@/types/place';
 import { toast } from 'sonner';
 
 interface PlacesPagination {
@@ -23,11 +23,15 @@ interface PlacesQueryParams {
   sortOrder?: 'asc' | 'desc';
 }
 
-// Fetch places with pagination and filters
-async function fetchPlaces(params: PlacesQueryParams = {}): Promise<{
-  data: PlaceResultsSummary[];
+interface PlacesResponse {
+  data: PlaceResults[];
   count: number;
-}> {
+}
+
+// Fetch places with pagination and filters
+async function fetchPlaces(
+  params: PlacesQueryParams = {}
+): Promise<PlacesResponse> {
   const {
     page = 1,
     pageSize = 10,
@@ -39,12 +43,10 @@ async function fetchPlaces(params: PlacesQueryParams = {}): Promise<{
   } = params;
 
   const supabase = createClient();
-  
+
   // Start building the query
-  let query = supabase
-    .from('places')
-    .select(
-      `
+  let query = supabase.from('places').select(
+    `
         *,
         category:category_id(id, name, slug, icon),
         subcategory:subcategory_id(id, name, slug, icon),
@@ -54,8 +56,8 @@ async function fetchPlaces(params: PlacesQueryParams = {}): Promise<{
         region:region_id(id, name),
         city:city_id(id, name)
       `,
-      { count: 'exact' }
-    );
+    { count: 'exact' }
+  );
 
   // Apply filters
   if (search) {
@@ -76,10 +78,10 @@ async function fetchPlaces(params: PlacesQueryParams = {}): Promise<{
   // Apply pagination
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  
+
   // Apply sorting
   query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-  
+
   // Execute the query with pagination
   const { data, error, count } = await query.range(from, to);
 
@@ -88,9 +90,9 @@ async function fetchPlaces(params: PlacesQueryParams = {}): Promise<{
     throw new Error(error.message);
   }
 
-  return { 
-    data: data as PlaceResultsSummary[], 
-    count: count || 0 
+  return {
+    data: data as PlaceResults[],
+    count: count || 0,
   };
 }
 
@@ -98,7 +100,7 @@ async function fetchPlaces(params: PlacesQueryParams = {}): Promise<{
 async function deletePlace(id: string): Promise<void> {
   const supabase = createClient();
   const { error } = await supabase.from('places').delete().eq('id', id);
-  
+
   if (error) {
     console.error('Error deleting place:', error);
     throw new Error(error.message);
@@ -112,7 +114,7 @@ async function updatePlaceStatus(id: string, status: string): Promise<void> {
     .from('places')
     .update({ status, updated_at: new Date() })
     .eq('id', id);
-  
+
   if (error) {
     console.error('Error updating place status:', error);
     throw new Error(error.message);
@@ -133,15 +135,10 @@ export function usePlaces() {
   });
 
   // Fetch places query
-  const {
-    data,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery<PlacesResponse>({
     queryKey: ['places', queryParams],
     queryFn: () => fetchPlaces(queryParams),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev as PlacesResponse,
   });
 
   // Update pagination when data changes
@@ -169,7 +166,7 @@ export function usePlaces() {
 
   // Update place status mutation
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => 
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
       updatePlaceStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['places'] });
@@ -196,7 +193,7 @@ export function usePlaces() {
     setPagination,
     fetchPlaces: fetchPlacesWithFilters,
     deletePlace: deleteMutation.mutate,
-    updatePlaceStatus: (id: string, status: string) => 
+    updatePlaceStatus: (id: string, status: string) =>
       updateStatusMutation.mutate({ id, status }),
     isDeleting: deleteMutation.isPending,
     isUpdating: updateStatusMutation.isPending,

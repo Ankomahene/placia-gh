@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { parseNaturalLanguageQuery } from '@/lib/services/openai-search';
+import { parseNaturalLanguageQuery } from '@/lib/services';
 
 export async function POST(request: NextRequest) {
   try {

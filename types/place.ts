@@ -186,8 +186,8 @@ export interface Place {
   tags?: string[];
   accessibility?: { label: string; icon: string }[];
 
-  created_at: Date;
-  updated_at: Date;
+  created_at?: Date;
+  updated_at?: Date;
 
   other_details?: object;
   source?: string;
@@ -201,6 +201,7 @@ export interface Place {
     | 'rejected'
     | 'archived'
     | 'draft';
+  isBusinessPlace?: boolean;
 }
 
 export type PriceLevelLabel =
@@ -326,7 +327,7 @@ export interface PlaceResultsSummary {
   business_status?: string;
   formatted_address?: string;
   vicinity?: string;
-  isBusiness?: boolean;
+  isBusinessPlace?: boolean;
 }
 
 export interface UserUploadedPhotosForPlace {

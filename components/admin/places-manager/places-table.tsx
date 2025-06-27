@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, KeyboardEvent } from 'react';
 import {
   flexRender,
   getCoreRowModel,
@@ -12,51 +12,52 @@ import {
   type SortingState,
   type ColumnFiltersState,
 } from '@tanstack/react-table';
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuTrigger, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuItem 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
-import { 
-  ChevronDown, 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, 
-  ChevronsRight, 
-  MoreHorizontal, 
-  Search, 
-  Loader2, 
-  Eye, 
-  Pencil, 
-  Trash2, 
-  Check, 
-  X, 
-  Clock, 
-  Filter 
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  MoreHorizontal,
+  Search,
+  Loader2,
+  Eye,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+  Clock,
+  Filter,
+  Plus,
 } from 'lucide-react';
 import { usePlaces } from '@/hooks/admin/use-places';
 import { Badge } from '@/components/ui/badge';
-import { 
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -69,10 +70,10 @@ import {
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { PlaceResultsSummary } from '@/types/place';
+import { PlaceResults } from '@/types/place';
 
 // Define columns for the table
-const columns: ColumnDef<PlaceResultsSummary>[] = [
+const columns: ColumnDef<PlaceResults>[] = [
   {
     accessorKey: 'name',
     header: 'Name',
@@ -88,9 +89,7 @@ const columns: ColumnDef<PlaceResultsSummary>[] = [
     cell: ({ row }) => {
       const category = row.original.category;
       return (
-        <div className="truncate max-w-[150px]">
-          {category?.name || 'N/A'}
-        </div>
+        <div className="truncate max-w-[150px]">{category?.name || 'N/A'}</div>
       );
     },
   },
@@ -137,13 +136,22 @@ const columns: ColumnDef<PlaceResultsSummary>[] = [
         <Badge
           variant={
             status === 'approved'
-              ? 'success'
+              ? 'default'
               : status === 'pending'
-              ? 'warning'
-              : status === 'rejected'
-              ? 'destructive'
-              : 'secondary'
+                ? 'secondary'
+                : status === 'rejected'
+                  ? 'destructive'
+                  : 'secondary'
           }
+          className={`${
+            status === 'approved'
+              ? 'bg-green-500'
+              : status === 'pending'
+                ? 'bg-yellow-500'
+                : status === 'rejected'
+                  ? 'bg-red-500'
+                  : 'bg-gray-500'
+          }`}
         >
           {status}
         </Badge>
@@ -171,12 +179,13 @@ const columns: ColumnDef<PlaceResultsSummary>[] = [
   },
 ];
 
-function PlaceActions({ place }: { place: PlaceResultsSummary }) {
+function PlaceActions({ place }: { place: PlaceResults }) {
   const router = useRouter();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [newStatus, setNewStatus] = useState(place.status);
-  const { deletePlace, updatePlaceStatus, isDeleting, isUpdating } = usePlaces();
+  const { deletePlace, updatePlaceStatus, isDeleting, isUpdating } =
+    usePlaces();
 
   const handleDelete = async () => {
     try {
@@ -216,7 +225,9 @@ function PlaceActions({ place }: { place: PlaceResultsSummary }) {
             <Eye className="h-4 w-4 mr-2" />
             View
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => router.push(`/admin/places/${place.id}`)}>
+          <DropdownMenuItem
+            onClick={() => router.push(`/admin/places-manager/${place.id}`)}
+          >
             <Pencil className="h-4 w-4 mr-2" />
             Edit
           </DropdownMenuItem>
@@ -225,7 +236,7 @@ function PlaceActions({ place }: { place: PlaceResultsSummary }) {
             Change Status
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
+          <DropdownMenuItem
             onClick={() => setIsDeleteDialogOpen(true)}
             className="text-red-600 focus:text-red-600"
           >
@@ -236,18 +247,22 @@ function PlaceActions({ place }: { place: PlaceResultsSummary }) {
       </DropdownMenu>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete <span className="font-medium">{place.name}</span>. 
-              This action cannot be undone.
+              This will permanently delete{' '}
+              <span className="font-medium">{place.name}</span>. This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
+            <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
@@ -265,18 +280,22 @@ function PlaceActions({ place }: { place: PlaceResultsSummary }) {
       </AlertDialog>
 
       {/* Status Change Dialog */}
-      <AlertDialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
+      <AlertDialog
+        open={isStatusDialogOpen}
+        onOpenChange={setIsStatusDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Change Status</AlertDialogTitle>
             <AlertDialogDescription>
-              Update the status for <span className="font-medium">{place.name}</span>.
+              Update the status for{' '}
+              <span className="font-medium">{place.name}</span>.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4">
             <Select
               value={newStatus as string}
-              onValueChange={(value) => setNewStatus(value)}
+              onValueChange={(value) => setNewStatus(value as any)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
@@ -284,6 +303,7 @@ function PlaceActions({ place }: { place: PlaceResultsSummary }) {
               <SelectContent>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="scraped">Scraped</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
@@ -313,16 +333,11 @@ export function PlacesTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  
-  const { 
-    places, 
-    isLoading, 
-    error, 
-    pagination, 
-    setPagination,
-    fetchPlaces
-  } = usePlaces();
+
+  const { places, isLoading, error, pagination, setPagination, fetchPlaces } =
+    usePlaces();
 
   const table = useReactTable({
     data: places,
@@ -342,6 +357,16 @@ export function PlacesTable() {
     pageCount: pagination.totalPages,
   });
 
+  const handleSearch = () => {
+    setGlobalFilter(searchInput);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
   useEffect(() => {
     fetchPlaces({
       page: pagination.page,
@@ -349,12 +374,20 @@ export function PlacesTable() {
       search: globalFilter,
       status: statusFilter !== 'all' ? statusFilter : undefined,
     });
-  }, [pagination.page, pagination.pageSize, globalFilter, statusFilter, fetchPlaces]);
+  }, [
+    pagination.page,
+    pagination.pageSize,
+    globalFilter,
+    statusFilter,
+    fetchPlaces,
+  ]);
 
   if (error) {
     return (
       <div className="rounded-md bg-destructive/10 p-8 text-center">
-        <h3 className="text-lg font-semibold text-destructive mb-2">Error Loading Places</h3>
+        <h3 className="text-lg font-semibold text-destructive mb-2">
+          Error Loading Places
+        </h3>
         <p className="text-muted-foreground">
           {error instanceof Error ? error.message : 'An unknown error occurred'}
         </p>
@@ -366,22 +399,27 @@ export function PlacesTable() {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row gap-4 md:items-center justify-between">
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-72 flex">
             <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search places..."
-              value={globalFilter}
-              onChange={(e) => setGlobalFilter(e.target.value)}
-              className="pl-8 w-full"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="pl-8 w-full rounded-r-none"
             />
+            <Button
+              onClick={handleSearch}
+              className="rounded-l-none"
+              variant="outline"
+            >
+              Search
+            </Button>
           </div>
-          
+
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 text-muted-foreground" />
-            <Select
-              value={statusFilter}
-              onValueChange={setStatusFilter}
-            >
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Filter by status" />
               </SelectTrigger>
@@ -389,6 +427,7 @@ export function PlacesTable() {
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="scraped">Scraped</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="archived">Archived</SelectItem>
                 <SelectItem value="draft">Draft</SelectItem>
@@ -400,8 +439,12 @@ export function PlacesTable() {
         <div className="flex items-center gap-2">
           <Select
             value={pagination.pageSize.toString()}
-            onValueChange={(value) => 
-              setPagination({ ...pagination, pageSize: parseInt(value), page: 1 })
+            onValueChange={(value) =>
+              setPagination({
+                ...pagination,
+                pageSize: parseInt(value),
+                page: 1,
+              })
             }
           >
             <SelectTrigger className="w-[120px]">
@@ -414,8 +457,8 @@ export function PlacesTable() {
               <SelectItem value="100">100 rows</SelectItem>
             </SelectContent>
           </Select>
-          
-          <Link href="/admin/places/add">
+
+          <Link href="/admin/places-manager/add">
             <Button className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add Place
@@ -445,7 +488,10 @@ export function PlacesTable() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   <div className="flex justify-center items-center h-full">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <span className="ml-2">Loading places...</span>
@@ -456,18 +502,24 @@ export function PlacesTable() {
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
+                  data-state={row.getIsSelected() && 'selected'}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
                   No places found.
                 </TableCell>
               </TableRow>
@@ -478,9 +530,16 @@ export function PlacesTable() {
 
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
-          Showing {pagination.page === 1 ? 1 : (pagination.page - 1) * pagination.pageSize + 1} to{' '}
-          {Math.min(pagination.page * pagination.pageSize, pagination.totalItems)} of{' '}
-          {pagination.totalItems} places
+          Showing{' '}
+          {pagination.page === 1
+            ? 1
+            : (pagination.page - 1) * pagination.pageSize + 1}{' '}
+          to{' '}
+          {Math.min(
+            pagination.page * pagination.pageSize,
+            pagination.totalItems
+          )}{' '}
+          of {pagination.totalItems} places
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -494,7 +553,9 @@ export function PlacesTable() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
+            onClick={() =>
+              setPagination({ ...pagination, page: pagination.page - 1 })
+            }
             disabled={pagination.page === 1}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -505,7 +566,9 @@ export function PlacesTable() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
+            onClick={() =>
+              setPagination({ ...pagination, page: pagination.page + 1 })
+            }
             disabled={pagination.page === pagination.totalPages}
           >
             <ChevronRight className="h-4 w-4" />
@@ -513,7 +576,9 @@ export function PlacesTable() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPagination({ ...pagination, page: pagination.totalPages })}
+            onClick={() =>
+              setPagination({ ...pagination, page: pagination.totalPages })
+            }
             disabled={pagination.page === pagination.totalPages}
           >
             <ChevronsRight className="h-4 w-4" />

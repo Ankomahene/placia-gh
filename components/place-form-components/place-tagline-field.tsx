@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 interface PlaceTaglineFieldProps {
-  value?: string;
+  value?: string | null;
   onChange: (value: string) => void;
   error?: string;
   className?: string;
@@ -23,6 +23,9 @@ export function PlaceTaglineField({
   placeholder = 'Enter a catchy tagline (optional)',
   maxLength = 100,
 }: PlaceTaglineFieldProps) {
+  // Ensure value is always a string
+  const safeValue = value || '';
+
   return (
     <div className={cn('space-y-2', className)}>
       <Label htmlFor="place-tagline" className="text-sm font-medium">
@@ -32,7 +35,7 @@ export function PlaceTaglineField({
       <Input
         id="place-tagline"
         type="text"
-        value={value}
+        value={safeValue}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         className={cn(error && 'border-red-500')}
@@ -41,7 +44,7 @@ export function PlaceTaglineField({
       <div className="flex justify-between items-center">
         {error && <p className="text-sm text-red-500">{error}</p>}
         <p className="text-xs text-muted-foreground ml-auto">
-          {value.length}/{maxLength}
+          {safeValue.length}/{maxLength}
         </p>
       </div>
     </div>

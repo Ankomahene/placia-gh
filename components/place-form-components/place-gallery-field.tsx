@@ -7,12 +7,12 @@ import { Progress } from '@/components/ui/progress';
 import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 import { Plus, Upload, X, Loader2 } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
 interface PlaceGalleryFieldProps {
-  value?: string[];
+  value?: string[] | null;
   onChange: (value: string[]) => void;
   error?: string;
   className?: string;
@@ -39,11 +39,30 @@ export function PlaceGalleryField({
   placeholder = 'Enter image URL',
   maxImages = 5,
 }: PlaceGalleryFieldProps) {
+  // Ensure value is always an array
+  const galleryUrls = value || [];
+
   const [newImageUrl, setNewImageUrl] = useState('');
   const [isDragging, setIsDragging] = useState(false);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(() =>
-    value.map((url) => ({ url, isUploaded: false }))
+    galleryUrls.map((url) => ({ url, isUploaded: false }))
   );
+
+  // Update gallery images when value prop changes, but only when the arrays are actually different
+  useEffect(() => {
+    const urls = galleryUrls || [];
+    const currentUrls = galleryImages
+      .filter((img) => !img.isUploading)
+      .map((img) => img.url);
+
+    // Only update if the arrays are different in content or length
+    if (
+      urls.length !== currentUrls.length ||
+      !urls.every((url, i) => url === currentUrls[i])
+    ) {
+      setGalleryImages(urls.map((url) => ({ url, isUploaded: false })));
+    }
+  }, [galleryUrls]);
 
   const clearFileInput = () => {
     const fileInput = document.getElementById(
@@ -205,11 +224,13 @@ export function PlaceGalleryField({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const remainingSlots = maxImages - galleryImages.length;
-    const filesToProcess = files.slice(0, remainingSlots);
-
-    filesToProcess.forEach((file) => uploadFileToSupabase(file));
+    if (event.target.files && event.target.files.length > 0) {
+      if (galleryImages.length < maxImages) {
+        uploadFileToSupabase(event.target.files[0]);
+      } else {
+        toast.error(`Maximum ${maxImages} images allowed`);
+      }
+    }
   };
 
   const handleDragOver = (event: React.DragEvent) => {
@@ -225,14 +246,13 @@ export function PlaceGalleryField({
     event.preventDefault();
     setIsDragging(false);
 
-    const files = Array.from(event.dataTransfer.files).filter((file) =>
-      file.type.startsWith('image/')
-    );
-
-    const remainingSlots = maxImages - galleryImages.length;
-    const filesToProcess = files.slice(0, remainingSlots);
-
-    filesToProcess.forEach((file) => uploadFileToSupabase(file));
+    if (event.dataTransfer.files && event.dataTransfer.files.length > 0) {
+      if (galleryImages.length < maxImages) {
+        uploadFileToSupabase(event.dataTransfer.files[0]);
+      } else {
+        toast.error(`Maximum ${maxImages} images allowed`);
+      }
+    }
   };
 
   const canAddMore = galleryImages.length < maxImages;
@@ -244,134 +264,117 @@ export function PlaceGalleryField({
         {label}
         <span className="text-muted-foreground ml-1">(Optional)</span>
         <span className="text-xs text-muted-foreground ml-2">
-          {galleryImages.length}/{maxImages}
+          {galleryImages.filter((img) => !img.isUploading).length}/{maxImages}
         </span>
       </Label>
 
-      {/* Add new image URL */}
-      {canAddMore && (
-        <div className="flex gap-2">
-          <Input
-            type="url"
-            value={newImageUrl}
-            onChange={(e) => setNewImageUrl(e.target.value)}
-            placeholder={placeholder}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addImage();
-              }
-            }}
-            disabled={hasUploadingImages}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={addImage}
-            disabled={!newImageUrl.trim() || !canAddMore || hasUploadingImages}
-            className="shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
-      {/* File Upload Area */}
-      {canAddMore && (
-        <div
-          className={cn(
-            'border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors',
-            isDragging
-              ? 'border-primary bg-primary/5'
-              : 'border-muted-foreground/25 hover:border-muted-foreground/50',
-            hasUploadingImages && 'pointer-events-none opacity-50'
-          )}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={() =>
-            !hasUploadingImages &&
-            document.getElementById('gallery-file-input')?.click()
-          }
-        >
-          <Upload className="h-6 w-6 mx-auto mb-2 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground mb-1">
-            {hasUploadingImages
-              ? 'Uploading...'
-              : 'Drop images here or click to browse'}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {maxImages - galleryImages.length} slots remaining
-          </p>
-          <input
-            id="gallery-file-input"
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleFileChange}
-            className="hidden"
-            disabled={hasUploadingImages}
-          />
-        </div>
-      )}
-
-      {/* Gallery Grid */}
+      {/* Gallery grid */}
       {galleryImages.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           {galleryImages.map((image, index) => (
             <div
-              key={image.uploadId || image.url || index}
-              className="relative group"
+              key={image.uploadId || `gallery-${index}`}
+              className="relative aspect-square rounded-md overflow-hidden border"
             >
-              <div className="border rounded-lg overflow-hidden aspect-square">
-                {image.isUploading ? (
-                  <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400 mb-2" />
-                    <Progress
-                      value={image.uploadProgress || 0}
-                      className="w-3/4 mb-2"
-                    />
-                    <span className="text-xs text-gray-500">
-                      {Math.round(image.uploadProgress || 0)}%
-                    </span>
-                  </div>
-                ) : (
+              {image.isUploading ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted p-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                  <Progress
+                    value={image.uploadProgress}
+                    className="w-full h-1"
+                  />
+                  <p className="text-xs text-center mt-2">Uploading...</p>
+                </div>
+              ) : (
+                <>
                   <Image
                     src={image.url}
                     alt={`Gallery image ${index + 1}`}
-                    width={400}
-                    height={400}
-                    className="w-full h-full object-cover"
-                    onError={() => {
-                      console.error('Failed to load image:', image.url);
-                    }}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 50vw, 33vw"
                   />
-                )}
-              </div>
-
-              {!image.isUploading && (
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-
-              {/* Upload indicator */}
-              {image.isUploaded && !image.isUploading && (
-                <div className="absolute top-2 left-2">
-                  <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">
-                    Uploaded
-                  </span>
-                </div>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6"
+                    onClick={() => removeImage(index)}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </>
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Add image form */}
+      {galleryImages.length < maxImages && (
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={newImageUrl}
+              onChange={(e) => setNewImageUrl(e.target.value)}
+              placeholder={placeholder}
+              className={cn(error && 'border-red-500')}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newImageUrl.trim()) {
+                  e.preventDefault();
+                  addImage();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              onClick={addImage}
+              disabled={!newImageUrl.trim()}
+              className="shrink-0"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add Image
+            </Button>
+          </div>
+
+          <div
+            className={cn(
+              'border-2 border-dashed rounded-lg p-8 text-center',
+              isDragging && 'border-primary bg-primary/5',
+              error && 'border-red-500'
+            )}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <div className="flex flex-col items-center">
+              <Upload className="h-10 w-10 text-muted-foreground mb-2" />
+              <p className="text-sm font-medium mb-1">
+                Drag and drop image here
+              </p>
+              <p className="text-xs text-muted-foreground mb-4">
+                Supports: JPG, PNG, GIF (max 5MB)
+              </p>
+              <Input
+                id="gallery-file-input"
+                type="file"
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  document.getElementById('gallery-file-input')?.click();
+                }}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Browse Files
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
