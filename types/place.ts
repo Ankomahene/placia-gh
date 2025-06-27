@@ -202,6 +202,7 @@ export interface Place {
     | 'archived'
     | 'draft';
   isBusinessPlace?: boolean;
+  isFeatured?: boolean;
 }
 
 export type PriceLevelLabel =
