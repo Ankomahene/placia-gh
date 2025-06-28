@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import L from 'leaflet';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
-import L from 'leaflet';
+import React, { useEffect, useRef, useState } from 'react';
 import { useMap, useMapEvents } from 'react-leaflet';
-import { PlacePopup, popupStyles } from './shared';
-import ReactDOMServer from 'react-dom/server';
-import Link from 'next/link';
+import { PlacePopup } from './shared';
 
 // Dynamically import react-leaflet components
 const MapContainer = dynamic(

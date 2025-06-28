@@ -53,7 +53,11 @@ export function PlaceContact({ place }: PlaceContactProps) {
         {/* Phone */}
         {place.contacts && place.contacts.length > 0 && (
           <div>
-            <Button variant="outline" className="w-full justify-start" asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-start dark:bg-zinc-800 dark:border-zinc-700"
+              asChild
+            >
               <a href={`tel:${place.contacts[0]}`}>
                 <Phone className="h-4 w-4 mr-2 text-green-600 dark:text-green-400" />
                 {place.contacts[0]}
@@ -65,7 +69,11 @@ export function PlaceContact({ place }: PlaceContactProps) {
         {/* Email */}
         {place.email && (
           <div>
-            <Button variant="outline" className="w-full justify-start" asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-start dark:bg-zinc-800 dark:border-zinc-700"
+              asChild
+            >
               <a href={`mailto:${place.email}`}>
                 <Mail className="h-4 w-4 mr-2 text-blue-600 dark:text-blue-400" />
                 {place.email}
@@ -77,7 +85,11 @@ export function PlaceContact({ place }: PlaceContactProps) {
         {/* Website */}
         {place.website && (
           <div>
-            <Button variant="outline" className="w-full justify-start" asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-start dark:bg-zinc-800 dark:border-zinc-700"
+              asChild
+            >
               <a href={place.website} target="_blank" rel="noopener noreferrer">
                 <Globe className="h-4 w-4 mr-2 text-purple-600 dark:text-purple-400" />
                 {place.website.replace(/^https?:\/\//, '').split('/')[0]}

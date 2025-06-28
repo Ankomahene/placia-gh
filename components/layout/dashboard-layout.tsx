@@ -15,9 +15,14 @@ export function DashboardLayout({
   isAdmin = false,
 }: DashboardLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+
+  const handleSidebarCollapseChange = (isCollapsed: boolean) => {
+    setIsSidebarCollapsed(isCollapsed);
   };
 
   return (
@@ -25,12 +30,16 @@ export function DashboardLayout({
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 transform bg-background border-r transition-transform duration-200 ease-in-out',
+          'fixed inset-y-0 left-0 z-50 transform bg-background border-r transition-all duration-300 ease-in-out',
           'md:relative md:translate-x-0',
+          isSidebarCollapsed ? 'w-16' : 'w-64',
           isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
-        <DashboardSidebar isAdmin={isAdmin} />
+        <DashboardSidebar
+          isAdmin={isAdmin}
+          onCollapseChange={handleSidebarCollapseChange}
+        />
       </aside>
 
       {/* Mobile overlay */}

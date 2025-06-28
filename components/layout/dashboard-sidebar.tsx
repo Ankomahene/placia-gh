@@ -6,8 +6,12 @@ import { signOut } from '@/lib/services/auth';
 import { cn } from '@/lib/utils';
 import {
   BarChart3,
+  Building2,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
+  PanelLeftClose,
+  PanelLeftOpen,
   Database,
   Heart,
   LayoutDashboard,
@@ -31,6 +35,7 @@ import { toast } from 'sonner';
 
 interface DashboardSidebarProps {
   isAdmin?: boolean;
+  onCollapseChange?: (isCollapsed: boolean) => void;
 }
 
 interface NavigationItem {
@@ -40,7 +45,10 @@ interface NavigationItem {
   children?: NavigationItem[];
 }
 
-export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
+export function DashboardSidebar({
+  isAdmin = false,
+  onCollapseChange,
+}: DashboardSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>(['test-pages']);
   const pathname = usePathname();
@@ -53,6 +61,12 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
       return;
     }
     router.push('/');
+  };
+
+  const toggleCollapse = () => {
+    const newCollapsed = !isCollapsed;
+    setIsCollapsed(newCollapsed);
+    onCollapseChange?.(newCollapsed);
   };
 
   const toggleExpanded = (itemName: string) => {
@@ -120,8 +134,13 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
       icon: LayoutDashboard,
     },
     {
-      name: 'My Places',
-      href: '/dashboard/places',
+      name: 'Businesses',
+      href: '/dashboard/businesses',
+      icon: Building2,
+    },
+    {
+      name: 'Contributed Places',
+      href: '/dashboard/contributed-places',
       icon: MapPin,
     },
     {
@@ -129,11 +148,7 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
       href: '/dashboard/favorites',
       icon: Heart,
     },
-    {
-      name: 'Add Business',
-      href: '/dashboard/add-business',
-      icon: Plus,
-    },
+
     {
       name: 'Messages',
       href: '/dashboard/messages',
@@ -144,19 +159,24 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
       href: '/dashboard/profile',
       icon: User,
     },
-    {
-      name: 'Settings',
-      href: '/dashboard/settings',
-      icon: Settings,
-    },
+    // {
+    //   name: 'Settings',
+    //   href: '/dashboard/settings',
+    //   icon: Settings,
+    // },
   ];
 
   const navigation = isAdmin ? adminNavigation : userNavigation;
 
   const renderNavigationItem = (item: NavigationItem, depth = 0) => {
-    const isActive =
-      pathname === item.href ||
-      (item.href !== '#' && pathname.startsWith(item.href));
+    // More precise active state logic to prevent multiple highlights
+    const isExactMatch = pathname === item.href;
+    const isSubRoute =
+      item.href !== '#' &&
+      item.href !== '/dashboard' &&
+      item.href !== '/admin' &&
+      pathname.startsWith(item.href);
+    const isActive = isExactMatch || isSubRoute;
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(
       item.name.toLowerCase().replace(' ', '-')
@@ -223,14 +243,19 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
   };
 
   return (
-    <div className="h-full bg-background flex flex-col">
+    <div
+      className={cn(
+        'h-full bg-background flex flex-col transition-all duration-300 ease-in-out',
+        isCollapsed ? 'w-16' : 'w-64'
+      )}
+    >
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <Link
           href={isAdmin ? '/admin' : '/dashboard'}
           className={cn(
-            'flex items-center gap-2 transition-opacity',
-            isCollapsed && 'opacity-0 md:opacity-100'
+            'flex items-center gap-2 transition-opacity duration-300',
+            isCollapsed && 'opacity-0 md:opacity-100 scale-0 md:scale-100'
           )}
         >
           <Logo size="sm" />
@@ -239,13 +264,13 @@ export function DashboardSidebar({ isAdmin = false }: DashboardSidebarProps) {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setIsCollapsed(!isCollapsed)}
+          onClick={toggleCollapse}
           className="h-8 w-8 hidden md:flex"
         >
           {isCollapsed ? (
-            <Menu className="h-4 w-4" />
+            <PanelLeftOpen className="h-4 w-4" />
           ) : (
-            <X className="h-4 w-4" />
+            <PanelLeftClose className="h-4 w-4" />
           )}
         </Button>
       </div>

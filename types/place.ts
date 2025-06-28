@@ -82,6 +82,7 @@ export interface PlaceSubcategory {
   created_at?: Date;
   updated_at?: Date;
   grouping_id?: string;
+  isBusiness?: boolean;
 }
 
 export interface PlaceType {

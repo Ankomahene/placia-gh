@@ -231,3 +231,42 @@ export async function getUser(): Promise<{
     return { user: null, error: error as AuthError };
   }
 }
+
+export async function updateProfile(profileData: {
+  full_name?: string;
+  phone?: string;
+}): Promise<{
+  user: User | null;
+  error: AuthError | null;
+}> {
+  try {
+    const supabase = createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Update user profile in the users table
+    const { data: updatedUser, error: updateError } = await supabase
+      .from('users')
+      .update({
+        ...profileData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', user.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    return { user: updatedUser as User, error: null };
+  } catch (error) {
+    return { user: null, error: error as AuthError };
+  }
+}

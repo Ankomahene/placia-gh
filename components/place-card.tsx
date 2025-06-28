@@ -1,9 +1,10 @@
-import { Star, Navigation, ExternalLink } from 'lucide-react';
+import { Star, Navigation, ExternalLink, Heart } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { PlaceResultsSummary } from '@/types/place';
+import { useFavorites } from '@/hooks/use-favorites';
 import Link from 'next/link';
 
 interface PlaceCardProps {
@@ -15,6 +16,17 @@ interface PlaceCardProps {
 }
 
 export default function PlaceCard({ place, className }: PlaceCardProps) {
+  const { toggleFavorite, isFavorite, canAddToFavorites, isLoggedIn } =
+    useFavorites();
+
+  const isPlaceFavorited = isFavorite(place.id);
+
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleFavorite(place);
+  };
+
   const handleGetDirections = () => {
     if (!place.location) return;
 
@@ -72,6 +84,34 @@ export default function PlaceCard({ place, className }: PlaceCardProps) {
             >
               {place.open_now ? 'Open' : 'Closed'}
             </Badge>
+          </div>
+        )}
+
+        {/* Favorites Heart Button */}
+        {isLoggedIn && (
+          <div className="absolute bottom-3 right-3 z-20">
+            <Button
+              variant="secondary"
+              size="icon"
+              className={cn(
+                'h-8 w-8 rounded-full bg-white/90 dark:bg-black/60 backdrop-blur-sm shadow-lg border-0 transition-all duration-200',
+                'hover:bg-white dark:hover:bg-black/80 hover:scale-110',
+                isPlaceFavorited && 'bg-red-50 dark:bg-red-950/50'
+              )}
+              onClick={handleToggleFavorite}
+              title={
+                isPlaceFavorited ? 'Remove from favorites' : 'Add to favorites'
+              }
+            >
+              <Heart
+                className={cn(
+                  'h-4 w-4 transition-colors',
+                  isPlaceFavorited
+                    ? 'fill-red-500 text-red-500'
+                    : 'text-gray-600 dark:text-gray-300'
+                )}
+              />
+            </Button>
           </div>
         )}
       </div>

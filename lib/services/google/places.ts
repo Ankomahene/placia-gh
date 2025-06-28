@@ -1064,7 +1064,7 @@ function mapGoogleTypesToCategories(types: string[] = []): {
   return { category, subcategory };
 }
 
-function transformGoogleSearchResultsToSummaries(
+export function transformGoogleSearchResultsToSummaries(
   results: (GooglePlaceSearchResult | FormattedGooglePlaceSearchResult)[]
 ): PlaceResultsSummary[] {
   const formattedResults = results.map((p) => {
@@ -1087,6 +1087,7 @@ function transformGoogleSearchResultsToSummaries(
         formattedAddress: p.formatted_address,
         openNow: p.open_now,
         gallery: gallery || [],
+        source: 'google',
       };
     }
     return p as FormattedGooglePlaceSearchResult;

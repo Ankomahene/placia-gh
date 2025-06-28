@@ -93,7 +93,7 @@ export const getStatusCardGradient = (isOpen: boolean | string | undefined) => {
 
 // Dark theme safe muted backgrounds
 export function getMutedBackground(): string {
-  return 'bg-muted/20 dark:bg-muted/10';
+  return 'bg-muted/20 dark:bg-muted/40';
 }
 
 export const getMutedBackgroundHover = () =>

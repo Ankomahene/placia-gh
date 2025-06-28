@@ -32,11 +32,7 @@ export function PlacePopup({
 }: PlacePopupProps) {
   // Determine the source - if source is 'google' or 'google_places', use 'google', otherwise use 'platform'
   const placeSource =
-    source === 'google' || source === 'google_places'
-      ? 'google'
-      : source === 'placia'
-        ? 'platform'
-        : source;
+    source === 'google' || source === 'google_places' ? 'google' : 'platform';
 
   return (
     <div className={`custom-popup ${className}`} style={style}>

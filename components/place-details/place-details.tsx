@@ -49,10 +49,10 @@ export function PlaceDetails({
               <Button
                 onClick={() => setIsSummaryOpen(true)}
                 variant="outline"
-                className="gap-2"
+                className="flex items-center gap-2 px-4 py-2 rounded-2xl shadow-md bg-gradient-to-r from-indigo-600 dark:from-indigo-700 to-purple-600 dark:to-purple-800 text-white hover:scale-105 transition-all"
               >
                 <Bot className="h-4 w-4" />
-                AI Summary & Q&A
+                Summarize with AI
               </Button>
             </div>
 
@@ -79,10 +79,18 @@ export function PlaceDetails({
                 />
               )}
               {activeTab === 'hours' && <PlaceHours place={place} />}
-              {activeTab === 'chat' && place.isBusinessPlace && (
-                <div className="p-6">
-                  <PlaceChat place={place} isLoggedIn={!!user} />
-                </div>
+              {activeTab === 'chat' && (
+                <>
+                  {place.isBusinessPlace ? (
+                    <div className="p-6">
+                      <PlaceChat place={place} isLoggedIn={!!user} />
+                    </div>
+                  ) : (
+                    <div className="p-6 h-20 flex items-center justify-center">
+                      <p>Chat is not available for this place</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -96,9 +104,13 @@ export function PlaceDetails({
             <PlaceContact place={place} />
 
             {/* Chat widget (if business) - desktop only */}
-            {place.isBusinessPlace && (
+            {place.isBusinessPlace ? (
               <div className="hidden lg:block">
                 <PlaceChat place={place} isLoggedIn={!!user} />
+              </div>
+            ) : (
+              <div className="hidden lg:flex h-10  items-center justify-center">
+                <p>Chat is not available for this place</p>
               </div>
             )}
           </div>

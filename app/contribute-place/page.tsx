@@ -1,5 +1,5 @@
-import { AddPlaceForm } from '@/components/place-form';
+import { ContributeClient } from './ContributeClient';
 
 export default function AddPlacePage() {
-  return <AddPlaceForm isAnonymous />;
+  return <ContributeClient />;
 }

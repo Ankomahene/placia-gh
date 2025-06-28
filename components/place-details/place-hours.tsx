@@ -127,7 +127,10 @@ export function PlaceHours({ place }: PlaceHoursProps) {
                       {hours.day}
                     </span>
                     {isToday && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge
+                        variant="secondary"
+                        className="text-xs dark:bg-zinc-700"
+                      >
                         Today
                       </Badge>
                     )}

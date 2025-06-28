@@ -220,6 +220,7 @@ export function PlacePhotos({
                   <Button
                     onClick={handleSubmitPhoto}
                     disabled={!uploadedImageUrl || isSubmitting}
+                    className="dark:bg-zinc-800 dark:border-zinc-700"
                   >
                     <Save className="h-4 w-4 mr-2" />
                     {isSubmitting ? 'Uploading...' : 'Upload Photo'}
@@ -231,7 +232,11 @@ export function PlacePhotos({
         ) : (
           <div className="flex gap-2">
             <Link href="/auth/login">
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                className="dark:bg-zinc-800 dark:border-zinc-700"
+              >
                 <Camera className="h-4 w-4 mr-2" />
                 Log in to upload
               </Button>

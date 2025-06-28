@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,7 +19,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/hooks/use-user';
-import { resetPassword } from '@/lib/services/auth';
+import { resetPassword, updateProfile } from '@/lib/services/auth';
 
 const profileSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters'),
@@ -30,7 +30,7 @@ const profileSchema = z.object({
 type ProfileFormData = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
-  const { user } = useUser();
+  const { user, refetch } = useUser();
   const router = useRouter();
   const [isUpdating, setIsUpdating] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -38,16 +38,35 @@ export default function ProfilePage() {
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      fullName: user?.full_name || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
+      fullName: '',
+      email: '',
+      phone: '',
     },
   });
+
+  // Reset form with user data when user loads
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        fullName: user.full_name || '',
+        email: user.email || '',
+        phone: user.phone || '',
+      });
+    }
+  }, [user, form]);
 
   async function onSubmit(data: ProfileFormData) {
     setIsUpdating(true);
     try {
-      // TODO: Implement profile update
+      const { error } = await updateProfile({
+        full_name: data.fullName,
+        phone: data.phone,
+      });
+
+      if (error) throw error;
+
+      // Refresh user data
+      await refetch();
       toast.success('Profile updated successfully');
     } catch (error) {
       toast.error('Failed to update profile');

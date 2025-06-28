@@ -37,7 +37,7 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                className="bg-white text-primary hover:bg-white/80 border-primary/40 rounded-lg"
+                className="bg-white text-primary hover:bg-white/80 border-primary/40 rounded-lg dark:bg-zinc-100 dark:border-zinc-200"
               >
                 <MapPin className="mr-2 h-5 w-5" />
                 Add a Place

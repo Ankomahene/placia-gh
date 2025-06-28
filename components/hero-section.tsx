@@ -293,7 +293,7 @@ export default function HeroSection() {
                   <Input
                     type="text"
                     placeholder="e.g., 'Find me a good jollof restaurant near Accra Mall'"
-                    className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary/50"
+                    className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent dark:bg-zinc-900 focus-visible:ring-1 focus-visible:ring-primary/50"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                   />

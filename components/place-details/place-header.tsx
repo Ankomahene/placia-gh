@@ -227,7 +227,7 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
         </div>
 
         {/* Enhanced gradient overlay */}
-        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-background via-background/80 to-transparent h-40"></div>
+        <div className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-background via-background/80 to-transparent h-14"></div>
       </div>
 
       {/* Place info overlay */}
@@ -259,12 +259,12 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
               </h1>
 
               {place.tagline ? (
-                <p className="text-muted-foreground text-lg mb-4">
+                <p className="text-muted-foreground text-lg mb-4 line-clamp-2">
                   {place.tagline}
                 </p>
               ) : (
                 place.description && (
-                  <p className="text-muted-foreground text-lg mb-4">
+                  <p className="text-muted-foreground text-lg mb-4 line-clamp-2">
                     {place.description.slice(0, 100)}...
                   </p>
                 )
@@ -299,7 +299,13 @@ export function PlaceHeader({ place }: PlaceHeaderProps) {
                   )}
                 >
                   <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
-                  <span className="truncate">
+                  <span
+                    className="line-clamp-1"
+                    title={
+                      place.location?.street_address ||
+                      `${place.city?.name || ''}, ${place.region?.name || ''}`
+                    }
+                  >
                     {place.location?.street_address ||
                       `${place.city?.name || ''}, ${place.region?.name || ''}`}
                   </span>

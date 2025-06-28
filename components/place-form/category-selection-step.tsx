@@ -24,6 +24,7 @@ interface CategorySelectionStepProps {
   onSubcategoryChange: (subcategoryId: string) => void;
   onTypeChange: (typeId?: string) => void;
   onOwnershipChange: (ownershipId?: string) => void;
+  businessOnly?: boolean;
   errors?: {
     category_id?: string;
     subcategory_id?: string;
@@ -39,22 +40,45 @@ export function CategorySelectionStep({
   onSubcategoryChange,
   onTypeChange,
   onOwnershipChange,
+  businessOnly = false,
   errors,
 }: CategorySelectionStepProps) {
   const [categorySearch, setCategorySearch] = useState('');
   const { categories, isLoading: categoriesLoading } = usePlaceCategories();
 
-  // Fetch subcategories
-  const { data: subcategories, isLoading: subcategoriesLoading } = useQuery({
-    queryKey: ['subcategories', selectedCategoryId],
+  // Fetch categories with business subcategories when businessOnly is true
+  const { data: businessCategoryIds } = useQuery({
+    queryKey: ['business-categories'],
     queryFn: async () => {
-      if (!selectedCategoryId) return [];
+      if (!businessOnly) return null;
       const supabase = createClient();
       const { data, error } = await supabase
         .from('subcategories')
+        .select('category_id')
+        .eq('isBusiness', true);
+      if (error) throw error;
+      // Return unique category IDs that have business subcategories
+      return Array.from(new Set(data.map((item) => item.category_id)));
+    },
+    enabled: businessOnly,
+  });
+
+  // Fetch subcategories
+  const { data: subcategories, isLoading: subcategoriesLoading } = useQuery({
+    queryKey: ['subcategories', selectedCategoryId, businessOnly],
+    queryFn: async () => {
+      if (!selectedCategoryId) return [];
+      const supabase = createClient();
+      let query = supabase
+        .from('subcategories')
         .select('*')
-        .eq('category_id', selectedCategoryId)
-        .order('name');
+        .eq('category_id', selectedCategoryId);
+
+      if (businessOnly) {
+        query = query.eq('isBusiness', true);
+      }
+
+      const { data, error } = await query.order('name');
       if (error) throw error;
       return data as PlaceSubcategory[];
     },
@@ -146,12 +170,24 @@ export function CategorySelectionStep({
     (s) => s.id === selectedSubcategoryId
   );
 
-  // Filter categories based on search
-  const filteredCategories = categories?.filter(
-    (category) =>
+  // Filter categories based on search and business filter
+  const filteredCategories = categories?.filter((category) => {
+    // Filter by search
+    const matchesSearch =
       category.name.toLowerCase().includes(categorySearch.toLowerCase()) ||
-      category.description?.toLowerCase().includes(categorySearch.toLowerCase())
-  );
+      category.description
+        ?.toLowerCase()
+        .includes(categorySearch.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    // Filter by business categories if businessOnly is true
+    if (businessOnly && businessCategoryIds) {
+      return businessCategoryIds.includes(category.id);
+    }
+
+    return true;
+  });
 
   return (
     <div className="space-y-6">

@@ -321,10 +321,6 @@ export function MapPreview() {
     );
   }
 
-  if (error) {
-    return null;
-  }
-
   return (
     <>
       {' '}
@@ -346,6 +342,7 @@ export function MapPreview() {
                 setSelectedPlace(place || null);
               }}
               isLoading={isLoading}
+              showNoPlacesMessage={false}
             />
 
             {/* Smaller Floating Cards - Hidden on small screens */}
@@ -374,7 +371,7 @@ export function MapPreview() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full bg-background border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        className="absolute top-2 right-2 h-6 w-6 p-0 rounded-full z-10 text-gray-500"
                         onClick={(e) => {
                           e.stopPropagation();
                           closeFloatingCard(place.id);
@@ -522,9 +519,14 @@ export function MapPreview() {
                                     </h3>
                                     <Badge
                                       variant="outline"
-                                      className="text-xs bg-green-50 text-green-700 border-green-200 px-1 py-0"
+                                      className={cn(
+                                        'text-xs px-1 py-0',
+                                        place.source === 'platform'
+                                          ? 'bg-green-50 text-green-700 border-green-200'
+                                          : 'bg-blue-50 text-blue-700 border-blue-200'
+                                      )}
                                     >
-                                      P
+                                      {place.source?.charAt(0).toUpperCase()}
                                     </Badge>
                                   </div>
                                 </div>

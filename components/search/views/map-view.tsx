@@ -28,6 +28,7 @@ interface MapViewProps {
   onPlaceHover: (placeId: string | null) => void;
   onPlaceSelect: (placeId: string) => void;
   isLoading: boolean;
+  showNoPlacesMessage?: boolean;
 }
 
 export function MapView({
@@ -37,6 +38,7 @@ export function MapView({
   onPlaceHover,
   onPlaceSelect,
   isLoading,
+  showNoPlacesMessage = true,
 }: MapViewProps) {
   // Track which place is being clicked for map flying
   const [flyToMarkerId, setFlyToMarkerId] = useState<string | null>(null);
@@ -74,10 +76,11 @@ export function MapView({
       image: place.main_image,
       address: place.location.name || place.formatted_address || place.vicinity,
       distance: `${distance} km`,
+      source: place.source,
     };
   });
 
-  if (places.length === 0 && !isLoading) {
+  if (places.length === 0 && !isLoading && showNoPlacesMessage) {
     return (
       <div className="h-full flex items-center justify-center p-8">
         <div className="text-center">

@@ -27,6 +27,8 @@ import {
 } from '@/components/place-form-components';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { featureFlags } from '@/feature-flags';
 import { useUser } from '@/hooks/use-user';
 import { MatchedLocation } from '@/lib/services/location-matching';
@@ -81,6 +83,10 @@ interface AddPlaceFormProps {
   onCancel?: () => void;
   enableSourceFields?: boolean;
   isAnonymous?: boolean;
+  title?: string;
+  description?: string;
+  isBusinessPlace?: boolean;
+  businessOnly?: boolean;
 }
 
 export function AddPlaceForm({
@@ -88,6 +94,10 @@ export function AddPlaceForm({
   onCancel,
   enableSourceFields = false,
   isAnonymous = false,
+  title = 'Add New Place',
+  description = 'Add a new place to our directory. Fill out all required information to submit for review.',
+  isBusinessPlace = false,
+  businessOnly = false,
 }: AddPlaceFormProps) {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
@@ -129,6 +139,7 @@ export function AddPlaceForm({
     source_link: '',
     status: 'pending',
     added_by: 'anonymous',
+    isBusinessPlace: isBusinessPlace,
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -271,7 +282,7 @@ export function AddPlaceForm({
       if (error) throw error;
 
       toast.success(
-        'Place submitted successfully! It will be reviewed and approved soon.'
+        `${formData.isBusinessPlace ? 'Business' : 'Place'} submitted successfully! It will be reviewed and approved soon.`
       );
 
       // Set success state and store place ID
@@ -333,6 +344,7 @@ export function AddPlaceForm({
             onOwnershipChange={(ownershipId) =>
               updateField('ownership_id', ownershipId)
             }
+            businessOnly={businessOnly || formData.isBusinessPlace}
             errors={{
               category_id: errors.category_id,
               subcategory_id: errors.subcategory_id,
@@ -384,6 +396,23 @@ export function AddPlaceForm({
                   value={formData.contacts}
                   onChange={(value) => updateField('contacts', value)}
                 />
+
+                {/* Business Place Checkbox */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isBusinessPlace"
+                    checked={formData.isBusinessPlace || false}
+                    onCheckedChange={(checked) =>
+                      updateField('isBusinessPlace', checked as boolean)
+                    }
+                  />
+                  <Label
+                    htmlFor="isBusinessPlace"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    This is a business place
+                  </Label>
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -632,6 +661,7 @@ export function AddPlaceForm({
       source_link: '',
       status: 'pending',
       added_by: user?.id || 'anonymous',
+      isBusinessPlace: isBusinessPlace,
     });
     setErrors({});
     setMatchedLocation(null);
@@ -657,18 +687,21 @@ export function AddPlaceForm({
               </div>
 
               <h1 className="text-2xl font-bold text-green-900 mb-2">
-                Place Added Successfully!
+                {formData.isBusinessPlace ? 'Business' : 'Place'} Added
+                Successfully!
               </h1>
 
               <p className="text-green-700 mb-6">
-                Your place has been submitted and is now pending review.
-                We&apos;ll notify you once it&apos;s approved and live on the
-                platform.
+                Your {formData.isBusinessPlace ? 'business' : 'place'} has been
+                submitted and is now pending review. We&apos;ll notify you once
+                it&apos;s approved and live on the platform.
               </p>
 
               {submittedPlaceId && (
                 <div className="bg-white rounded-lg p-4 mb-6 border border-green-200">
-                  <p className="text-sm text-gray-600 mb-1">Place ID:</p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    {formData.isBusinessPlace ? 'Business' : 'Place'} Name:
+                  </p>
                   <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
                     {submittedPlaceId}
                   </p>
@@ -682,7 +715,7 @@ export function AddPlaceForm({
                   size="lg"
                 >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Another Place
+                  Add Another {formData.isBusinessPlace ? 'Business' : 'Place'}
                 </Button>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -727,11 +760,8 @@ export function AddPlaceForm({
   return (
     <div className="container mx-auto py-8 px-4 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Add New Place</h1>
-        <p className="text-muted-foreground">
-          Add a new place to our directory. Fill out all required information to
-          submit for review.
-        </p>
+        <h1 className="text-3xl font-bold mb-2">{title}</h1>
+        <p className="text-muted-foreground">{description}</p>
       </div>
 
       <StepIndicator steps={steps} currentStep={currentStep} className="mb-8" />
@@ -758,7 +788,12 @@ export function AddPlaceForm({
           ) : (
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               <Save className="w-4 h-4 mr-2" />
-              {isSubmitting ? 'Submitting...' : 'Submit Place'}
+              {isSubmitting
+                ? 'Submitting...'
+                : formData.isBusinessPlace
+                  ? 'Submit Business'
+                  : 'Submit Place'
+                  }
             </Button>
           )}
         </div>

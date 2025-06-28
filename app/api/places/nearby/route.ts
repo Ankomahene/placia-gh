@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server';
-import { googlePlaceSearch } from '@/lib/services/google/places';
+import { transformGoogleSearchResultsToSummaries } from '@/lib/services/google/places';
+import {
+  Client,
+  PlacesNearbyRanking,
+} from '@googlemaps/google-maps-services-js';
+import { GooglePlaceDetails } from '@/types/search';
 
 export async function GET(request: Request) {
+  const client = new Client({});
+  const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY!;
+
+  if (!process.env.GOOGLE_API_KEY) {
+    throw new Error('GOOGLE_API_KEY environment variable is required');
+  }
+
   try {
     const { searchParams } = new URL(request.url);
     const lat = parseFloat(searchParams.get('lat') || '');
     const lng = parseFloat(searchParams.get('lng') || '');
     const radius = parseInt(searchParams.get('radius') || '5000', 10);
-    const pageToken = searchParams.get('pageToken') || undefined;
-    const address = searchParams.get('address') || undefined;
 
     if (isNaN(lat) || isNaN(lng)) {
       return NextResponse.json(
@@ -17,29 +27,24 @@ export async function GET(request: Request) {
       );
     }
 
-    console.log('address', address);
-
-    const { results, nextPageToken } = await googlePlaceSearch.search({
-      naturalQuery: address ? `places nearby ${address}` : 'places nearby',
-      userLocation: { lat, lng },
-      pageToken,
-      useCache: true,
-      defaultStructuredQuery: {
-        query: 'places nearby',
-        search_type: 'proximity',
-        sort_order: 'highest_first',
-        min_rating: 3.5,
-        radius_meters: radius,
-        region: 'gh',
+    const response = await client.placesNearby({
+      params: {
+        key: GOOGLE_API_KEY,
+        location: `${lat},${lng}`,
+        // radius: radius,
+        rankby: 'distance' as PlacesNearbyRanking,
       },
     });
 
+    const results = response.data.results || [];
+
+    const summaries = transformGoogleSearchResultsToSummaries(
+      results as GooglePlaceDetails[]
+    );
+
     return NextResponse.json({
       success: true,
-      data: results.filter(
-        (result) => result.distance && result.distance <= radius
-      ),
-      nextPageToken,
+      data: summaries,
     });
   } catch (error) {
     console.error('Error fetching nearby places:', error);

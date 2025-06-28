@@ -431,3 +431,388 @@ export async function savePlaceResults(
     return null;
   }
 }
+
+// Get user's businesses with pagination and filters
+export async function getUserBusinesses(params: {
+  userId: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+  category?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}): Promise<{
+  data: PlaceResults[];
+  count: number;
+}> {
+  const {
+    userId,
+    page = 1,
+    pageSize = 10,
+    search = '',
+    status,
+    category,
+    sortBy = 'created_at',
+    sortOrder = 'desc',
+  } = params;
+
+  try {
+    const supabase = createClient();
+
+    // Start building the query
+    let query = supabase
+      .from('places')
+      .select(
+        `
+        *,
+        category:category_id(id, name, slug, icon),
+        subcategory:subcategory_id(id, name, slug, icon),
+        type:type_id(id, name, slug, icon),
+        ownership:ownership_id(id, type, slug, icon),
+        country:country_id(id, name, emoji),
+        region:region_id(id, name),
+        city:city_id(id, name)
+      `,
+        { count: 'exact' }
+      )
+      .eq('added_by', userId)
+      .eq('isBusinessPlace', true);
+
+    // Apply filters
+    if (search) {
+      query = query.or(
+        `name.ilike.%${search}%,description.ilike.%${search}%,tagline.ilike.%${search}%`
+      );
+    }
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    if (category) {
+      query = query.eq('category_id', category);
+    }
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    // Apply sorting
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Execute the query with pagination
+    const { data, error, count } = await query.range(from, to);
+
+    if (error) {
+      console.error('Error fetching user businesses:', error);
+      throw new Error(error.message);
+    }
+
+    // Transform the data to PlaceResults format
+    const transformedData: PlaceResults[] = (data || []).map((place: any) => ({
+      id: place.id,
+      name: place.name,
+      slug: place.slug,
+      tagline: place.tagline,
+      description: place.description,
+      contacts: place.contacts,
+      email: place.email,
+      logo: place.logo,
+      main_image: place.main_image || place.gallery?.[0] || '',
+      gallery: place.gallery || [],
+
+      country: place.country,
+      region: place.region,
+      city: place.city,
+      location: place.location,
+
+      website: place.website,
+      socials: place.socials,
+
+      category: place.category,
+      subcategory: place.subcategory,
+      type: place.type,
+      ownership: place.ownership,
+
+      rating: place.rating,
+      open_hours: place.open_hours,
+      features: place.features || [],
+      services: place.services || [],
+      tags: place.tags,
+      accessibility: place.accessibility || [],
+
+      created_at: new Date(place.created_at),
+      updated_at: new Date(place.updated_at),
+
+      other_details: place.other_details,
+      source: place.source,
+      source_link: place.source_link,
+
+      added_by: place.added_by,
+      status: place.status,
+      isBusinessPlace: place.isBusinessPlace,
+    }));
+
+    return {
+      data: transformedData,
+      count: count || 0,
+    };
+  } catch (error) {
+    console.error('Error in getUserBusinesses:', error);
+    throw error;
+  }
+}
+
+// Delete a user's business place
+export async function deleteUserBusiness(
+  placeId: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    const supabase = createClient();
+
+    // First verify this place belongs to the user and is a business
+    const { data: place, error: fetchError } = await supabase
+      .from('places')
+      .select('added_by, isBusinessPlace')
+      .eq('id', placeId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching place for deletion:', fetchError);
+      throw new Error('Place not found');
+    }
+
+    if (place.added_by !== userId || !place.isBusinessPlace) {
+      throw new Error('Unauthorized to delete this place');
+    }
+
+    // Delete the place
+    const { error: deleteError } = await supabase
+      .from('places')
+      .delete()
+      .eq('id', placeId)
+      .eq('added_by', userId);
+
+    if (deleteError) {
+      console.error('Error deleting place:', deleteError);
+      throw new Error('Failed to delete place');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteUserBusiness:', error);
+    throw error;
+  }
+}
+
+// Get user contributed places (non-business places)
+export async function getUserContributedPlaces(params: {
+  userId: string;
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  status?: string;
+  category?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}): Promise<{
+  data: PlaceResults[];
+  count: number;
+}> {
+  try {
+    const supabase = createClient();
+    const {
+      userId,
+      page = 1,
+      pageSize = 10,
+      search,
+      status,
+      category,
+      sortBy = 'created_at',
+      sortOrder = 'desc',
+    } = params;
+
+    let query = supabase
+      .from('places')
+      .select(
+        `
+        *,
+        category:category_id(id, name, slug, icon),
+        subcategory:subcategory_id(id, name, slug, icon),
+        type:type_id(id, name, slug, icon),
+        ownership:ownership_id(id, type, slug, icon),
+        country:country_id(id, name),
+        region:region_id(id, name),
+        city:city_id(id, name)
+      `,
+        { count: 'exact' }
+      )
+      .eq('added_by', userId)
+      .eq('isBusinessPlace', false); // Filter for non-business places
+
+    // Apply filters
+    if (search) {
+      query = query.or(
+        `name.ilike.%${search}%,description.ilike.%${search}%,tagline.ilike.%${search}%`
+      );
+    }
+
+    if (status && status !== 'all') {
+      query = query.eq('status', status);
+    }
+
+    if (category) {
+      query = query.eq('category_id', category);
+    }
+
+    // Apply sorting
+    query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+
+    const { data: places, error, count } = await query;
+
+    if (error) {
+      console.error('Error fetching user contributed places:', error);
+      throw error;
+    }
+
+    // Transform to PlaceResults format
+    const transformedPlaces: PlaceResults[] = (places || []).map((place) => ({
+      id: place.id,
+      name: place.name,
+      slug: place.slug,
+      tagline: place.tagline,
+      description: place.description,
+      contacts: place.contacts,
+      email: place.email,
+      logo: place.logo,
+      main_image: place.main_image || place.gallery?.[0] || '',
+      gallery: place.gallery || [],
+
+      country: place.country,
+      region: place.region,
+      city: place.city,
+      location: place.location,
+
+      website: place.website,
+      socials: place.socials,
+
+      category: place.category,
+      subcategory: place.subcategory,
+      type: place.type,
+      ownership: place.ownership,
+
+      rating: place.rating,
+      status: place.status,
+      open_hours: place.open_hours,
+      features: place.features || [],
+      services: place.services || [],
+      tags: place.tags,
+      accessibility: place.accessibility || [],
+
+      created_at: new Date(place.created_at),
+      updated_at: new Date(place.updated_at),
+    }));
+
+    return {
+      data: transformedPlaces,
+      count: count || 0,
+    };
+  } catch (error) {
+    console.error('Error in getUserContributedPlaces:', error);
+    throw error;
+  }
+}
+
+// Delete user contributed place
+export async function deleteUserContributedPlace(
+  placeId: string,
+  userId: string
+): Promise<boolean> {
+  try {
+    const supabase = createClient();
+
+    // First verify this place belongs to the user and is NOT a business
+    const { data: place, error: fetchError } = await supabase
+      .from('places')
+      .select('added_by, isBusinessPlace')
+      .eq('id', placeId)
+      .single();
+
+    if (fetchError) {
+      console.error('Error fetching place for deletion:', fetchError);
+      throw new Error('Place not found');
+    }
+
+    if (place.added_by !== userId || place.isBusinessPlace) {
+      throw new Error('Unauthorized to delete this place');
+    }
+
+    // Delete the place
+    const { error: deleteError } = await supabase
+      .from('places')
+      .delete()
+      .eq('id', placeId)
+      .eq('added_by', userId);
+
+    if (deleteError) {
+      console.error('Error deleting place:', deleteError);
+      throw new Error('Failed to delete place');
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in deleteUserContributedPlace:', error);
+    throw error;
+  }
+}
+
+// Get user reviews count
+export async function getUserReviewsCount(userId: string): Promise<number> {
+  try {
+    const supabase = createClient();
+
+    const { count, error } = await supabase
+      .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching user reviews count:', error);
+      throw error;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getUserReviewsCount:', error);
+    throw error;
+  }
+}
+
+// Get user uploaded photos count
+export async function getUserPhotosCount(userId: string): Promise<number> {
+  try {
+    const supabase = createClient();
+
+    const { count, error } = await supabase
+      .from('user_uploaded_photos')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching user photos count:', error);
+      throw error;
+    }
+
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getUserPhotosCount:', error);
+    throw error;
+  }
+}
