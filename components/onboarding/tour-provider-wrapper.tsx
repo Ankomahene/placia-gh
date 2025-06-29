@@ -12,7 +12,6 @@ export function TourProviderWrapper({ children }: TourProviderWrapperProps) {
   const { stopCurrentSpeech } = useTour();
 
   const handleBeforeClose = () => {
-    console.log('🛑 Reactour closing - stopping speech');
     stopCurrentSpeech();
   };
 

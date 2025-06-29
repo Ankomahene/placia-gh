@@ -1,8 +1,9 @@
 // Audio Tour System - V2 with Pre-recorded Audio
-export { AudioTourProvider, useAudioTour } from './audio-tour-context';
+export { AudioTourProvider } from './audio-tour-context';
 export { AudioTourManager } from './audio-tour-manager';
 export { AudioTourProviderWrapper } from './audio-tour-provider-wrapper';
 export { AudioTourTestButton } from './audio-tour-test-button';
+export { AlexChat } from './alex-chat';
 
 // Re-export types and data
 export type {

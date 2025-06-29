@@ -183,7 +183,6 @@ export class GooglePlaceSearch {
       searchLocation = user_location;
     } else if (location) {
       try {
-        console.log('Rating: geocodeLocation for', location);
         searchLocation = await geocodeLocation(location);
       } catch (error) {
         console.warn(
@@ -499,7 +498,7 @@ export async function nearbySearch(
       }
     }
 
-    console.log('searchParams for nearby search', searchParams);
+    // console.log('searchParams for nearby search', searchParams);
 
     const response = await client.placesNearby({
       params: searchParams,
@@ -754,7 +753,7 @@ export async function geocodeLocation(
 
     const placeCandidates = placeResponse.data.candidates;
     if (placeCandidates && placeCandidates.length > 0) {
-      console.log('Place location', placeCandidates[0].geometry?.location);
+      // console.log('Place location', placeCandidates[0].geometry?.location);
       const geometry = placeCandidates[0].geometry?.location;
       if (geometry) {
         return {

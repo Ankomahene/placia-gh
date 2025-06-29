@@ -562,7 +562,7 @@ Analyze the current query and provide a JSON response with user_response, server
         context.lastSearchQuery = response.server_query;
       }
 
-      console.log('response', response);
+      // console.log('response', response);
 
       return response;
     } catch (error) {

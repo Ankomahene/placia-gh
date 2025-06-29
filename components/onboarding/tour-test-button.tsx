@@ -249,7 +249,6 @@ export function TourTestButton() {
                 onClick={() => {
                   if ('speechSynthesis' in window) {
                     const voices = window.speechSynthesis.getVoices();
-                    console.log('🎙️ Available voices:', voices);
 
                     // Test speech with best voice
                     const utterance = new SpeechSynthesisUtterance(
@@ -269,7 +268,6 @@ export function TourTestButton() {
                       const voice = voices.find((v) => v.name === voiceName);
                       if (voice) {
                         utterance.voice = voice;
-                        console.log('🎯 Testing with voice:', voice.name);
                         break;
                       }
                     }

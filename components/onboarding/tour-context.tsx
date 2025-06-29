@@ -89,7 +89,6 @@ export function TourProvider({ children }: TourProviderProps) {
   }, []);
 
   const stopCurrentSpeech = useCallback(() => {
-    console.log('🛑 Global speech stop requested');
     if (speechController) {
       speechController.stop();
     }
@@ -98,7 +97,6 @@ export function TourProvider({ children }: TourProviderProps) {
 
   const registerSpeechController = useCallback(
     (controller: SpeechController) => {
-      console.log('🎛️ Registering speech controller');
       setSpeechController(controller);
     },
     []

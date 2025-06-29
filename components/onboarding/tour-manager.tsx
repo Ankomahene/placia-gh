@@ -25,7 +25,6 @@ export function TourManager() {
     );
     if (hasCompletedStored !== 'true' && !hasSeenWelcome) {
       const timer = setTimeout(() => {
-        console.log('🎭 Showing welcome modal for first-time user');
         setShowWelcomeModal(true);
         setHasSeenWelcome(true);
         // Small delay to ensure modal is rendered before agent starts
@@ -41,63 +40,42 @@ export function TourManager() {
     response: 'yes' | 'no' | 'continue' | 'next',
     source: 'voice' | 'button' = 'voice'
   ) => {
-    console.log(
-      '🎯 Tour response received:',
-      response,
-      'Source:',
-      source,
-      'Context:',
-      {
-        showWelcomeModal,
-        isOpen,
-        currentStep,
-      }
-    );
-
     if (response === 'yes') {
       if (showWelcomeModal) {
-        // User accepted the initial tour offer
-        console.log('✅ User accepted tour, starting...');
         // Update all states immediately to prevent race conditions
         setShowWelcomeModal(false);
         setIsOpen(true);
         setCurrentStep(0);
-        console.log('🚀 Tour started - isOpen: true, currentStep: 0');
       }
     } else if (response === 'no') {
       if (showWelcomeModal) {
-        console.log('❌ User declined tour');
         setShowWelcomeModal(false);
         handleSkipTour();
       } else {
         // User wants to skip during tour
-        console.log('⏭️ User wants to skip tour');
+
         setIsOpen(false);
         handleCompleteTour();
       }
     } else if (response === 'continue' || response === 'next') {
       // Only allow progression if it's from voice or if there's no active speech
       if (source === 'voice' || !isAgentReady) {
-        console.log('➡️ Moving to next step:', currentStep + 1);
         // Move to next step
         if (currentStep < 4) {
           // We have 5 steps (0-4)
           setCurrentStep(currentStep + 1);
         } else {
           // Tour complete
-          console.log('🎉 Tour completed!');
+
           setIsOpen(false);
           handleCompleteTour();
         }
-      } else {
-        console.log('⚠️ Ignoring button response - voice agent is active');
       }
     }
   };
 
   // Handle manual tour start (from test button)
   const handleStartTour = () => {
-    console.log('🧪 Manual tour start (test mode)');
     setShowWelcomeModal(true);
     setHasSeenWelcome(true);
     setIsAgentReady(true);
@@ -125,19 +103,6 @@ export function TourManager() {
     setIsAgentReady(false);
     handleCompleteTour();
   };
-
-  // Debug logging
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && isAgentReady) {
-      console.log('🔍 TourManager State:', {
-        showWelcomeModal,
-        isOpen,
-        currentStep,
-        calculatedIsWelcomeModal: showWelcomeModal && !isOpen,
-        calculatedCurrentStep: isOpen ? currentStep : -1,
-      });
-    }
-  }, [showWelcomeModal, isOpen, currentStep, isAgentReady]);
 
   // Expose start tour function for test button
   useEffect(() => {

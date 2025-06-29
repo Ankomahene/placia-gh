@@ -12,7 +12,6 @@ export default function AddBusinessPage() {
         businessOnly={true}
         onSuccess={(placeId) => {
           // Handle success if needed
-          console.log('Business added successfully:', placeId);
         }}
         onCancel={() => {
           // Handle cancel if needed

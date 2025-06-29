@@ -25,6 +25,7 @@ import {
   AUDIO_TOUR_CONFIG,
   AUDIO_TOUR_STORAGE_KEYS,
 } from '@/lib/onboarding-v2/audio-tour-data';
+import { AlexChat } from './alex-chat';
 
 export function AudioTourManager() {
   // React Tour hooks
@@ -55,6 +56,8 @@ export function AudioTourManager() {
   const [isAgentReady, setIsAgentReady] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [currentSubtitle, setCurrentSubtitle] = useState('');
+  const [showHelpMenu, setShowHelpMenu] = useState(false);
+  const [showAlexChat, setShowAlexChat] = useState(false);
 
   // Handle first user interaction to unlock audio
   const [audioUnlocked, setAudioUnlocked] = useState(false);
@@ -64,16 +67,13 @@ export function AudioTourManager() {
   const unlockAudio = useCallback(async () => {
     if (audioUnlocked) return;
 
-    console.log('🔓 Unlocking audio context on user interaction');
     setAudioUnlocked(true);
 
     // If we were waiting to play intro, play it now
     if (shouldPlayIntroOnUnlock) {
-      console.log('🎵 Playing intro audio automatically after unlock');
       try {
         setCurrentSubtitle(showSubtitles ? SUBTITLE_TEXTS.intro : '');
         await playAudio(AUDIO_FILES.intro);
-        console.log('✅ Auto-intro audio completed');
       } catch (error) {
         console.error('Failed to play auto-intro audio:', error);
       }
@@ -106,7 +106,6 @@ export function AudioTourManager() {
       localStorage.getItem('placia_audio_tour_completed') === 'true';
     if (hasCompleted) {
       setHasCompletedTour(true);
-      console.log('📚 Tour already completed - skipping modal');
     }
   }, [setHasCompletedTour]);
 
@@ -131,7 +130,6 @@ export function AudioTourManager() {
       if (stepIndex < 0 || stepIndex >= AUDIO_FILES.steps.length) return;
 
       try {
-        console.log(`🎵 Playing step ${stepIndex + 1} audio`);
         setCurrentSubtitle(
           showSubtitles ? SUBTITLE_TEXTS.steps[stepIndex] : ''
         );
@@ -140,17 +138,10 @@ export function AudioTourManager() {
         // Wait for audio to complete - NO auto-advance
         await playAudio(AUDIO_FILES.steps[stepIndex]);
 
-        console.log(
-          `✅ Step ${stepIndex + 1} audio completed - waiting for user to click Next`
-        );
-
         // NO automatic advancement - user must click Next
       } catch (error) {
         console.error(`❌ Failed to play step ${stepIndex + 1} audio:`, error);
         // Fallback: just show visual content, no auto-advance
-        console.log(
-          `📖 Step ${stepIndex + 1} ready - waiting for user to click Next`
-        );
       }
     },
     [playAudio, setCurrentAudioStep, showSubtitles]
@@ -158,23 +149,18 @@ export function AudioTourManager() {
 
   // Handle tour start (user clicked "Yes Show me")
   const handleStartTour = useCallback(async () => {
-    console.log('🎬 User chose to start audio tour');
     setShowWelcomeModal(false);
     setShouldPlayIntroOnUnlock(false); // Cancel auto-play if not already happened
 
     try {
       // If audio hasn't been unlocked yet, unlock it and play intro
       if (!audioUnlocked) {
-        console.log('🔓 Unlocking audio and playing intro');
         setAudioUnlocked(true);
         setCurrentSubtitle(showSubtitles ? SUBTITLE_TEXTS.intro : '');
         await playAudio(AUDIO_FILES.intro);
-        console.log('✅ Intro audio completed');
       } else {
-        console.log('🎵 Audio already unlocked, playing intro now');
         setCurrentSubtitle(showSubtitles ? SUBTITLE_TEXTS.intro : '');
         await playAudio(AUDIO_FILES.intro);
-        console.log('✅ Intro audio completed');
       }
 
       // Start visual tour after intro completes
@@ -208,14 +194,11 @@ export function AudioTourManager() {
   // Handle tour completion (only when tour actually completes all steps)
   const handleCompleteTour = useCallback(
     async (playCompletionAudio: boolean = true) => {
-      console.log('🎉 Tour completed!');
-
       // Only play completion audio if explicitly requested (actual completion)
       if (playCompletionAudio) {
         try {
           setCurrentSubtitle(showSubtitles ? SUBTITLE_TEXTS.completion : '');
           await playAudio(AUDIO_FILES.completion);
-          console.log('✅ Completion audio finished');
         } catch (error) {
           console.error('Failed to play completion audio:', error);
         }
@@ -235,7 +218,6 @@ export function AudioTourManager() {
 
   // Handle tour skip/cancel
   const handleSkipTour = useCallback(() => {
-    console.log('⏹️ Tour stopped by user - marking as completed');
     stopAudio();
     setShowWelcomeModal(false);
     setIsOpen(false);
@@ -260,7 +242,6 @@ export function AudioTourManager() {
 
   // Handle tour closed by user (via X button or escape)
   const handleTourClosed = useCallback(() => {
-    console.log('❌ Tour closed by user - marking as completed');
     stopAudio();
     setCurrentSubtitle('');
     setIsAgentReady(false);
@@ -282,7 +263,6 @@ export function AudioTourManager() {
   // Listen for step changes from @reactour/tour navigation
   useEffect(() => {
     if (isOpen && currentStep !== currentAudioStep && currentStep >= 0) {
-      console.log(`🔄 Step changed via tour navigation to: ${currentStep + 1}`);
       // Stop current audio and play new step audio
       stopAudio();
       handleStepAudio(currentStep);
@@ -466,15 +446,44 @@ export function AudioTourManager() {
         </motion.div>
       )}
 
-      {/* Floating restart button for completed users */}
-      {hasCompletedTour && !isOpen && !showWelcomeModal && (
+      {/* Floating Help Menu for all users */}
+      {!isOpen && !showWelcomeModal && !showAlexChat && (
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="fixed bottom-6 right-6 z-40"
         >
+          {showHelpMenu ? (
+            <Card className="p-4 bg-background/95 backdrop-blur-sm border shadow-lg mb-2">
+              <div className="flex flex-col gap-2 min-w-[160px]">
+                <Button
+                  onClick={() => {
+                    setShowHelpMenu(false);
+                    handleManualStart();
+                  }}
+                  variant="outline"
+                  className="justify-start"
+                >
+                  <Bot className="w-4 h-4 mr-2" />
+                  Start Tour
+                </Button>
+                <Button
+                  onClick={() => {
+                    setShowHelpMenu(false);
+                    setShowAlexChat(true);
+                  }}
+                  variant="outline"
+                  className="justify-start"
+                >
+                  <Volume2 className="w-4 h-4 mr-2" />
+                  Talk to Alex
+                </Button>
+              </div>
+            </Card>
+          ) : null}
+
           <Button
-            onClick={handleManualStart}
+            onClick={() => setShowHelpMenu(!showHelpMenu)}
             className="rounded-full w-14 h-14 shadow-lg bg-primary hover:bg-primary/90"
             size="lg"
           >
@@ -502,6 +511,62 @@ export function AudioTourManager() {
               Stop Tour
             </Button>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Talk to Alex Chat Popup */}
+      <AnimatePresence>
+        {showAlexChat && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60"
+              onClick={() => setShowAlexChat(false)}
+            />
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.8, y: 20 }}
+              className="relative z-10 w-full max-w-2xl max-h-[80vh]"
+            >
+              <Card className="bg-white dark:bg-gray-900 shadow-2xl border-2 border-primary/20 overflow-hidden">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-primary to-blue-600 text-white p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10 border-2 border-white/20">
+                        <AvatarFallback className="bg-white/20 text-white font-bold">
+                          A
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <h3 className="text-xl font-semibold">
+                          Chat with Alex
+                        </h3>
+                        <p className="text-white/80 text-sm">
+                          Your Placia Assistant
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAlexChat(false)}
+                      className="text-white hover:bg-white/20 h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* AlexChat Component */}
+                <AlexChat onClose={() => setShowAlexChat(false)} />
+              </Card>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </>

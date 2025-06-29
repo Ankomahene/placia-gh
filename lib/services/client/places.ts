@@ -248,13 +248,6 @@ export async function savePlace(
       actualUserId
     );
 
-    // Debug logging
-    console.log('🔍 Debug - Original place data:', placeData);
-    console.log('🔍 Debug - Transformed place data:', transformedPlace);
-
-    // For import, always create new place with new ID
-    console.log('➕ Creating new place for import');
-
     // Always generate new ID to avoid conflicts
     transformedPlace.id = uuid();
 
@@ -274,7 +267,7 @@ export async function savePlace(
       });
       throw error;
     }
-    console.log('✅ Place created successfully:', data);
+
     return data;
   } catch (error) {
     console.error('💥 Error saving place:', error);
@@ -312,23 +305,12 @@ export async function savePlacesBatch(
       // Always generate new UUID for import
       transformed.id = uuid();
 
-      console.log(
-        '➕ Prepared place for insert:',
-        transformed.name,
-        'ID:',
-        transformed.id
-      );
       return transformed;
     });
 
     // Batch insert new places
     if (transformedPlaces.length > 0) {
       try {
-        console.log(
-          `🔍 Debug - Attempting to insert ${transformedPlaces.length} new places:`,
-          transformedPlaces
-        );
-
         const { data: insertedPlaces, error: insertError } = await supabase
           .from('places')
           .insert(transformedPlaces)
@@ -348,9 +330,6 @@ export async function savePlacesBatch(
             result.errorCount++;
           });
         } else if (insertedPlaces) {
-          console.log(
-            `✅ Successfully inserted ${insertedPlaces.length} places`
-          );
           result.successful.push(...insertedPlaces);
           result.successCount += insertedPlaces.length;
         }

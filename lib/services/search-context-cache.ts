@@ -63,21 +63,9 @@ class SearchContextCache {
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
       if (context.timestamp < thirtyMinutesAgo) {
         this.cache.delete(sessionId);
-        console.info(
-          `🗑️ Expired and removed context for session: ${sessionId}`
-        );
+
         return undefined;
       }
-
-      console.log(`✅ Retrieved cached context for session: ${sessionId}`, {
-        query: context.originalQuery,
-        location: context.structuredQuery.location,
-        age:
-          Math.round((Date.now() - context.timestamp.getTime()) / 1000 / 60) +
-          ' minutes',
-      });
-    } else {
-      console.info(`❌ No cached context found for session: ${sessionId}`);
     }
 
     return context;

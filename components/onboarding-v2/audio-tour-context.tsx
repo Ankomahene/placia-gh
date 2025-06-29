@@ -155,7 +155,6 @@ export function AudioTourProvider({ children }: AudioTourProviderProps) {
 
         // Set up event listeners for this playback
         const handleEnded = () => {
-          console.log('🎵 Audio finished:', audioFile);
           cleanup();
           resolve();
         };
@@ -183,7 +182,6 @@ export function AudioTourProvider({ children }: AudioTourProviderProps) {
         audio
           .play()
           .then(() => {
-            console.log('🎵 Started playing audio:', audioFile);
             setAudioLoading(false);
           })
           .catch(handleError);

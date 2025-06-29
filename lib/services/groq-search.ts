@@ -119,7 +119,7 @@ export async function parseNaturalLanguageQuery(
   try {
     // If a default structured query is provided, use it and skip Groq call
     if (defaultStructuredQuery) {
-      console.log('Using pre-generated structured query, skipping Groq call');
+      console.info('Using pre-generated structured query, skipping Groq call');
       return {
         ...defaultStructuredQuery,
         // Only add user location if the query explicitly wants to use user location
@@ -185,7 +185,7 @@ export async function parseNaturalLanguageQuery(
       ...(parsed.sort_order && { sort_order: parsed.sort_order }),
     };
 
-    console.log('Structured query:', structuredQuery);
+    // console.log('Structured query:', structuredQuery);
 
     return structuredQuery;
   } catch (error) {

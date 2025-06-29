@@ -15,9 +15,6 @@ export function AudioTourProviderWrapper({
     useAudioTour();
 
   const handleBeforeClose = () => {
-    console.log(
-      '🛑 Audio tour closing - stopping audio and marking as completed'
-    );
     stopAudio();
 
     // Mark as completed when manually closed (so modal doesn't reappear)
@@ -28,11 +25,9 @@ export function AudioTourProviderWrapper({
   };
 
   const handleTourComplete = async () => {
-    console.log('🎉 Tour completed by user!');
     try {
       // Play completion audio
       await playAudio('/audio/tour/completion.mp3');
-      console.log('✅ Completion audio finished');
     } catch (error) {
       console.error('Failed to play completion audio:', error);
     }

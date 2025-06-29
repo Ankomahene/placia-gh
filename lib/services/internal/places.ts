@@ -59,7 +59,7 @@ export async function searchInternalPlaces(
   try {
     const supabase = await createClient();
 
-    console.log('structuredQuery', structuredQuery);
+    // console.log('structuredQuery', structuredQuery);
 
     const {
       query,
