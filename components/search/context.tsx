@@ -14,6 +14,11 @@ import {
   convertServiceSortToConfig,
   getDefaultSortConfigForSearchType,
 } from './utils/sorting-utils';
+import {
+  findExactPregeneratedQuery,
+  PregeneratedQuery,
+} from '@/lib/pregenerated-queries';
+import { StructuredSearchQuery } from '@/types/search';
 
 // Types for complete search results
 interface GoogleSearchResult {
@@ -56,6 +61,10 @@ interface ISearchContext {
   shouldAutoRunChat: boolean;
   setShouldAutoRunChat: (should: boolean) => void;
 
+  // Pregenerated query support
+  selectedPregeneratedQuery: PregeneratedQuery | null;
+  setSelectedPregeneratedQuery: (query: PregeneratedQuery | null) => void;
+
   // Search functionality
   query: string;
   isSearching: boolean;
@@ -69,13 +78,18 @@ interface ISearchContext {
   sortingCapabilities: SortingCapabilities;
   performSearch: (
     query: string,
-    location: { lat: number; lng: number }
+    location: { lat: number; lng: number },
+    pregeneratedQuery?: PregeneratedQuery
   ) => Promise<void>;
   search: (
     query: string,
     location: { lat: number; lng: number }
   ) => Promise<void>;
   loadMore: (location: { lat: number; lng: number }) => Promise<void>;
+  performPregeneratedSearch: (
+    pregeneratedQuery: PregeneratedQuery,
+    location?: { lat: number; lng: number }
+  ) => Promise<void>;
   setViewMode: (mode: ViewMode) => void;
   setSearchMode: (mode: SearchMode) => void;
   setHoveredPlaceId: (id: string | null) => void;
@@ -116,6 +130,8 @@ export const SearchContextProvider = ({
   const [previousSearchTerm, setPreviousSearchTerm] = useState('');
   const [isOpenSearchWindow, setIsOpenSearchWindow] = useState(false);
   const [shouldAutoRunChat, setShouldAutoRunChat] = useState(false);
+  const [selectedPregeneratedQuery, setSelectedPregeneratedQuery] =
+    useState<PregeneratedQuery | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('card');
   const [searchMode, setSearchMode] = useState<SearchMode>('general');
   const [hoveredPlaceId, setHoveredPlaceId] = useState<string | null>(null);
@@ -220,7 +236,11 @@ export const SearchContextProvider = ({
   );
 
   const performSearch = useCallback(
-    async (query: string, userLocation?: { lat: number; lng: number }) => {
+    async (
+      query: string,
+      userLocation?: { lat: number; lng: number },
+      pregeneratedQuery?: PregeneratedQuery
+    ) => {
       const trimmedQuery = query.trim();
       if (!trimmedQuery) return;
 
@@ -236,10 +256,32 @@ export const SearchContextProvider = ({
       });
 
       try {
+        // Check if we have a pregenerated query or need to find one
+        let defaultStructuredQuery: StructuredSearchQuery | undefined =
+          pregeneratedQuery?.structuredQuery;
+
+        // If no pregenerated query provided, try to find exact match
+        if (!defaultStructuredQuery) {
+          const foundPregeneratedQuery =
+            findExactPregeneratedQuery(trimmedQuery);
+          if (foundPregeneratedQuery) {
+            defaultStructuredQuery = foundPregeneratedQuery.structuredQuery;
+            console.info(
+              'Using pregenerated query for exact match:',
+              trimmedQuery
+            );
+          }
+        }
+
         const response = await fetch('/api/search', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query: trimmedQuery, userLocation }),
+          body: JSON.stringify({
+            query: trimmedQuery,
+            userLocation,
+            defaultStructuredQuery,
+            useInitialQuery: true,
+          }),
         });
         const data = await response.json();
 
@@ -275,6 +317,20 @@ export const SearchContextProvider = ({
       }
     },
     [setDefaultSortFromSearchResults]
+  );
+
+  const performPregeneratedSearch = useCallback(
+    async (
+      pregeneratedQuery: PregeneratedQuery,
+      userLocation?: { lat: number; lng: number }
+    ) => {
+      await performSearch(
+        pregeneratedQuery.query,
+        userLocation,
+        pregeneratedQuery
+      );
+    },
+    [performSearch]
   );
 
   const loadMore = useCallback(
@@ -512,6 +568,10 @@ export const SearchContextProvider = ({
       shouldAutoRunChat,
       setShouldAutoRunChat,
 
+      // Pregenerated query support
+      selectedPregeneratedQuery,
+      setSelectedPregeneratedQuery,
+
       // Search functionality
       query: currentQuery,
       isSearching,
@@ -526,6 +586,7 @@ export const SearchContextProvider = ({
       performSearch,
       search: performSearch,
       loadMore,
+      performPregeneratedSearch,
       setViewMode,
       setSearchMode,
       setHoveredPlaceId,
@@ -562,6 +623,8 @@ export const SearchContextProvider = ({
     setIsOpenSearchWindow,
     shouldAutoRunChat,
     setShouldAutoRunChat,
+    selectedPregeneratedQuery,
+    setSelectedPregeneratedQuery,
     currentQuery,
     isSearching,
     sortedResults,
@@ -575,6 +638,7 @@ export const SearchContextProvider = ({
     sortingCapabilities,
     performSearch,
     loadMore,
+    performPregeneratedSearch,
     setViewMode,
     setSearchMode,
     setHoveredPlaceId,

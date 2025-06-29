@@ -4,6 +4,7 @@ import { smartPlaceSearch } from '@/lib/services/smart-search';
 import { PlaceResultsSummary } from '@/types/place';
 import { parseNaturalLanguageQuery } from '@/lib/services';
 import { searchContextCache } from '@/lib/services/search-context-cache';
+import { StructuredSearchQuery } from '@/types/search';
 
 export async function POST(request: Request) {
   try {
@@ -14,6 +15,7 @@ export async function POST(request: Request) {
       smartSearchOffset,
       useInitialQuery,
       sessionId,
+      defaultStructuredQuery,
     }: {
       query: string;
       userLocation?: { lat: number; lng: number };
@@ -21,6 +23,7 @@ export async function POST(request: Request) {
       smartSearchOffset?: number;
       useInitialQuery?: boolean;
       sessionId?: string;
+      defaultStructuredQuery?: StructuredSearchQuery;
     } = await request.json();
 
     if (!query) {
@@ -36,7 +39,7 @@ export async function POST(request: Request) {
     const structuredQuery = await parseNaturalLanguageQuery(
       query,
       userLocation,
-      undefined,
+      defaultStructuredQuery,
       useInitialQuery
     );
 

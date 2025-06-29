@@ -3,6 +3,7 @@
 import { TourProvider, StepType } from '@reactour/tour';
 import { AUDIO_TOUR_STEPS } from '@/lib/onboarding-v2/audio-tour-data';
 import { useAudioTour } from './audio-tour-context';
+import { useTheme } from 'next-themes';
 
 interface AudioTourProviderWrapperProps {
   children: React.ReactNode;
@@ -13,6 +14,11 @@ export function AudioTourProviderWrapper({
 }: AudioTourProviderWrapperProps) {
   const { stopAudio, resetTour, playAudio, setHasCompletedTour } =
     useAudioTour();
+  const { theme, systemTheme } = useTheme();
+
+  // Determine if we're in dark mode
+  const isDark =
+    theme === 'dark' || (theme === 'system' && systemTheme === 'dark');
 
   const handleBeforeClose = () => {
     stopAudio();
@@ -47,6 +53,12 @@ export function AudioTourProviderWrapper({
           '--reactour-accent': '#7c3aed',
           borderRadius: 10,
           maxWidth: '320px',
+          backgroundColor: isDark ? '#1f2937' : '#ffffff',
+          color: isDark ? '#f9fafb' : '#111827',
+          border: isDark ? '1px solid #374151' : '1px solid #e5e7eb',
+          boxShadow: isDark
+            ? '0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2)'
+            : '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
         }),
         maskArea: (base) => ({
           ...base,
@@ -57,17 +69,23 @@ export function AudioTourProviderWrapper({
           left: 'auto',
           right: '-0.8125em',
           backgroundColor: '#7c3aed',
+          color: '#ffffff',
         }),
         close: (base) => ({
           ...base,
           right: 'auto',
           left: 8,
           top: 8,
-          backgroundColor: '#f3f4f6',
-          color: '#374151',
+          backgroundColor: isDark ? '#374151' : '#f3f4f6',
+          color: isDark ? '#f9fafb' : '#374151',
           '&:hover': {
-            backgroundColor: '#e5e7eb',
+            backgroundColor: isDark ? '#4b5563' : '#e5e7eb',
           },
+        }),
+        // Add styling for tour content
+        maskWrapper: (base) => ({
+          ...base,
+          color: isDark ? '#374151' : '#111827',
         }),
       }}
       onClickMask={({ setIsOpen }) => setIsOpen(false)}
@@ -79,7 +97,11 @@ export function AudioTourProviderWrapper({
         return currentStep > 0 ? (
           <button
             onClick={() => setCurrentStep(Math.max(currentStep - 1, 0))}
-            className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+            className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+              isDark
+                ? 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+            }`}
           >
             Back
           </button>

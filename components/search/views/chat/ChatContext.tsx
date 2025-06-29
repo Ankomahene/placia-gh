@@ -24,6 +24,7 @@ import { useSearchContext } from '../../hooks/use-search-context';
 import { useLocation } from '@/hooks/use-location';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
 import { ChatMessage } from '../../mock-data';
+import { findExactPregeneratedQuery } from '@/lib/pregenerated-queries';
 
 interface ChatContextType {
   // Chat state
@@ -85,7 +86,11 @@ export function ChatProvider({
   shouldAutoRun,
 }: ChatProviderProps) {
   // Get chat search term from search context
-  const { chatSearchTerm } = useSearchContext();
+  const {
+    chatSearchTerm,
+    selectedPregeneratedQuery,
+    setSelectedPregeneratedQuery,
+  } = useSearchContext();
 
   // Get user location using the custom hook
   const { latitude, longitude } = useLocation();
@@ -278,6 +283,13 @@ export function ChatProvider({
     setInputValue('');
     setIsTyping(true);
 
+    // Check if we have a pregenerated query from suggestions and clear it after use
+    let defaultStructuredQuery = undefined;
+    if (selectedPregeneratedQuery) {
+      defaultStructuredQuery = selectedPregeneratedQuery.structuredQuery;
+      setSelectedPregeneratedQuery(null); // Clear after use since chat mode handles its own processing
+    }
+
     try {
       // Step 1: Process with Groq conversation flow
       const conversationResponse = await fetch('/api/conversation-flow/groq', {
@@ -288,6 +300,7 @@ export function ChatProvider({
         body: JSON.stringify({
           query: currentInput,
           sessionId,
+          defaultStructuredQuery,
         }),
       });
 
@@ -363,6 +376,14 @@ export function ChatProvider({
       }
 
       // Step 4: Perform search
+      // If we don't already have a structured query from suggestions, try to find one from the server query
+      if (!defaultStructuredQuery) {
+        const pregeneratedQuery = findExactPregeneratedQuery(
+          conversationResult.server_query
+        );
+        defaultStructuredQuery = pregeneratedQuery?.structuredQuery;
+      }
+
       const searchResponse = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -376,6 +397,7 @@ export function ChatProvider({
             : undefined,
           sessionId,
           useInitialQuery: true,
+          defaultStructuredQuery,
         }),
       });
 
@@ -566,6 +588,12 @@ export function ChatProvider({
             }
 
             // Step 4: Perform search
+            // Check for pregenerated query match
+            const pregeneratedQuery = findExactPregeneratedQuery(
+              conversationResult.server_query
+            );
+            const defaultStructuredQuery = pregeneratedQuery?.structuredQuery;
+
             const searchResponse = await fetch('/api/search', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -579,6 +607,7 @@ export function ChatProvider({
                   : undefined,
                 sessionId,
                 useInitialQuery: true,
+                defaultStructuredQuery,
               }),
             });
 

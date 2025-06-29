@@ -31,7 +31,7 @@ export default function Header() {
         'fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b',
         isScrolled
           ? 'bg-background/95 backdrop-blur-md py-3 shadow-sm'
-          : 'bg-transparent py-5'
+          : 'bg-white dark:bg-zinc-900 py-5'
       )}
     >
       <div className="container mx-auto px-4 flex items-center justify-between">

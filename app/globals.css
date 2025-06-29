@@ -359,6 +359,14 @@
   .animate-shimmer {
     animation: shimmer 2s linear infinite;
   }
+
+  .bg-gradient-radial {
+    background-image: radial-gradient(circle, var(--tw-gradient-stops));
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
 }
 
 /* Leaflet styles */

@@ -10,6 +10,11 @@ import { MapPreview } from './map-preview';
 import { useSearchContext } from './search/hooks/use-search-context';
 import { useSpeechRecognition } from '@/hooks/use-speech-recognition';
 import { SpeechListeningPopup } from './speech-listening-popup';
+import { SearchSuggestions } from './search/components/search-suggestions';
+import {
+  PregeneratedQuery,
+  findExactPregeneratedQuery,
+} from '@/lib/pregenerated-queries';
 import Image from 'next/image';
 
 const exampleSearches = [
@@ -37,12 +42,17 @@ export default function HeroSection() {
     onChatSearch,
     userLocation,
     performSearch,
+    performPregeneratedSearch,
     setSearchMode,
     restoreSearchState,
     getNavigationSource,
     setIsOpenSearchWindow,
+    selectedPregeneratedQuery,
+    setSelectedPregeneratedQuery,
   } = useSearchContext();
   const [searchInput, setSearchInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Speech recognition functionality using the existing hook
   const speechRecognition = useSpeechRecognition({
@@ -178,7 +188,15 @@ export default function HeroSection() {
       setSearchMode('general');
       setSearchTerm(searchInput);
       onSearch(searchInput);
-      if (searchInput !== previousSearchTerm) {
+
+      // Use pregenerated query if available, otherwise regular search
+      if (selectedPregeneratedQuery) {
+        await performPregeneratedSearch(
+          selectedPregeneratedQuery,
+          userLocation
+        );
+        setSelectedPregeneratedQuery(null); // Clear after use
+      } else if (searchInput !== previousSearchTerm) {
         await performSearch(searchInput, userLocation);
       }
     }
@@ -189,15 +207,59 @@ export default function HeroSection() {
       setSearchMode('chat');
       setChatSearchTerm(searchInput);
       onChatSearch(searchInput);
+
+      // Clear the pregenerated query since chat mode will handle its own processing
+      setSelectedPregeneratedQuery(null);
     }
   };
 
   const handleExampleClick = async (query: string) => {
     setSearchInput(query);
+    setShowSuggestions(false);
+
+    // Check if the example query matches a pregenerated query
+    const pregeneratedQuery = findExactPregeneratedQuery(query);
+    if (pregeneratedQuery) {
+      setSelectedPregeneratedQuery(pregeneratedQuery);
+    } else {
+      // Clear any existing pregenerated query if this example doesn't match one
+      setSelectedPregeneratedQuery(null);
+    }
+  };
+
+  const handleSuggestionSelect = async (suggestion: PregeneratedQuery) => {
+    setSearchInput(suggestion.query);
+    setShowSuggestions(false);
+    setSelectedPregeneratedQuery(suggestion);
+
+    // Only fill the input, don't search automatically
+    // User will manually trigger search in their preferred mode
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+
+    // Clear selected pregenerated query when user continues typing
+    // This gives priority to user's typed input over suggestions
+    if (
+      selectedPregeneratedQuery &&
+      value !== selectedPregeneratedQuery.query
+    ) {
+      setSelectedPregeneratedQuery(null);
+    }
+
+    // Only show suggestions when actively typing (2+ chars) and no suggestion is selected
+    setShowSuggestions(value.trim().length >= 2 && !selectedPregeneratedQuery);
+  };
+
+  const handleInputBlur = () => {
+    // Delay hiding suggestions to allow for selection
+    setTimeout(() => setShowSuggestions(false), 200);
   };
 
   return (
-    <section className="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden min-h-screen flex items-center">
+    <section className="relative pt-24 pb-12 md:pt-32 md:pb-20 overflow-hidden min-h-screen flex items-center bg-gradient-to-r from-primary/5 via-blue-500/5 to-purple-500/5 mb-6 animate-fade-in backdrop-blur-sm">
       {/* Animated Background */}
       <div className="absolute inset-0 z-0">
         {/* Primary gradient */}
@@ -207,33 +269,18 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-tr from-purple-500/3 via-transparent to-green-500/3 animate-gradient-shift-reverse"></div>
 
         {/* Geometric patterns */}
-        <div className="absolute inset-0 opacity-30">
+        <div className="absolute inset-0 opacity-80">
           <div className="absolute top-20 left-10 w-32 h-32 bg-primary/10 rounded-full blur-xl animate-float"></div>
           <div className="absolute top-40 right-20 w-24 h-24 bg-blue-500/10 rounded-full blur-lg animate-float-delayed"></div>
           <div className="absolute bottom-40 left-20 w-28 h-28 bg-purple-500/10 rounded-full blur-xl animate-float-slow"></div>
         </div>
-
-        {/* Floating place icons */}
-        {floatingElements.map((element, index) => (
-          <div
-            key={index}
-            className="absolute opacity-20 animate-float-gentle"
-            style={{
-              top: `${20 + index * 15}%`,
-              left: `${10 + index * 20}%`,
-              animationDelay: element.delay,
-            }}
-          >
-            <div className="text-2xl">{element.icon}</div>
-          </div>
-        ))}
       </div>
 
       {/* Mesh gradient overlay */}
-      <div className="absolute inset-0 z-0 bg-gradient-to-b from-background/95 via-background/85 to-background/95"></div>
+      {/* <div className="absolute inset-0 z-0 bg-gradient-to-b from-background/95 via-background/85 to-background/95"></div> */}
 
-      <div className="container mx-auto px-4 relative z-10">
-        <div className="max-w-4xl mx-auto text-center mb-12">
+      <div className="container mx-auto px-4 relative z-10 ">
+        <div className="max-w-4xl mx-auto text-center mb-12 ">
           {/* AI Badge */}
           <div className="relative inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-primary/5 via-blue-500/5 to-purple-500/5 border border-primary/20 mb-6 animate-fade-in backdrop-blur-sm">
             {/* <Bot className="h-4 w-4 text-primary" />
@@ -291,57 +338,69 @@ export default function HeroSection() {
               className="p-2 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm"
               data-tour="search-input"
             >
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <div className="relative flex-grow">
-                  <Input
-                    type="text"
-                    placeholder="e.g., 'Find me a good jollof restaurant near Accra Mall'"
-                    className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent dark:bg-zinc-900 focus-visible:ring-1 focus-visible:ring-primary/50"
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                  />
-                  <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleVoiceRecording}
-                      className={`h-8 w-8 rounded-full transition-colors duration-200 ${
-                        speechRecognition.isListening
-                          ? 'text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900'
-                          : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
-                      }`}
-                    >
-                      <Mic className="h-4 w-4" />
-                      <span className="sr-only">
-                        {speechRecognition.isListening
-                          ? 'Stop voice search'
-                          : 'Start voice search'}
-                      </span>
-                    </Button>
+              <div className="relative">
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <div className="relative flex-grow">
+                    <Input
+                      type="text"
+                      placeholder="e.g., 'Find me a good jollof restaurant near Accra Mall'"
+                      className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent dark:bg-zinc-900 focus-visible:ring-1 focus-visible:ring-primary/50"
+                      value={searchInput}
+                      onChange={handleInputChange}
+                      onBlur={handleInputBlur}
+                      ref={inputRef}
+                    />
+                    <div className="absolute right-4 top-1/2 transform -translate-y-1/2 flex gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={handleVoiceRecording}
+                        className={`h-8 w-8 rounded-full transition-colors duration-200 ${
+                          speechRecognition.isListening
+                            ? 'text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950 dark:hover:bg-red-900'
+                            : 'text-muted-foreground hover:text-primary hover:bg-primary/10'
+                        }`}
+                      >
+                        <Mic className="h-4 w-4" />
+                        <span className="sr-only">
+                          {speechRecognition.isListening
+                            ? 'Stop voice search'
+                            : 'Start voice search'}
+                        </span>
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="rounded-lg px-6 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
-                  disabled={!searchInput.trim()}
-                >
-                  <Search className="h-5 w-5 md:mr-1" />
-                  <span className="hidden md:block">Search</span>
-                </Button>
-                <Button
-                  type="button"
-                  onClick={handleChatSearch}
-                  size="lg"
-                  variant="outline"
-                  className="rounded-lg px-6 py-6 bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/40"
-                  disabled={!searchInput.trim()}
-                >
-                  <Bot className="h-5 w-5 md:mr-1" />
-                  <span className="hidden md:block">Chat</span>
-                </Button>
-              </form>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="rounded-lg px-6 py-6 bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg"
+                    disabled={!searchInput.trim()}
+                  >
+                    <Search className="h-5 w-5 md:mr-1" />
+                    <span className="hidden md:block">Search</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={handleChatSearch}
+                    size="lg"
+                    variant="outline"
+                    className="rounded-lg px-6 py-6 bg-primary/5 border-primary/30 hover:bg-primary/10 hover:border-primary/40"
+                    disabled={!searchInput.trim()}
+                  >
+                    <Bot className="h-5 w-5 md:mr-1" />
+                    <span className="hidden md:block">Chat</span>
+                  </Button>
+                </form>
+
+                {/* Search Suggestions Dropdown */}
+                <SearchSuggestions
+                  searchInput={searchInput}
+                  isOpen={showSuggestions}
+                  onSuggestionSelect={handleSuggestionSelect}
+                  inputRef={inputRef}
+                />
+              </div>
             </Card>
 
             {/* Example searches with improved styling */}
@@ -356,7 +415,7 @@ export default function HeroSection() {
                 <Badge
                   key={index}
                   variant="outline"
-                  className="border-primary/20 bg-primary/5 px-4 py-2 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 hover:scale-105"
+                  className="border-primary/20 bg-zinc-400/10 px-4 py-2 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 hover:scale-105"
                   onClick={() => handleExampleClick(search)}
                 >
                   {search}

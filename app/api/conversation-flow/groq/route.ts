@@ -22,19 +22,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(
-      `Processing Groq conversation flow for session: ${sessionId}, query: "${query}"`
-    );
-
     const result = await processQueryWithGroq(sessionId, query);
-
-    console.log(`Groq conversation result:`, {
-      is_followup: result.is_followup,
-      followup_type: result.followup_type,
-      confidence: result.confidence,
-      needs_clarification: result.needs_clarification,
-      server_query: result.server_query,
-    });
 
     return NextResponse.json({
       success: true,

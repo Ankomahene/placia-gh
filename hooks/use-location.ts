@@ -3,14 +3,19 @@
  *
  * Features:
  * - Session-level caching (30 minutes) to prevent unnecessary API calls
- * - Progressive fallback strategy: High accuracy → Low accuracy → IP-based location
- * - Smart retry logic that respects permission denials
+ * - GPS-based location detection with high/low accuracy fallback
+ * - Manual location override capability
  * - Automatic address resolution with graceful degradation
  * - Cross-component state sharing via React Query
  *
  * Usage:
  * ```typescript
- * const { latitude, longitude, address, error, loading, source } = useLocation();
+ * const { latitude, longitude, address, error, loading, source, setManualLocation } = useLocation();
+ * ```
+ *
+ * Manual Override:
+ * ```typescript
+ * setManualLocation({ latitude: 5.6037, longitude: -0.1870, address: "Accra, Ghana" });
  * ```
  *
  * Cache Management:
@@ -41,15 +46,60 @@ interface LocationState {
   address: string | null;
   error: string | null;
   accuracy?: number;
-  source?: 'high-accuracy' | 'low-accuracy' | 'cached' | 'ip';
+  source?: 'high-accuracy' | 'low-accuracy' | 'cached' | 'manual';
+}
+
+interface ManualLocationOverride {
+  latitude: number;
+  longitude: number;
+  address: string;
 }
 
 // Storage keys for caching
 const LOCATION_CACHE_KEY = 'user-location-cache';
 const LOCATION_PERMISSION_KEY = 'location-permission-status';
+const MANUAL_LOCATION_KEY = 'manual-location-override';
 
 // Cache duration (30 minutes)
 const CACHE_DURATION = 30 * 60 * 1000;
+
+// Get manual location override from localStorage
+function getManualLocationOverride(): LocationState | null {
+  if (typeof window === 'undefined') return null;
+
+  try {
+    const manual = localStorage.getItem(MANUAL_LOCATION_KEY);
+    if (!manual) return null;
+
+    const data = JSON.parse(manual);
+    return {
+      latitude: data.latitude,
+      longitude: data.longitude,
+      address: data.address,
+      error: null,
+      source: 'manual',
+    };
+  } catch {
+    return null;
+  }
+}
+
+// Set manual location override to localStorage
+function setManualLocationOverride(location: ManualLocationOverride): void {
+  if (typeof window === 'undefined') return;
+
+  try {
+    localStorage.setItem(MANUAL_LOCATION_KEY, JSON.stringify(location));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+// Clear manual location override
+function clearManualLocationOverride(): void {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(MANUAL_LOCATION_KEY);
+}
 
 // Get cached location from sessionStorage
 function getCachedLocation(): LocationState | null {
@@ -91,58 +141,35 @@ function cacheLocation(location: LocationState): void {
   }
 }
 
-// Get IP-based location as fallback
-async function getIPLocation(): Promise<LocationState> {
-  try {
-    const response = await fetch('https://ipapi.co/json/', {
-      timeout: 5000,
-    } as any);
-
-    if (!response.ok) throw new Error('IP location failed');
-
-    const data = await response.json();
-
-    if (data.latitude && data.longitude) {
-      return {
-        latitude: data.latitude,
-        longitude: data.longitude,
-        address: `${data.city}, ${data.region}`,
-        error: null,
-        accuracy: 10000, // Low accuracy for IP-based location
-        source: 'ip',
-      };
-    }
-
-    throw new Error('Invalid IP location data');
-  } catch {
-    throw new Error('IP location unavailable');
+// GPS-based location detection (removed IP fallback for accuracy)
+async function detectLocationGPS(): Promise<LocationState> {
+  // First check for manual override
+  const manualLocation = getManualLocationOverride();
+  if (manualLocation) {
+    return manualLocation;
   }
-}
 
-// Progressive location detection with fallbacks
-async function detectLocationProgressive(): Promise<LocationState> {
-  // First, try to get cached location
+  // Then check for cached location
   const cached = getCachedLocation();
   if (cached) {
     return cached;
   }
 
   if (!navigator.geolocation) {
-    // Fallback to IP-based location
-    return await getIPLocation();
+    throw new Error('Geolocation is not supported by this browser');
   }
 
   // Try high accuracy first, then fallback to low accuracy
   const strategies = [
     {
       enableHighAccuracy: true,
-      timeout: 8000,
+      timeout: 10000,
       maximumAge: 60000, // 1 minute
       source: 'high-accuracy' as const,
     },
     {
       enableHighAccuracy: false,
-      timeout: 10000,
+      timeout: 15000,
       maximumAge: 300000, // 5 minutes
       source: 'low-accuracy' as const,
     },
@@ -158,18 +185,14 @@ async function detectLocationProgressive(): Promise<LocationState> {
       return location;
     } catch (error) {
       // Continue to next strategy
-      console.error(`Location strategy ${strategy.source} failed:`, error);
+      console.warn(`Location strategy ${strategy.source} failed:`, error);
     }
   }
 
-  // Final fallback to IP-based location
-  try {
-    const ipLocation = await getIPLocation();
-    cacheLocation(ipLocation);
-    return ipLocation;
-  } catch {
-    throw new Error('All location detection methods failed');
-  }
+  // If all GPS methods fail, throw error instead of using inaccurate IP location
+  throw new Error(
+    'Unable to determine your location. Please enable location services or select manually.'
+  );
 }
 
 // Single geolocation attempt
@@ -199,7 +222,7 @@ function attemptGeolocation(options: {
           try {
             const response = await fetch(
               `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=16&addressdetails=1`,
-              { signal: AbortSignal.timeout(5000) }
+              { signal: AbortSignal.timeout(8000) }
             );
 
             if (response.ok) {
@@ -209,7 +232,7 @@ function attemptGeolocation(options: {
             }
           } catch {
             // Address lookup failed, but we still have coordinates
-            console.error(
+            console.warn(
               'Address lookup failed, continuing with coordinates only'
             );
           }
@@ -224,17 +247,20 @@ function attemptGeolocation(options: {
 
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied';
+            errorMessage =
+              'Location permission denied. Please enable location services or select manually.';
             // Remember permission denial to avoid repeated prompts
             if (typeof window !== 'undefined') {
               sessionStorage.setItem(LOCATION_PERMISSION_KEY, 'denied');
             }
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information unavailable';
+            errorMessage =
+              'Location information unavailable. Please select manually.';
             break;
           case error.TIMEOUT:
-            errorMessage = 'Location request timed out';
+            errorMessage =
+              'Location request timed out. Please select manually.';
             break;
         }
 
@@ -256,7 +282,7 @@ export function useLocation() {
     refetch,
   } = useQuery({
     queryKey: ['user-location'],
-    queryFn: detectLocationProgressive,
+    queryFn: detectLocationGPS,
     staleTime: CACHE_DURATION, // 30 minutes
     gcTime: CACHE_DURATION * 2, // 1 hour garbage collection
     retry: (failureCount, error) => {
@@ -270,12 +296,12 @@ export function useLocation() {
       // Only retry once for other errors
       return failureCount < 1;
     },
-    retryDelay: 2000,
+    retryDelay: 3000,
   });
 
   // Force refetch by clearing all caches first
   const forceRefetch = async () => {
-    // Clear both session storage cache and permission status
+    // Clear session storage cache and permission status (but keep manual override)
     clearLocationCache();
 
     // Invalidate and remove React Query cache
@@ -286,11 +312,40 @@ export function useLocation() {
     return await refetch();
   };
 
+  // Set manual location and update cache
+  const setManualLocation = async (manualLocation: ManualLocationOverride) => {
+    // Save manual override to localStorage
+    setManualLocationOverride(manualLocation);
+
+    // Update React Query cache
+    const locationState: LocationState = {
+      latitude: manualLocation.latitude,
+      longitude: manualLocation.longitude,
+      address: manualLocation.address,
+      error: null,
+      source: 'manual',
+    };
+
+    queryClient.setQueryData(['user-location'], locationState);
+
+    // Also cache to session storage
+    cacheLocation(locationState);
+  };
+
+  // Clear manual location and refetch
+  const clearManualLocation = async () => {
+    clearManualLocationOverride();
+    return await forceRefetch();
+  };
+
   return {
     ...location,
     error: error instanceof Error ? error.message : null,
     loading: isLoading || isFetching,
-    refetch: forceRefetch, // Use our custom refetch that clears all caches
+    refetch: forceRefetch,
+    setManualLocation,
+    clearManualLocation,
+    isManualLocation: location?.source === 'manual',
   };
 }
 

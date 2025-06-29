@@ -351,7 +351,7 @@ export function MapPreview() {
                 {visibleFloatingCards.map((place, index) => (
                   <motion.div
                     key={`${place.id}-${index}`}
-                    className="absolute z-20 w-56"
+                    className="absolute z-20 w-56 space-y-1"
                     style={{
                       left: '20px',
                       top: `${15 + index * 25}%`,

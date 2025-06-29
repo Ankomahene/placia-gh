@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,8 +39,8 @@ export function PlaceOpenHoursField({
   className,
   label = 'Opening Hours',
 }: PlaceOpenHoursFieldProps) {
-  // Ensure value is always an array
-  const hours = value || [];
+  // Ensure value is always an array - memoized to prevent unnecessary re-renders
+  const hours = useMemo(() => value || [], [value]);
 
   const [selectedDays, setSelectedDays] = useState<Set<string>>(
     new Set(hours.map((h) => h.day))

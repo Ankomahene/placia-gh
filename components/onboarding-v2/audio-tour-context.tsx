@@ -160,7 +160,6 @@ export function AudioTourProvider({ children }: AudioTourProviderProps) {
         };
 
         const handleError = () => {
-          console.error('❌ Audio playback error:', audioFile);
           setAudioError('Failed to play audio');
           setIsPlaying(false);
           setAudioLoading(false);

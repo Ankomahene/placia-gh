@@ -150,86 +150,7 @@ function smartLocationMatch(searchTerm: string, dbName: string): number {
   return wordScore * 0.5; // Lower score for partial matches
 }
 
-// Save unmatched location to existing tables with flag
-async function saveUnmatchedLocation(
-  type: 'region' | 'city' | 'town',
-  name: string,
-  components: LocationComponents,
-  parentId?: string
-) {
-  const supabase = createClient();
-
-  try {
-    const tableName = `${type}s`; // regions, cities, towns
-
-    // Check if already exists to prevent duplicates
-    let existsQuery = supabase
-      .from(tableName)
-      .select('id')
-      .ilike('name', name)
-      .eq('is_unmatched', true);
-
-    if (parentId) {
-      const parentField =
-        type === 'region'
-          ? 'country_id'
-          : type === 'city'
-            ? 'region_id'
-            : 'city_id';
-      existsQuery = existsQuery.eq(parentField, parentId);
-    }
-
-    const { data: existing } = await existsQuery.limit(1);
-
-    if (!existing || existing.length === 0) {
-      const insertData: any = {
-        name,
-        is_unmatched: true,
-        source_address: components.address,
-        original_search_term: name,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-
-      if (parentId) {
-        const parentField =
-          type === 'region'
-            ? 'country_id'
-            : type === 'city'
-              ? 'region_id'
-              : 'city_id';
-        insertData[parentField] = parentId;
-      }
-
-      // Add location coordinates if available
-      if (components.latitude && components.longitude) {
-        insertData.latitude = components.latitude;
-        insertData.longitude = components.longitude;
-      }
-
-      const { data: inserted, error } = await supabase
-        .from(tableName)
-        .insert(insertData)
-        .select()
-        .single();
-
-      if (error) {
-        console.warn(`Could not save unmatched ${type}:`, error.message);
-      } else {
-        return inserted.id; // Return the ID for potential use
-      }
-    } else {
-      return existing[0].id;
-    }
-  } catch (error) {
-    // Silently handle errors to not break the user experience
-    console.warn(`Could not save unmatched ${type}:`, error);
-  }
-
-  return null;
-}
-
-// Match location components to database IDs
+// Match location components to database IDs (without saving unmatched locations)
 export async function matchLocationToDatabase(
   components: LocationComponents
 ): Promise<MatchedLocation> {
@@ -278,8 +199,6 @@ export async function matchLocationToDatabase(
               .select('*')
               .eq('country_id', bestMatch.id);
 
-            let regionMatched = false;
-
             if (regions && regions.length > 0) {
               let bestRegionMatch = regions[0];
               let bestRegionScore = smartLocationMatch(
@@ -300,7 +219,6 @@ export async function matchLocationToDatabase(
 
               if (bestRegionScore > 0.4) {
                 matchedLocation.region_id = bestRegionMatch.id;
-                regionMatched = true;
 
                 // Match city within region
                 if (components.city) {
@@ -308,8 +226,6 @@ export async function matchLocationToDatabase(
                     .from('cities')
                     .select('*')
                     .eq('region_id', bestRegionMatch.id);
-
-                  let cityMatched = false;
 
                   if (cities && cities.length > 0) {
                     let bestCityMatch = cities[0];
@@ -331,9 +247,8 @@ export async function matchLocationToDatabase(
 
                     if (bestCityScore > 0.4) {
                       matchedLocation.city_id = bestCityMatch.id;
-                      cityMatched = true;
 
-                      // Match town within city (if applicable)
+                      // Try to match town within city (if applicable)
                       if (components.town) {
                         const { data: towns } = await supabase
                           .from('towns')
@@ -360,106 +275,23 @@ export async function matchLocationToDatabase(
 
                           if (bestTownScore > 0.4) {
                             matchedLocation.town_id = bestTownMatch.id;
-                          } else {
-                            // Save unmatched town for future use and use it
-                            const savedTownId = await saveUnmatchedLocation(
-                              'town',
-                              components.town,
-                              components,
-                              bestCityMatch.id
-                            );
-                            if (savedTownId) {
-                              matchedLocation.town_id = savedTownId;
-                            }
                           }
-                        } else if (components.town) {
-                          // No towns in database for this city, save for future use and use it
-                          const savedTownId = await saveUnmatchedLocation(
-                            'town',
-                            components.town,
-                            components,
-                            bestCityMatch.id
-                          );
-                          if (savedTownId) {
-                            matchedLocation.town_id = savedTownId;
-                          }
+                          // Note: If town doesn't match, we no longer save it to database
                         }
                       }
                     }
-                  }
-
-                  // If city not matched, save for future use and use it
-                  if (!cityMatched && components.city) {
-                    const savedCityId = await saveUnmatchedLocation(
-                      'city',
-                      components.city,
-                      components,
-                      bestRegionMatch.id
-                    );
-                    if (savedCityId) {
-                      matchedLocation.city_id = savedCityId;
-
-                      // Also try to save and use town if available
-                      if (components.town) {
-                        const savedTownId = await saveUnmatchedLocation(
-                          'town',
-                          components.town,
-                          components,
-                          savedCityId
-                        );
-                        if (savedTownId) {
-                          matchedLocation.town_id = savedTownId;
-                        }
-                      }
-                    }
+                    // Note: If city doesn't match, we no longer save it to database
                   }
                 }
               }
             }
-
-            // If region not matched, save for future use and use it
-            if (!regionMatched && components.region) {
-              const savedRegionId = await saveUnmatchedLocation(
-                'region',
-                components.region,
-                components,
-                bestMatch.id
-              );
-              if (savedRegionId) {
-                matchedLocation.region_id = savedRegionId;
-
-                // Also try to save and use city/town if available
-                if (components.city) {
-                  const savedCityId = await saveUnmatchedLocation(
-                    'city',
-                    components.city,
-                    components,
-                    savedRegionId
-                  );
-                  if (savedCityId) {
-                    matchedLocation.city_id = savedCityId;
-
-                    if (components.town) {
-                      const savedTownId = await saveUnmatchedLocation(
-                        'town',
-                        components.town,
-                        components,
-                        savedCityId
-                      );
-                      if (savedTownId) {
-                        matchedLocation.town_id = savedTownId;
-                      }
-                    }
-                  }
-                }
-              }
-            }
+            // Note: If region doesn't match, we no longer save it to database
           }
         }
       }
     }
   } catch (error) {
-    console.error('Database matching error:', error);
+    console.error('Error matching location to database:', error);
   }
 
   return matchedLocation;

@@ -433,7 +433,7 @@ export function AudioTourManager() {
       )}
 
       {/* Error display */}
-      {audioError && (
+      {/* {audioError && (
         <motion.div
           initial={{ opacity: 0, x: 100 }}
           animate={{ opacity: 1, x: 0 }}
@@ -443,8 +443,8 @@ export function AudioTourManager() {
           <Card className="p-4 bg-red-50 border-red-200 text-red-700">
             <p className="text-sm">{audioError}</p>
           </Card>
-        </motion.div>
-      )}
+        </motion.div> 
+      )}*/}
 
       {/* Floating Help Menu for all users */}
       {!isOpen && !showWelcomeModal && !showAlexChat && (

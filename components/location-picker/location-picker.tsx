@@ -49,6 +49,7 @@ interface LocationPickerProps {
   mapHeight?: string;
   required?: boolean;
   error?: string;
+  enableDatabaseMatching?: boolean; // New prop to control database interactions
 }
 
 export function LocationPicker({
@@ -59,6 +60,7 @@ export function LocationPicker({
   mapHeight = '300px',
   required = false,
   error,
+  enableDatabaseMatching = true, // Default to true for backward compatibility
 }: LocationPickerProps) {
   const [searchValue, setSearchValue] = useState('');
   const [currentLocation, setCurrentLocation] = useState<{
@@ -114,7 +116,28 @@ export function LocationPicker({
         locationComponents = geocodeResult;
       }
 
-      const matched = await matchLocationToDatabase(locationComponents);
+      let matched: MatchedLocation;
+
+      if (enableDatabaseMatching) {
+        // Use full database matching for place forms
+        matched = await matchLocationToDatabase(locationComponents);
+      } else {
+        // Skip database matching for simple location selection
+        matched = {
+          location: {
+            lng: locationComponents.longitude,
+            lat: locationComponents.latitude,
+            name:
+              locationComponents.city ||
+              locationComponents.town ||
+              'Selected Location',
+            street_address: locationComponents.address || '',
+          },
+          components: locationComponents,
+          // No database IDs when database matching is disabled
+        };
+      }
+
       setMatchedData(matched);
       onChange?.(matched);
 
@@ -256,46 +279,71 @@ export function LocationPicker({
 
             <div className="space-y-2">
               <div className="text-sm text-muted-foreground">
-                Detected Location:
+                {enableDatabaseMatching
+                  ? 'Detected Location:'
+                  : 'Location Components:'}
               </div>
               <div className="flex flex-wrap gap-1">
                 {matchedData.components.country && (
                   <Badge
-                    variant={matchedData.country_id ? 'default' : 'secondary'}
+                    variant={
+                      enableDatabaseMatching
+                        ? matchedData.country_id
+                          ? 'default'
+                          : 'secondary'
+                        : 'outline'
+                    }
                   >
                     {matchedData.components.country}
-                    {matchedData.country_id && ' ✓'}
+                    {enableDatabaseMatching && matchedData.country_id && ' ✓'}
                   </Badge>
                 )}
                 {matchedData.components.region && (
                   <Badge
-                    variant={matchedData.region_id ? 'default' : 'secondary'}
+                    variant={
+                      enableDatabaseMatching
+                        ? matchedData.region_id
+                          ? 'default'
+                          : 'secondary'
+                        : 'outline'
+                    }
                   >
                     {matchedData.components.region}
-                    {matchedData.region_id && ' ✓'}
+                    {enableDatabaseMatching && matchedData.region_id && ' ✓'}
                   </Badge>
                 )}
                 {matchedData.components.city && (
                   <Badge
-                    variant={matchedData.city_id ? 'default' : 'secondary'}
+                    variant={
+                      enableDatabaseMatching
+                        ? matchedData.city_id
+                          ? 'default'
+                          : 'secondary'
+                        : 'outline'
+                    }
                   >
                     {matchedData.components.city}
-                    {matchedData.city_id && ' ✓'}
+                    {enableDatabaseMatching && matchedData.city_id && ' ✓'}
                   </Badge>
+                )}
+                {matchedData.components.town && (
+                  <Badge variant="outline">{matchedData.components.town}</Badge>
                 )}
               </div>
 
-              {(!matchedData.country_id ||
-                !matchedData.region_id ||
-                !matchedData.city_id) && (
-                <Alert>
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription className="text-xs">
-                    Some location components couldn&apos;t be matched to your
-                    database. You may need to manually select them in the form.
-                  </AlertDescription>
-                </Alert>
-              )}
+              {enableDatabaseMatching &&
+                (!matchedData.country_id ||
+                  !matchedData.region_id ||
+                  !matchedData.city_id) && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      Some location components couldn&apos;t be matched to your
+                      database. The location data will be used as-is for this
+                      place.
+                    </AlertDescription>
+                  </Alert>
+                )}
             </div>
           </CardContent>
         </Card>

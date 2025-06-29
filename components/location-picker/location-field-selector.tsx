@@ -391,7 +391,7 @@ export function LocationFieldSelector({
                   {!matchedLocation.country_id && 'Country not matched. '}
                   {!matchedLocation.region_id && 'Region not matched. '}
                   {!matchedLocation.city_id && 'City not matched. '}
-                  Unmatched locations will be saved for future use.
+                  Location data will be used as-is for this place.
                 </AlertDescription>
               </Alert>
             )}
