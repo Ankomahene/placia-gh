@@ -3,6 +3,10 @@ import Footer from '@/components/layout/footer';
 import Header from '@/components/layout/header';
 import { SearchClientWrapper } from '@/components/search/search-client-wrapper';
 import TrendingPlaces from '@/components/trending-places';
+import {
+  AudioTourManager,
+  AudioTourTestButton,
+} from '@/components/onboarding-v2';
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -20,7 +24,10 @@ export default function Home() {
         <TrendingPlaces />
 
         {/* Contribute Banner */}
-        <section className="relative overflow-hidden rounded-3xl">
+        <section
+          className="relative overflow-hidden rounded-3xl"
+          data-tour="contribute-banner"
+        >
           <div className="absolute inset-0 bg-gradient-to-r from-primary to-primary/50 opacity-90" />
           <div className="relative px-8 py-12 md:py-16 flex flex-col md:flex-row items-center justify-between gap-8">
             <div className="text-white max-w-2xl">
@@ -47,6 +54,12 @@ export default function Home() {
         </section>
       </div>
       <Footer />
+
+      {/* AI Audio Tour Manager */}
+      <AudioTourManager />
+
+      {/* Development Tools */}
+      <AudioTourTestButton />
     </main>
   );
 }

@@ -99,7 +99,7 @@ export default function FeaturedPlaces() {
 
   // Show places
   return (
-    <section>
+    <section data-tour="featured-places">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl md:text-3xl font-bold">Featured Places</h2>
         <div className="flex gap-2">

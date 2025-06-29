@@ -123,6 +123,11 @@ export function DashboardSidebar({
           href: '/admin/places-ranking-test',
           icon: BarChart3,
         },
+        {
+          name: 'ElevenLabs AI',
+          href: '/admin/elevenlabs-conversation-test',
+          icon: MessageSquare,
+        },
       ],
     },
   ];

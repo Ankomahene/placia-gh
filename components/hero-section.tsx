@@ -287,7 +287,10 @@ export default function HeroSection() {
 
           {/* Enhanced Search Interface */}
           <div className="relative max-w-3xl mx-auto mb-8">
-            <Card className="p-2 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm">
+            <Card
+              className="p-2 shadow-lg border-primary/20 bg-card/95 backdrop-blur-sm"
+              data-tour="search-input"
+            >
               <form onSubmit={handleSearch} className="flex gap-2">
                 <div className="relative flex-grow">
                   <Input
@@ -342,7 +345,10 @@ export default function HeroSection() {
             </Card>
 
             {/* Example searches with improved styling */}
-            <div className="mt-6 flex flex-wrap gap-3 justify-center">
+            <div
+              className="mt-6 flex flex-wrap gap-3 justify-center"
+              data-tour="search-examples"
+            >
               <span className="text-sm text-muted-foreground mb-2 w-full">
                 Try asking:
               </span>
@@ -386,6 +392,7 @@ export default function HeroSection() {
         <div
           className="relative mt-16 animate-fade-in-up"
           style={{ animationDelay: '0.3s' }}
+          data-tour="map-preview"
         >
           <MapPreview />
         </div>
