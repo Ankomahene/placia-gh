@@ -31,6 +31,8 @@ import {
   type LoginFormData,
   signInWithGoogle,
 } from '@/lib/services/auth';
+import TestLoginButton from '@/components/auth/TestLoginButton';
+import { featureFlags } from '@/feature-flags';
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
@@ -73,6 +75,9 @@ export default function LoginForm() {
       </CardHeader>
 
       <CardContent>
+        {/* Test Login Feature */}
+        <TestLoginButton enabled={featureFlags.testLogin} className="mb-4" />
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField

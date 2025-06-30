@@ -250,7 +250,7 @@ export function DashboardSidebar({
   return (
     <div
       className={cn(
-        'h-full bg-background flex flex-col transition-all duration-300 ease-in-out',
+        'h-[100vh] bg-background flex flex-col transition-all duration-300 ease-in-out sticky top-0',
         isCollapsed ? 'w-16' : 'w-64'
       )}
     >
@@ -281,18 +281,18 @@ export function DashboardSidebar({
       </div>
 
       {/* Navigation */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-4 bg-gradient-to-b from-primary/5 to-primary/10 backdrop-blur-sm">
         <nav className="space-y-2">
           {navigation.map((item) => renderNavigationItem(item))}
         </nav>
       </div>
 
       {/* Footer - Sign out only */}
-      <div className="border-t p-4">
+      <div className="border-t p-4 bg-gradient-to-b from-primary/5 to-primary/10 backdrop-blur-sm">
         {!isCollapsed ? (
           <Button
             variant="outline"
-            className="w-full justify-start"
+            className="w-full justify-start bg-red-100 text-red-500 dark:bg-red-950 dark:text-red-300 border-none hover:bg-red-200 hover:text-red-600 dark:hover:bg-red-900/50 dark:hover:text-red-300"
             onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4 mr-2" />

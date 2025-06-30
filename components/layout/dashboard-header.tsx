@@ -5,8 +5,9 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { CurrentLocation } from '@/components/current-location';
-import { Bell, Menu } from 'lucide-react';
+import { Bell, LogOut, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { signOut } from '@/lib/services/auth';
 
 interface DashboardHeaderProps {
   isAdmin?: boolean;
@@ -135,10 +136,14 @@ export function DashboardHeader({
             <CurrentLocation />
           </div>
 
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 bg-primary rounded-full" />
-            <span className="sr-only">Notifications</span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative hover:bg-red-500 hover:text-white rounded-full"
+            onClick={() => signOut()}
+          >
+            <LogOut className="h-5 w-5" />
+            <span className="sr-only">Logout</span>
           </Button>
 
           <ThemeToggle />
