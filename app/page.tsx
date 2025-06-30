@@ -11,11 +11,19 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MapPin } from 'lucide-react';
+import Image from 'next/image';
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen bg-background text-foreground relative">
       <Header />
+      <Image
+        src="/bolt.png"
+        alt="Bolt Badge"
+        width={90}
+        height={90}
+        className="absolute object-cover right-5 top-[80px] z-10"
+      />
       <Suspense fallback={<div className="h-screen w-full" />}>
         <SearchClientWrapper />
       </Suspense>
