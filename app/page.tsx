@@ -22,7 +22,7 @@ export default function Home() {
         alt="Bolt Badge"
         width={90}
         height={90}
-        className="absolute object-cover right-5 top-[80px] z-10"
+        className="absolute object-cover right-3 top-[90px] z-10 w-[75px] h-[75px] md:right-5 md:top-[80px] md:w-24 md:h-24 shadow rounded-full"
       />
       <Suspense fallback={<div className="h-screen w-full" />}>
         <SearchClientWrapper />
