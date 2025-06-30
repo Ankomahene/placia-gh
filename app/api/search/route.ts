@@ -33,6 +33,8 @@ export async function POST(request: Request) {
       );
     }
 
+    console.log('search query: ', query);
+
     const useGoogleCache = !!googlePageToken;
     const useSmartSearchCache = !!smartSearchOffset && smartSearchOffset > 0;
 
