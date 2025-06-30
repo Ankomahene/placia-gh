@@ -255,7 +255,7 @@ export function SearchSorting({
         value={sortConfig.type}
         onValueChange={(value) => handleSortTypeChange(value as SortType)}
       >
-        <SelectTrigger className="h-9">
+        <SelectTrigger className="h-9 px-1 sm:px-2 text-xs sm:text-sm">
           <SelectValue placeholder="Sort by" />
         </SelectTrigger>
         <SelectContent>
@@ -283,7 +283,7 @@ export function SearchSorting({
       {/* Sort Order Selector (only shown if not 'none') */}
       {sortConfig.type !== 'none' && currentSortOption && (
         <Select value={sortConfig.order} onValueChange={handleSortOrderChange}>
-          <SelectTrigger className="h-9">
+          <SelectTrigger className="h-9 px-1 sm:px-2 text-xs sm:text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

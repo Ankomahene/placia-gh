@@ -384,7 +384,7 @@ export function SearchDrawer() {
                 className="border-b bg-background/95 backdrop-blur-xl flex-shrink-0"
               >
                 <div className="container mx-auto px-4 py-3">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     {/* Back/Close Button */}
                     <Button
                       variant="ghost"
@@ -392,8 +392,8 @@ export function SearchDrawer() {
                       onClick={handleClose}
                       className="flex-shrink-0"
                     >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back
+                      <ArrowLeft className="h-4 w-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Back</span>
                     </Button>
 
                     {/* Search Form */}
@@ -402,7 +402,7 @@ export function SearchDrawer() {
                         <Input
                           type="text"
                           placeholder="Search for places in Ghana..."
-                          className="pr-12"
+                          className="pr-12 text-xs sm:text-sm"
                           value={currentTerm}
                           onChange={(e) => setCurrentTerm(e.target.value)}
                         />
@@ -427,11 +427,11 @@ export function SearchDrawer() {
                       </div>
                       <Button
                         type="submit"
-                        className="px-6"
+                        className="px-4"
                         disabled={!currentTerm.trim()}
                       >
-                        <Search className="h-4 w-4 mr-2" />
-                        Search
+                        <Search className="h-4 w-4 sm:mr-2" />
+                        <span className="hidden sm:inline">Search</span>
                       </Button>
                     </form>
 

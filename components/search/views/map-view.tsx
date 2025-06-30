@@ -29,6 +29,7 @@ interface MapViewProps {
   onPlaceSelect: (placeId: string) => void;
   isLoading: boolean;
   showNoPlacesMessage?: boolean;
+  zoom?: number;
 }
 
 export function MapView({
@@ -39,6 +40,7 @@ export function MapView({
   onPlaceSelect,
   isLoading,
   showNoPlacesMessage = true,
+  zoom = 12,
 }: MapViewProps) {
   // Track which place is being clicked for map flying
   const [flyToMarkerId, setFlyToMarkerId] = useState<string | null>(null);
@@ -119,6 +121,7 @@ export function MapView({
             onMarkerHover={handleMapPinHover}
             onMarkerClick={handleCardClick}
             flyToMarkerId={flyToMarkerId}
+            zoom={zoom}
           />
         </div>
       </div>

@@ -343,6 +343,7 @@ export function MapPreview() {
               }}
               isLoading={isLoading}
               showNoPlacesMessage={false}
+              zoom={14}
             />
 
             {/* Smaller Floating Cards - Hidden on small screens */}

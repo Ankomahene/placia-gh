@@ -344,7 +344,7 @@ export default function HeroSection() {
                     <Input
                       type="text"
                       placeholder="e.g., 'Find me a good jollof restaurant near Accra Mall'"
-                      className="pl-6 pr-16 py-6 text-lg border-0 bg-transparent dark:bg-zinc-900 focus-visible:ring-1 focus-visible:ring-primary/50"
+                      className="pl-6 pr-16 py-6 border-0 bg-transparent dark:bg-zinc-900 focus-visible:ring-1 focus-visible:ring-primary/50 text-sm sm:text-md md:text-lg"
                       value={searchInput}
                       onChange={handleInputChange}
                       onBlur={handleInputBlur}
@@ -415,7 +415,7 @@ export default function HeroSection() {
                 <Badge
                   key={index}
                   variant="outline"
-                  className="border-primary/20 bg-zinc-400/10 px-4 py-2 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 hover:scale-105"
+                  className="border-primary/20 bg-zinc-400/10 px-2 sm:px-4 py-2 cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-all duration-200 hover:scale-105 text-xs sm:text-sm"
                   onClick={() => handleExampleClick(search)}
                 >
                   {search}
