@@ -43,13 +43,7 @@ export function ChatView({
   // Use the flag to determine if we should auto-run
   const shouldAutoRun = shouldAutoRunChat;
 
-  // Reset the flag after using it
-  React.useEffect(() => {
-    if (shouldAutoRunChat) {
-      // Reset the flag so it doesn't auto-run again when switching back to chat
-      setShouldAutoRunChat(false);
-    }
-  }, [shouldAutoRunChat, setShouldAutoRunChat]);
+  // Note: shouldAutoRunChat flag is reset by ChatContext after processing
 
   return (
     <ChatProvider

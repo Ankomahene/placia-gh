@@ -90,6 +90,7 @@ export function ChatProvider({
     chatSearchTerm,
     selectedPregeneratedQuery,
     setSelectedPregeneratedQuery,
+    setShouldAutoRunChat,
   } = useSearchContext();
 
   // Get user location using the custom hook
@@ -489,6 +490,7 @@ export function ChatProvider({
         if (wasJustCleared) {
           // Remove the cleared flag and don't process initial query
           sessionStorage.removeItem(`chat_cleared_${sessionId}`);
+          setShouldAutoRunChat(false);
           return;
         }
 
@@ -668,10 +670,15 @@ export function ChatProvider({
             setMessages((prev) => [...prev, errorMessage]);
           } finally {
             setIsTyping(false);
+            // Reset the shouldAutoRunChat flag after processing is complete
+            setShouldAutoRunChat(false);
           }
         };
 
         processInitialQuery();
+      } else {
+        // Query was already processed, reset the flag
+        setShouldAutoRunChat(false);
       }
     }
   }, [shouldAutoRun, initialQuery, sessionId, userLocation]);
