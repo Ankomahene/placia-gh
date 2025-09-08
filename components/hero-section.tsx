@@ -287,7 +287,7 @@ export default function HeroSection() {
             <span className="text-sm font-medium text-primary">
               AI-Powered Search
             </span> */}
-            <div className="relative flex items-center gap-3">
+{/*             <div className="relative flex items-center gap-3">
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-blue-500/20 blur-xl rounded-full scale-150 animate-pulse-slow"></div>
                 <Image
@@ -304,7 +304,7 @@ export default function HeroSection() {
                 </span>
                 <Sparkles className="h-4 w-4 text-primary animate-pulse" />
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Main heading */}
