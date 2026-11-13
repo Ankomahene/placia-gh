@@ -1,0 +1,15 @@
+@import "tailwindcss";
+@import "@placia/ui/styles.css";
+
+@source "../../../packages/ui/src";
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@utility pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
