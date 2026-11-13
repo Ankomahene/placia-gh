@@ -1,5 +1,4 @@
 import { Button } from '@placia/ui/button';
-import { Logo } from '@placia/ui/logo';
 import {
   Banknote,
   BedDouble,
@@ -12,10 +11,9 @@ import {
   Pill,
   Search,
   ShoppingBasket,
-  UserRound,
   UtensilsCrossed,
 } from 'lucide-react';
-import { BottomNav } from './_components/bottom-nav';
+import { BottomNav, SiteHeader } from './_components/nav';
 
 const CATEGORIES = [
   { label: 'Food', icon: UtensilsCrossed },
@@ -31,69 +29,72 @@ const CATEGORIES = [
 
 export default function HomePage() {
   return (
-    <div className="mx-auto flex min-h-dvh max-w-xl flex-col">
-      <header className="flex items-center justify-between px-4 pt-4 pb-2">
-        <Logo />
-        <Button variant="ghost" size="icon" aria-label="Account">
-          <UserRound />
-        </Button>
-      </header>
+    <div className="flex min-h-dvh flex-col">
+      <SiteHeader active="/" />
 
-      <main className="flex-1 space-y-6 px-4 pt-3 pb-28">
-        <form action="/search" className="relative" role="search">
-          <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-5 text-muted-foreground" />
-          <input
-            name="q"
-            type="search"
-            autoComplete="off"
-            enterKeyHint="search"
-            placeholder="Search places in Ghana"
-            aria-label="Search places"
-            className="h-14 w-full rounded-full border bg-surface pr-16 pl-12 text-base shadow-card outline-none placeholder:text-muted-foreground focus:border-primary"
-          />
-          <Button
-            size="icon"
-            aria-label="Search by voice"
-            className="-translate-y-1/2 absolute top-1/2 right-2"
-          >
-            <Mic />
-          </Button>
-        </form>
+      <main className="mx-auto w-full max-w-xl flex-1 px-4 pt-3 pb-28 md:max-w-6xl md:px-8 md:pt-12 md:pb-16">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:items-start md:gap-12">
+          <div className="space-y-6 md:space-y-8 md:pt-6">
+            <h1 className="hidden font-semibold text-4xl tracking-tight md:block lg:text-5xl">
+              Find any place in Ghana
+            </h1>
 
-        <section aria-label="Categories" className="-mx-4">
-          <ul className="no-scrollbar flex gap-2 overflow-x-auto px-4">
-            {CATEGORIES.map(({ label, icon: Icon }) => (
-              <li key={label}>
-                <a
-                  href={`/search?category=${encodeURIComponent(label)}`}
-                  className="flex h-10 items-center gap-2 whitespace-nowrap rounded-full border bg-surface px-4 font-medium text-sm transition-colors hover:border-primary hover:text-primary"
-                >
-                  <Icon className="size-4 text-primary" />
-                  {label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section aria-labelledby="near-you" className="space-y-3">
-          <h2 id="near-you" className="font-semibold text-lg tracking-tight">
-            Near you
-          </h2>
-          <div className="relative overflow-hidden rounded-xl border bg-surface shadow-card">
-            <MapPreview />
-            <div className="flex items-center justify-between gap-3 border-t p-3">
-              <span className="font-medium text-sm">Accra</span>
-              <Button variant="soft" size="sm">
-                <LocateFixed />
-                Use my location
+            <form action="/search" className="relative" role="search">
+              <Search className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-4 size-5 text-muted-foreground md:left-5" />
+              <input
+                name="q"
+                type="search"
+                autoComplete="off"
+                enterKeyHint="search"
+                placeholder="Search places in Ghana"
+                aria-label="Search places"
+                className="h-14 w-full rounded-full border bg-surface pr-16 pl-12 text-base shadow-card outline-none placeholder:text-muted-foreground focus:border-primary md:h-16 md:pl-14 md:text-lg"
+              />
+              <Button
+                size="icon"
+                aria-label="Search by voice"
+                className="-translate-y-1/2 absolute top-1/2 right-2 md:size-12"
+              >
+                <Mic />
               </Button>
-            </div>
+            </form>
+
+            <section aria-label="Categories" className="-mx-4 md:mx-0">
+              <ul className="no-scrollbar flex gap-2 overflow-x-auto px-4 md:flex-wrap md:overflow-visible md:px-0">
+                {CATEGORIES.map(({ label, icon: Icon }) => (
+                  <li key={label}>
+                    <a
+                      href={`/search?category=${encodeURIComponent(label)}`}
+                      className="flex h-10 items-center gap-2 whitespace-nowrap rounded-full border bg-surface px-4 font-medium text-sm transition-colors hover:border-primary hover:text-primary"
+                    >
+                      <Icon className="size-4 text-primary" />
+                      {label}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
           </div>
-        </section>
+
+          <section aria-labelledby="near-you" className="space-y-3">
+            <h2 id="near-you" className="font-semibold text-lg tracking-tight md:sr-only">
+              Near you
+            </h2>
+            <div className="relative overflow-hidden rounded-xl border bg-surface shadow-card">
+              <MapPreview />
+              <div className="flex items-center justify-between gap-3 border-t p-3 md:px-5 md:py-4">
+                <span className="font-medium text-sm">Accra</span>
+                <Button variant="soft" size="sm">
+                  <LocateFixed />
+                  Use my location
+                </Button>
+              </div>
+            </div>
+          </section>
+        </div>
       </main>
 
-      <BottomNav />
+      <BottomNav active="/" />
     </div>
   );
 }
@@ -101,7 +102,13 @@ export default function HomePage() {
 /** Decorative stand-in until the MapLibre map lands in Phase 3. */
 function MapPreview() {
   return (
-    <svg viewBox="0 0 400 180" className="block h-44 w-full" role="img" aria-label="Map preview">
+    <svg
+      viewBox="0 0 400 180"
+      className="block h-44 w-full md:h-[26rem]"
+      preserveAspectRatio="xMidYMid slice"
+      role="img"
+      aria-label="Map preview"
+    >
       <rect width="400" height="180" className="fill-surface-2" />
       <g className="stroke-border" strokeWidth="10" fill="none" strokeLinecap="round">
         <path d="M-10 120 C 80 100, 140 150, 230 110 S 360 60, 410 80" />
