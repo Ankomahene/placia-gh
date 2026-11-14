@@ -28,6 +28,7 @@ for (const query of (q ?? '').split('|')) {
     '  meta  ',
     JSON.stringify({
       centre: res.meta.centre?.from,
+      area: res.meta.area,
       radius: res.meta.radiusM,
       widened: res.meta.widenedTo,
       anchor: res.meta.anchor,

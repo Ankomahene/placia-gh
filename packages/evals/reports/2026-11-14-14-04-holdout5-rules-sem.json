@@ -1,0 +1,1792 @@
+{
+  "suite": "search-golden-v1-holdout5",
+  "at": "2026-11-14T14:04:31.590Z",
+  "git": "3aa4ee0",
+  "config": {
+    "mode": "rules",
+    "chaos": null,
+    "tag": null,
+    "k": 10,
+    "provider": null,
+    "model": null,
+    "semantic": "text-embedding-3-small@512",
+    "aiBudgetMs": 2500,
+    "aiPolicy": "selective",
+    "weights": null,
+    "browseWeights": null,
+    "networkRttMs": 358,
+    "dirty": true
+  },
+  "overall": {
+    "cases": 30,
+    "known": null,
+    "browse": {
+      "n": 30,
+      "p10": 0.519,
+      "ndcg10": 0.531,
+      "success10": 0.7
+    },
+    "zeroResultRate": 0,
+    "errors": 0,
+    "parse": null,
+    "tokens": null,
+    "fallbacks": {
+      "not_configured": 30
+    },
+    "aiReasons": {},
+    "paths": {
+      "rules": 30
+    },
+    "latencyMs": {
+      "p50": 851,
+      "p95": 5420,
+      "parseP50": 0,
+      "embedP50": 0,
+      "parseP95": 13,
+      "dbP50": 504,
+      "dbP95": 5022
+    }
+  },
+  "byTag": {
+    "bare": {
+      "cases": 4,
+      "known": null,
+      "browse": {
+        "n": 4,
+        "p10": 0.275,
+        "ndcg10": 0.285,
+        "success10": 0.5
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 1419,
+        "p95": 1946,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 1418,
+        "dbP95": 1945
+      }
+    },
+    "browse": {
+      "cases": 30,
+      "known": null,
+      "browse": {
+        "n": 30,
+        "p10": 0.519,
+        "ndcg10": 0.531,
+        "success10": 0.7
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 30
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 30
+      },
+      "latencyMs": {
+        "p50": 851,
+        "p95": 5420,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 13,
+        "dbP50": 504,
+        "dbP95": 5022
+      }
+    },
+    "control": {
+      "cases": 4,
+      "known": null,
+      "browse": {
+        "n": 4,
+        "p10": 0.875,
+        "ndcg10": 0.891,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 356,
+        "p95": 504,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 355,
+        "dbP95": 504
+      }
+    },
+    "education": {
+      "cases": 5,
+      "known": null,
+      "browse": {
+        "n": 5,
+        "p10": 0.64,
+        "ndcg10": 0.653,
+        "success10": 0.8
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 5
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 5
+      },
+      "latencyMs": {
+        "p50": 1946,
+        "p95": 3021,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 16,
+        "dbP50": 1321,
+        "dbP95": 3020
+      }
+    },
+    "faith": {
+      "cases": 4,
+      "known": null,
+      "browse": {
+        "n": 4,
+        "p10": 0.75,
+        "ndcg10": 0.75,
+        "success10": 0.75
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 352,
+        "p95": 1314,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 352,
+        "dbP95": 1312
+      }
+    },
+    "food": {
+      "cases": 1,
+      "known": null,
+      "browse": {
+        "n": 1,
+        "p10": 0.1,
+        "ndcg10": 0.064,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 1
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 1
+      },
+      "latencyMs": {
+        "p50": 5420,
+        "p95": 5420,
+        "parseP50": 0,
+        "embedP50": 398,
+        "parseP95": 0,
+        "dbP50": 5022,
+        "dbP95": 5022
+      }
+    },
+    "health": {
+      "cases": 9,
+      "known": null,
+      "browse": {
+        "n": 9,
+        "p10": 0.389,
+        "ndcg10": 0.407,
+        "success10": 0.556
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 9
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 9
+      },
+      "latencyMs": {
+        "p50": 1419,
+        "p95": 5131,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 13,
+        "dbP50": 946,
+        "dbP95": 4003
+      }
+    },
+    "located": {
+      "cases": 9,
+      "known": null,
+      "browse": {
+        "n": 9,
+        "p10": 0.684,
+        "ndcg10": 0.715,
+        "success10": 0.889
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 9
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 9
+      },
+      "latencyMs": {
+        "p50": 352,
+        "p95": 1328,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 352,
+        "dbP95": 1327
+      }
+    },
+    "money": {
+      "cases": 2,
+      "known": null,
+      "browse": {
+        "n": 2,
+        "p10": 0.55,
+        "ndcg10": 0.537,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 2
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 2
+      },
+      "latencyMs": {
+        "p50": 356,
+        "p95": 6842,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 355,
+        "dbP95": 5726
+      }
+    },
+    "qualified": {
+      "cases": 13,
+      "known": null,
+      "browse": {
+        "n": 13,
+        "p10": 0.369,
+        "ndcg10": 0.369,
+        "success10": 0.538
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 13
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 13
+      },
+      "latencyMs": {
+        "p50": 2156,
+        "p95": 6842,
+        "parseP50": 0,
+        "embedP50": 1087,
+        "parseP95": 16,
+        "dbP50": 1312,
+        "dbP95": 5726
+      }
+    },
+    "shopping": {
+      "cases": 2,
+      "known": null,
+      "browse": {
+        "n": 2,
+        "p10": 0.3,
+        "ndcg10": 0.314,
+        "success10": 0.5
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 2
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 2
+      },
+      "latencyMs": {
+        "p50": 504,
+        "p95": 521,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 504,
+        "dbP95": 520
+      }
+    },
+    "stay": {
+      "cases": 6,
+      "known": null,
+      "browse": {
+        "n": 6,
+        "p10": 0.51,
+        "ndcg10": 0.539,
+        "success10": 0.667
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 6
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 6
+      },
+      "latencyMs": {
+        "p50": 446,
+        "p95": 2512,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 445,
+        "dbP95": 1425
+      }
+    },
+    "transport": {
+      "cases": 1,
+      "known": null,
+      "browse": {
+        "n": 1,
+        "p10": 1,
+        "ndcg10": 1,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 1
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 1
+      },
+      "latencyMs": {
+        "p50": 1042,
+        "p95": 1042,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 1041,
+        "dbP95": 1041
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "y-pharm-atonsu",
+      "q": "pharmacy atonsu",
+      "tags": ["browse", "bare", "health"],
+      "kind": "browse",
+      "n": 3,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1936,
+        "parse": 0,
+        "db": 1935,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Zip Pharmacy (pharmacy, Nkawkaw)",
+        "· Atta & Atta Pharmacy (pharmacy, Akoasi)",
+        "· Nyame Na Aye Medicines License Over The Counter Medical Shop (pharmacy, Tiawiah)"
+      ],
+      "intent": {
+        "text": "pharmacy",
+        "categories": ["pharmacy"],
+        "area": {
+          "kind": "village",
+          "id": 759,
+          "name": "Atonsu",
+          "lat": 6.54816,
+          "lon": -0.82005,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-school-agogo",
+      "q": "school agogo",
+      "tags": ["browse", "bare", "education"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1946,
+        "parse": 0,
+        "db": 1945,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Agogo Presbyterian Basic School (school, Agogo)",
+        "✓ Agogo Presbyterian Junior High School (school, Agogo)",
+        "✓ Roman Catholic Basic School (school, Agogo)",
+        "✓ APCE Demonstration Basic School (school, Agogo)",
+        "✓ Joy International School (school, Hwidiem)"
+      ],
+      "intent": {
+        "text": "school",
+        "categories": ["school"],
+        "area": {
+          "kind": "town",
+          "id": 2555,
+          "name": "Agogo",
+          "lat": 6.80087,
+          "lon": -1.08473,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-hosp-mampong",
+      "q": "hospital mampong",
+      "tags": ["browse", "bare", "health"],
+      "kind": "browse",
+      "n": 14,
+      "rr": 0.5,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.13886244387355454,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1419,
+        "parse": 0,
+        "db": 1418,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· SDA Hospital, Wiamoase (hospital, Wiamoase)",
+        "✓ Mampong Government Hospital (hospital, Daaho)",
+        "· Westphalian Hospital (hospital, Effiduase)",
+        "· divine grace hospital (hospital, Effiduase)",
+        "· Effiduasi District Hospital (hospital, Effiduase)"
+      ],
+      "intent": {
+        "text": "hospital",
+        "categories": ["hospital"],
+        "area": {
+          "kind": "town",
+          "id": 8971,
+          "name": "Mampong",
+          "lat": 7.05614,
+          "lon": -1.40425,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-market-aboabo",
+      "q": "market aboabo",
+      "tags": ["browse", "bare", "shopping"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 521,
+        "parse": 0,
+        "db": 520,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Central Market (market, Koforidua)",
+        "· Nkurakan Market (market, Nkurakan)",
+        "· Koforidua Zongo Market (market, Koforidua)",
+        "· Yam Market (market, Koforidua)",
+        "· Market (market, Koforidua)"
+      ],
+      "intent": {
+        "text": "market",
+        "categories": ["market"],
+        "area": {
+          "kind": "town",
+          "id": 9036,
+          "name": "Aboabo",
+          "lat": 6.11857,
+          "lon": -0.23505,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-drug-atonsu-ksi",
+      "q": "drug store atonsu kumasi",
+      "tags": ["browse", "qualified", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1697,
+        "parse": 0,
+        "db": 477,
+        "embed": 1220
+      },
+      "tokens": null,
+      "top": [
+        "· Edikay Pharmacy (pharmacy, Kumasi)",
+        "· Mikaddo Pharmacy Limited (pharmacy, Kumasi)",
+        "· Kinapharma Limited (pharmacy, Kumasi)",
+        "· Amples Pharmacy Limited (pharmacy, Kumasi)",
+        "· Pida Chemist Limited (pharmacy, Kumasi)"
+      ],
+      "intent": {
+        "text": "drug store atonsu",
+        "categories": ["pharmacy"],
+        "area": {
+          "kind": "city",
+          "id": 1454,
+          "name": "Kumasi",
+          "lat": 6.69856,
+          "lon": -1.62331,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-church-anloga-ksi",
+      "q": "church in anloga kumasi",
+      "tags": ["browse", "qualified", "faith"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1314,
+        "parse": 0,
+        "db": 1312,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Church of Christ - Oforikrom (church, Oforikrom)",
+        "✓ Global Evangelical Church (church, Afful Nkwanta)",
+        "✓ Mercy Baptist Church (church, Oforikrom)",
+        "✓ Calvary Methodist Church (church, Amakom)",
+        "✓ New Apostolic Church (church, Amakom)"
+      ],
+      "intent": {
+        "text": "church",
+        "categories": ["church"],
+        "area": {
+          "kind": "town",
+          "id": 5795,
+          "name": "Anloga",
+          "lat": 5.79365,
+          "lon": 0.89847,
+          "relation": "in"
+        },
+        "anchor": "anloga kumasi",
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-hotel-anloga-volta",
+      "q": "hotel anloga volta",
+      "tags": ["browse", "qualified", "stay"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0.07142857142857142,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1939,
+        "parse": 0,
+        "db": 724,
+        "embed": 1215
+      },
+      "tokens": null,
+      "top": [
+        "· Lawnia Hotel Annex (hotel, Ho)",
+        "· Dzidzorfe hotel and restaurant (hotel, South Tongu)",
+        "· Mawunyo Hotel and Bar (hotel, Kpetoe)",
+        "· Freedom Hotel (hotel, Ho)",
+        "· Hotel Stevens (hotel, Ho)"
+      ],
+      "intent": {
+        "text": "hotel anloga",
+        "categories": ["hotel"],
+        "area": {
+          "kind": "region",
+          "id": 14,
+          "name": "Volta",
+          "lat": 6.42672,
+          "lon": 0.52956,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-hosp-mampong-akw",
+      "q": "hospital mampong akwapem",
+      "tags": ["browse", "qualified", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 5131,
+        "parse": 13,
+        "db": 4003,
+        "embed": 1091
+      },
+      "tokens": null,
+      "top": [
+        "· Akosombo International School (school, Klo-Agogo)",
+        "· Botifalls Ghana (professional, Bosomtwi)",
+        "· Klo-Agogo Senior High School (shs, Klo-Agogo)",
+        "· Akaa Falls (attraction, Bosomtwi)",
+        "· Jumapo Post Office (post-office, Jumapo)"
+      ],
+      "intent": {
+        "text": "hospital mampong",
+        "categories": ["hospital"],
+        "area": {
+          "kind": "village",
+          "id": 2747,
+          "name": "Akwapim",
+          "lat": 6.24859,
+          "lon": -0.23685,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-school-akropong-akw",
+      "q": "school akropong akuapem",
+      "tags": ["browse", "qualified", "education"],
+      "kind": "browse",
+      "n": 19,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2541,
+        "parse": 16,
+        "db": 1321,
+        "embed": 1205
+      },
+      "tokens": null,
+      "top": [
+        "· Asare Bediako Senior High School-Akrokerri (school, Akrokerri)",
+        "· Hemanh/Akokwaso M/A (school, Hemang)",
+        "· Sanfo/Aduam M/A Junior High School (school, Sanfo)",
+        "· Sanfo/Aduam SDA primary school (school, Sanfo)",
+        "· I.C.T Lab and Library (school, Sanfo)"
+      ],
+      "intent": {
+        "text": "school akropong",
+        "categories": ["school"],
+        "area": {
+          "kind": "village",
+          "id": 1706,
+          "name": "Akuapim",
+          "lat": 6.32304,
+          "lon": -1.6089,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-bank-mampong-ash",
+      "q": "bank mampong ashanti",
+      "tags": ["browse", "qualified", "money"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0.14285714285714285,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.07336392209936005,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 6842,
+        "parse": 0,
+        "db": 5726,
+        "embed": 1116
+      },
+      "tokens": null,
+      "top": [
+        "· Asokore Mampong Community Bank PLC. (bank, Asokore Mampong)",
+        "· Asokore Mampong Rural Bank (bank, Asokore Mampong)",
+        "· Bank of Ghana (bank, Kumasi)",
+        "· GN Bank (bank, Aboabo)",
+        "· Kumawuman Rural Bank (bank, Kwamo)"
+      ],
+      "intent": {
+        "text": "bank mampong",
+        "categories": ["bank"],
+        "area": {
+          "kind": "region",
+          "id": 2,
+          "name": "Ashanti",
+          "lat": 6.80395,
+          "lon": -1.45572,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-school-tafo-ksi",
+      "q": "school in tafo kumasi",
+      "tags": ["browse", "qualified", "education"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 3021,
+        "parse": 0,
+        "db": 3020,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Wealth Creation Vocational School (school, Kumasi)",
+        "✓ Maranatha School Complex (school, Kumasi)",
+        "✓ Rockanje Presbyterian Experimental Basic School (school, Kumasi)",
+        "✓ NOBLE Prince International School (school, Tafo)",
+        "✓ Uthmania Primary School (school, Tafo)"
+      ],
+      "intent": {
+        "text": "school",
+        "categories": ["school"],
+        "area": {
+          "kind": "suburb",
+          "id": 7035,
+          "name": "Tafo",
+          "lat": 6.73406,
+          "lon": -1.60899,
+          "relation": "in"
+        },
+        "anchor": "tafo kumasi",
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-hotel-nsuta-tarkwa",
+      "q": "hotel nsuta tarkwa",
+      "tags": ["browse", "qualified", "stay"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2512,
+        "parse": 0,
+        "db": 1425,
+        "embed": 1087
+      },
+      "tokens": null,
+      "top": [
+        "✓ Trinity Hotel & Restaurant (hotel, Tarkwa)",
+        "✓ Hotel De Hilda (hotel, Nsuta)",
+        "✓ Get in Touch (GIT) (hotel, Tarkwa)",
+        "✓ Railview Hotel (hotel, Tarkwa)",
+        "✓ Morning Star Hotel (hotel, Tarkwa Na Aboso)"
+      ],
+      "intent": {
+        "text": "hotel nsuta",
+        "categories": ["hotel"],
+        "area": {
+          "kind": "town",
+          "id": 2001,
+          "name": "Tarkwa",
+          "lat": 5.31094,
+          "lon": -1.99243,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-church-konongo-odumasi",
+      "q": "church konongo odumasi",
+      "tags": ["browse", "qualified", "faith"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 811,
+        "parse": 0,
+        "db": 440,
+        "embed": 371
+      },
+      "tokens": null,
+      "top": [
+        "· St Andrews Anglican Church (church, Odumasi)",
+        "· Bethel Methodist Church - Akumsa Domase (church, Odumasi)",
+        "· The Church of Jesus Christ of Latter-day Saints (church, Nkoranza)",
+        "· UPCI Revival House Chapel Nkoranza (church, Nkoranza)",
+        "· Presbyterian Church of Ghana, Victory Congregation (church, Nkoranza)"
+      ],
+      "intent": {
+        "text": "church konongo",
+        "categories": ["church"],
+        "area": {
+          "kind": "village",
+          "id": 8634,
+          "name": "Odumasi",
+          "lat": 7.54468,
+          "lon": -1.73636,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-rest-mataheko-accra",
+      "q": "restaurant mataheko accra",
+      "tags": ["browse", "qualified", "food"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0.1,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.06362078819895171,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 5420,
+        "parse": 0,
+        "db": 5022,
+        "embed": 398
+      },
+      "tokens": null,
+      "top": [
+        "· Cedar Garden Restaurant (restaurant, Accra)",
+        "· Papillon Restaurant (restaurant, Accra)",
+        "· Sankofa Restaurant (restaurant, Accra)",
+        "· Nkwa Dua Meal Delivery (restaurant, Accra)",
+        "· diamond palace restaurant (restaurant, Accra)"
+      ],
+      "intent": {
+        "text": "restaurant mataheko",
+        "categories": ["restaurant"],
+        "area": {
+          "kind": "city",
+          "id": 5458,
+          "name": "Accra",
+          "lat": 5.55711,
+          "lon": -0.20124,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-pharm-aboabo-ksi",
+      "q": "pharmacy aboabo, kumasi",
+      "tags": ["browse", "qualified", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.6,
+      "ndcg10": 0.6578986223737446,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2156,
+        "parse": 0,
+        "db": 946,
+        "embed": 1209
+      },
+      "tokens": null,
+      "top": [
+        "✓ Edikay Pharmacy (pharmacy, Kumasi)",
+        "· Menri Pharmacy (pharmacy, Kumasi)",
+        "✓ Sarps Pharmacy (pharmacy, Kumasi)",
+        "✓ Mikaddo Pharmacy Limited (pharmacy, Kumasi)",
+        "✓ Amples Pharmacy Limited (pharmacy, Kumasi)"
+      ],
+      "intent": {
+        "text": "pharmacy aboabo",
+        "categories": ["pharmacy"],
+        "area": {
+          "kind": "city",
+          "id": 1454,
+          "name": "Kumasi",
+          "lat": 6.69856,
+          "lon": -1.62331,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-fuel-tanoso-ksi",
+      "q": "fuel station in tanoso kumasi",
+      "tags": ["browse", "qualified", "transport"],
+      "kind": "browse",
+      "n": 13,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1042,
+        "parse": 0,
+        "db": 1041,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Mile 4 TotalEnergies Service Station (fuel, Asuoyeboa)",
+        "✓ Shell (fuel, Tanoso)",
+        "✓ Shell (fuel, Asuoyeboa)",
+        "✓ Puma (fuel, Tanoso)",
+        "✓ Goil (fuel, Tanoso)"
+      ],
+      "intent": {
+        "text": "fuel station",
+        "categories": ["fuel"],
+        "area": {
+          "kind": "suburb",
+          "id": 3251,
+          "name": "Tanoso",
+          "lat": 6.69688,
+          "lon": -1.69103,
+          "relation": "in"
+        },
+        "anchor": "tanoso kumasi",
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-hotel-agogo-ash",
+      "q": "hotel agogo ashanti",
+      "tags": ["browse", "qualified", "stay"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 851,
+        "parse": 0,
+        "db": 446,
+        "embed": 405
+      },
+      "tokens": null,
+      "top": [
+        "· NODA Hotel (hotel, Fumesua)",
+        "· Yeguaa international hotel (hotel, Bekwai)",
+        "· Arkomenz Hotel (hotel, Gyinyase)",
+        "· Treasure Land Hotel (hotel, Ayigya)",
+        "· Agogo Presbyterian hospital (hospital, Agogo)"
+      ],
+      "intent": {
+        "text": "hotel agogo",
+        "categories": ["hotel"],
+        "area": {
+          "kind": "region",
+          "id": 2,
+          "name": "Ashanti",
+          "lat": 6.80395,
+          "lon": -1.45572,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-pharm-anloga-ksi",
+      "q": "pharmacy anloga",
+      "tags": ["browse", "located", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.9,
+      "ndcg10": 0.933745776545611,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 348,
+        "parse": 0,
+        "db": 347,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Estomens Pharmacy (pharmacy, Susuanso)",
+        "✓ Elite Pharmacy ltd (pharmacy, Susuanso)",
+        "✓ MAG Pharmacy (pharmacy, Susuanso)",
+        "✓ Saqs Pharmacy (pharmacy, Asokwa)",
+        "✓ Dipsy Pharmacy (pharmacy, Asafo)"
+      ],
+      "intent": {
+        "text": "pharmacy",
+        "categories": ["pharmacy"],
+        "area": {
+          "kind": "suburb",
+          "id": 9328,
+          "name": "Anloga",
+          "lat": 6.67761,
+          "lon": -1.59183,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-school-anloga-keta",
+      "q": "schools anloga",
+      "tags": ["browse", "located", "education"],
+      "kind": "browse",
+      "n": 15,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.5,
+      "ndcg10": 0.5769706247040591,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 296,
+        "parse": 0,
+        "db": 296,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Agorve Basic School (school, Anloga)",
+        "✓ Anloga Avume Basic School (school, Anloga)",
+        "· Whuti E.P. Primary School (school, Whuti)",
+        "· Emmanuel School (school, Woe)",
+        "· Atorkor Primary School (school, Atorkor)"
+      ],
+      "intent": {
+        "text": "schools",
+        "categories": ["school"],
+        "area": {
+          "kind": "town",
+          "id": 5795,
+          "name": "Anloga",
+          "lat": 5.79365,
+          "lon": 0.89847,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-hotel-akropong-accra",
+      "q": "hotel akropong",
+      "tags": ["browse", "located", "stay"],
+      "kind": "browse",
+      "n": 7,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.8571428571428571,
+      "ndcg10": 0.9020870746500321,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 446,
+        "parse": 0,
+        "db": 445,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Blue Royal Hotel (hotel, Larteh)",
+        "✓ Hearty Home Hotel (hotel, Akropong)",
+        "✓ Higher Heights Hotel (hotel, Tio-tio)",
+        "✓ Villadora Resort (hotel, Akropong)",
+        "✓ Akuapem Hospitality Center (hotel, Akropong)"
+      ],
+      "intent": {
+        "text": "hotel",
+        "categories": ["hotel"],
+        "area": {
+          "kind": "town",
+          "id": 11217,
+          "name": "Akropong",
+          "lat": 5.97056,
+          "lon": -0.08917,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-gh-akropong-ksi",
+      "q": "guest house akropong",
+      "tags": ["browse", "located", "stay"],
+      "kind": "browse",
+      "n": 19,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.2,
+      "ndcg10": 0.33013764944712026,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 299,
+        "parse": 0,
+        "db": 299,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Johnny's Guest House (guest-house, Abuakwa)",
+        "· Paradise Point Guest House (guest-house, New Kyekyire)",
+        "✓ Golden Knot (guest-house, Akropong)",
+        "· A.B. Lodge (guest-house, Abuakwa)",
+        "· My house (guest-house, Atafoa)"
+      ],
+      "intent": {
+        "text": "guest house",
+        "categories": ["guest-house"],
+        "area": {
+          "kind": "town",
+          "id": 11194,
+          "name": "Akropong",
+          "lat": 6.74184,
+          "lon": -1.73057,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-clinic-mampong-madina",
+      "q": "clinic mampong",
+      "tags": ["browse", "located", "health"],
+      "kind": "browse",
+      "n": 9,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1328,
+        "parse": 0,
+        "db": 1327,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· kofiase health clinic (clinic, Kofiase)",
+        "· Arthurs Clinic & Prostate Center. (clinic, Mampong Municipal)",
+        "· Nsuta Polyclinic (clinic, Nsuta)",
+        "· Krobo Health Centre (clinic, Krobo)",
+        "· Bodomase Clinic (hospital, Bodomasi)"
+      ],
+      "intent": {
+        "text": "clinic",
+        "categories": ["clinic"],
+        "area": {
+          "kind": "town",
+          "id": 8971,
+          "name": "Mampong",
+          "lat": 7.05614,
+          "lon": -1.40425,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-church-mataheko-tema",
+      "q": "church mataheko",
+      "tags": ["browse", "located", "faith"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 352,
+        "parse": 0,
+        "db": 352,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Divine Healers Church, Ablekuma (church, Afienya)",
+        "✓ Saints Peter And Paul Catholic Church (church, Mataheko)",
+        "✓ Hope Of Glory Methodist Church (church, Mataheko)",
+        "✓ Presbyterian Church Of Ghana - Resurrection Congregation (church, Mataheko)",
+        "✓ The Church of Pentecost (church, New Abelekuma)"
+      ],
+      "intent": {
+        "text": "church",
+        "categories": ["church"],
+        "area": {
+          "kind": "suburb",
+          "id": 6678,
+          "name": "Mataheko",
+          "lat": 5.76249,
+          "lon": 0.0033,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-school-agogo-ksi",
+      "q": "basic school agogo",
+      "tags": ["browse", "located", "education"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.7,
+      "ndcg10": 0.6879509227782195,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 380,
+        "parse": 0,
+        "db": 379,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Feyiase R/C Basic School ,lake-Road,kumasi (school, Kyirapatre)",
+        "· Al-Huda Islamic Basic School; Abirem. (school, Adiebeba)",
+        "✓ Atonsu Agogo Primary School (school, Agogo)",
+        "· KNUST Basic School (school, Kumasi)",
+        "✓ Rojel Montessori School (school, Agogo)"
+      ],
+      "intent": {
+        "text": "basic school",
+        "categories": ["school"],
+        "area": {
+          "kind": "suburb",
+          "id": 4758,
+          "name": "Agogo",
+          "lat": 6.65115,
+          "lon": -1.59258,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-church-tafo-kintampo",
+      "q": "chapel tafo",
+      "tags": ["browse", "located", "faith"],
+      "kind": "browse",
+      "n": 11,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 300,
+        "parse": 0,
+        "db": 300,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Christ Apostolic Church (church, Kintampo)",
+        "✓ The Church of Pentecost (church, Kintampo)",
+        "✓ Wesley Society (church, Kintampo)",
+        "✓ St Joseph Catholic Church (church, Kintampo)",
+        "✓ Zion Stronghold Ministries (church, Kintampo)"
+      ],
+      "intent": {
+        "text": "chapel",
+        "categories": ["church"],
+        "area": {
+          "kind": "suburb",
+          "id": 4690,
+          "name": "Tafo",
+          "lat": 8.03015,
+          "lon": -1.73258,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-pharm-nsuta-tarkwa",
+      "q": "pharmacy nsuta",
+      "tags": ["browse", "located", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 380,
+        "parse": 0,
+        "db": 379,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Health Spring Pharmacy (pharmacy, Government Hill)",
+        "✓ Owass Pharmacy (pharmacy, Hill Top Junction)",
+        "✓ GMC Pharmacy (pharmacy, Nsuta)",
+        "✓ Celtics Pharmacy (pharmacy, Nsuta)",
+        "✓ Madibra Pharmacy (pharmacy, Akyempim)"
+      ],
+      "intent": {
+        "text": "pharmacy",
+        "categories": ["pharmacy"],
+        "area": {
+          "kind": "town",
+          "id": 5865,
+          "name": "Nsuta",
+          "lat": 5.27337,
+          "lon": -1.98213,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-hotel-koforidua",
+      "q": "hotel koforidua",
+      "tags": ["browse", "control", "stay"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 420,
+        "parse": 0,
+        "db": 419,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Nasco Hotel (hotel, Koforidua)",
+        "✓ Embassy & Diplomat Hotel (hotel, Koforidua)",
+        "✓ Safegold Hotel (hotel, Koforidua)",
+        "✓ Partners May Hotel (hotel, Koforidua)",
+        "✓ Hotel Freden (hotel, Koforidua)"
+      ],
+      "intent": {
+        "text": "hotel",
+        "categories": ["hotel"],
+        "area": {
+          "kind": "city",
+          "id": 16,
+          "name": "Koforidua",
+          "lat": 6.10033,
+          "lon": -0.26146,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-bank-sunyani",
+      "q": "bank sunyani",
+      "tags": ["browse", "control", "money"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 356,
+        "parse": 0,
+        "db": 355,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Zenith Bank (bank, Sunyani)",
+        "✓ National Investment Bank (bank, Sunyani)",
+        "✓ Bank of Ghana (bank, Sunyani)",
+        "✓ Stanbic Bank (bank, Sunyani)",
+        "✓ Ghana Bank (bank, Sunyani)"
+      ],
+      "intent": {
+        "text": "bank",
+        "categories": ["bank"],
+        "area": {
+          "kind": "city",
+          "id": 4532,
+          "name": "Sunyani",
+          "lat": 7.33844,
+          "lon": -2.33092,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-super-adum",
+      "q": "supermarket adum",
+      "tags": ["browse", "control", "shopping"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.6,
+      "ndcg10": 0.6281649475693719,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 504,
+        "parse": 0,
+        "db": 504,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ A-Life Supermarket (supermarket, Kumasi)",
+        "· A-Life Supermarket (mall, Kumasi)",
+        "✓ Melcom (supermarket, Kumasi)",
+        "✓ Opoku Trading Limited (supermarket, Kumasi)",
+        "· Paradise Supermarket (mall, Ashtown)"
+      ],
+      "intent": {
+        "text": "supermarket",
+        "categories": ["supermarket"],
+        "area": {
+          "kind": "suburb",
+          "id": 4612,
+          "name": "Adum",
+          "lat": 6.69429,
+          "lon": -1.62333,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "y-pharm-ayigya",
+      "q": "pharmacy ayigya",
+      "tags": ["browse", "control", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.9,
+      "ndcg10": 0.9363792118010483,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 345,
+        "parse": 0,
+        "db": 344,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Estomens Pharmacy (pharmacy, Susuanso)",
+        "✓ Fausvic Pharmacy (a mutti Pharmacy) (pharmacy, Ayigya)",
+        "✓ MAG Pharmacy (pharmacy, Susuanso)",
+        "✓ O.K Honesty Pharmacy (pharmacy, Bomso)",
+        "✓ Elite Pharmacy ltd (pharmacy, Susuanso)"
+      ],
+      "intent": {
+        "text": "pharmacy",
+        "categories": ["pharmacy"],
+        "area": {
+          "kind": "suburb",
+          "id": 7469,
+          "name": "Ayigya",
+          "lat": 6.69217,
+          "lon": -1.57796,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    }
+  ]
+}

@@ -1,7 +1,13 @@
 import type { LLMRouter } from '../ai/router';
 import type { Embedder } from '../ai/types';
 import { type ParseOptions, parseQuery } from './ai-parse';
-import { AREA_RADIUS_M, type LocalityKind, type SearchContext } from './context';
+import {
+  AREA_RADIUS_M,
+  type AreaChoice,
+  type LocalityKind,
+  type SearchContext,
+  sameNameAreas,
+} from './context';
 import type { Intent, ParseResult } from './intent';
 import { onlyCategoryWords, parseRules } from './rules';
 import { normalize, words } from './text';
@@ -103,6 +109,11 @@ export interface SearchResponse {
     /** "near me" without a location: the client should ask for one. */
     needsLocation: boolean;
     anchor: { text: string; place: string | null } | null;
+    /**
+     * Where the searched town is, and other towns with the same name ("Anloga": Volta or
+     * Kumasi). The client can offer them; each choice's `query` re-runs the search there.
+     */
+    area: { where: string; others: AreaChoice[] } | null;
     weights: FusionWeights;
     semantic: boolean;
     /** Only category words in the text: name and meaning arms step back. */
@@ -340,6 +351,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
       widenedTo,
       needsLocation,
       anchor: anchorMeta,
+      area: intent.area ? sameNameAreas(deps.context, intent.area) : null,
       weights: { ...DEFAULT_WEIGHTS, ...weights },
       semantic: vector != null,
       pureBrowse,

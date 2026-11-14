@@ -1,4 +1,4 @@
-import { type Area, areaPrior, type SearchContext } from './context';
+import { AREA_RADIUS_M, type Area, areaKm, areaPrior, type SearchContext } from './context';
 import type { AreaRef, Intent } from './intent';
 import { jaroWinkler, normalize, words } from './text';
 
@@ -96,25 +96,121 @@ function toRef(a: Area, relation: AreaRef['relation']): AreaRef {
   return { kind: a.kind, id: a.id, name: a.name, lat: a.lat, lon: a.lon, relation };
 }
 
-/** Best area for a phrase. With a user location, prefer candidates near them. */
-export function pickArea(
-  candidates: Area[] | undefined,
-  user?: { lat: number; lon: number } | null,
-): Area | null {
+type LatLon = { lat: number; lon: number };
+
+/**
+ * How much distance from the user outweighs how well-known a town is. At 3, the Akropong 45 km
+ * from Accra beats the bigger Akropong 200 km away; a town ten times bigger still wins at ~2x
+ * the distance.
+ */
+const DISTANCE_WEIGHT = 3;
+
+const distancePenalty = (a: LatLon, user: LatLon) =>
+  DISTANCE_WEIGHT * Math.log1p(areaKm(a, user) / 5);
+
+/** Bus stops and the like are named after the area around them: prefer the area itself. */
+function withoutLandmarks(candidates: Area[]) {
+  const towns = candidates.filter((a) => a.kind !== 'landmark');
+  return towns.length ? towns : candidates;
+}
+
+/** Best area for a phrase. With a user location, the nearer of two same-name towns wins. */
+export function pickArea(candidates: Area[] | undefined, user?: LatLon | null): Area | null {
   if (!candidates?.length) return null;
-  if (!user) return candidates[0] ?? null;
+  const pool = withoutLandmarks(candidates);
+  if (!user) return pool[0] ?? null;
   let best: Area | null = null;
   let bestScore = -Infinity;
-  for (const a of candidates) {
-    const km = Math.hypot((a.lat - user.lat) * 111, (a.lon - user.lon) * 111);
-    // A well-known town 400 km away loses to the small village of the same name next door.
-    const score = areaPrior(a) - 2 * Math.log1p(km / 5);
+  for (const a of pool) {
+    const score = areaPrior(a) - distancePenalty(a, user);
     if (score > bestScore) {
       best = a;
       bestScore = score;
     }
   }
   return best;
+}
+
+/** Rough size, to tell which of two overlapping areas is the more specific one. */
+function areaSize(a: Area) {
+  if (a.kind === 'region') return 1e7;
+  if (a.kind === 'district') return 1e6;
+  return AREA_RADIUS_M[a.kind];
+}
+
+/** Is `a` inside `b`, or right next to it? */
+function inside(a: Area, b: Area) {
+  if (a === b) return false;
+  if (b.kind === 'region') return a.kind !== 'region' && a.regionId === b.id;
+  if (a.kind === 'region' || a.kind === 'district') return false;
+  if (b.kind === 'district') return a.districtId === b.id;
+  return areaKm(a, b) <= (AREA_RADIUS_M[b.kind] / 1000) * 1.5 + 2;
+}
+
+/**
+ * Two names side by side ("atonsu kumasi", "konongo odumasi", "anloga volta"): the pair in which
+ * one lies inside the other picks the town, and the inner, more specific one is the answer.
+ * Null when neither lies in the other, so they are not a town and its qualifier.
+ */
+export function pickPair(
+  first: Area[] | undefined,
+  second: Area[] | undefined,
+  user?: LatLon | null,
+): Area | null {
+  let best: Area | null = null;
+  let bestScore = -Infinity;
+  for (const a of withoutLandmarks(first ?? [])) {
+    for (const b of withoutLandmarks(second ?? [])) {
+      const aIn = inside(a, b);
+      const bIn = inside(b, a);
+      if (!aIn && !bIn) continue;
+      // Both inside each other ("konongo odumasi": a suburb by a town): the smaller one is meant.
+      const inner = aIn && bIn ? (areaSize(b) < areaSize(a) ? b : a) : aIn ? a : b;
+      const score = areaPrior(a) + areaPrior(b) - (user ? distancePenalty(inner, user) : 0);
+      if (score > bestScore) {
+        best = inner;
+        bestScore = score;
+      }
+    }
+  }
+  return best;
+}
+
+/** A location phrase made of two names ("atonsu kumasi", "atonsu in kumasi"). */
+export function pairInPhrase(ctx: SearchContext, phrase: string, user?: LatLon | null) {
+  const toks = words(phrase).filter((w) => !FILLER.has(w));
+  for (let k = 1; k < toks.length; k++) {
+    const a = toks.slice(0, k).join(' ');
+    const b = toks.slice(k).join(' ');
+    if (!ctx.areas.has(a) || !ctx.areas.has(b)) continue;
+    const paired = pickPair(ctx.areas.get(a), ctx.areas.get(b), user);
+    if (paired) return paired;
+  }
+  return null;
+}
+
+/** Is any word in [start, end) part of a category phrase ("filling station", "police station")? */
+function inCategoryPhrase(ctx: SearchContext, toks: string[], start: number, end: number) {
+  for (let i = Math.max(0, start - ctx.maxWords + 1); i < end; i++) {
+    for (let e = Math.min(toks.length, i + ctx.maxWords); e > Math.max(i, start); e--) {
+      const phrase = toks.slice(i, e).join(' ');
+      if (ctx.phrases.has(phrase) || ctx.phrases.has(singular(phrase))) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * An area name ending exactly at `end` (just before a qualifier or a preposition). Words doing
+ * category duty never count: "station" in "filling station kasoa" is a bus stop's name too.
+ */
+function areaEndingAt(ctx: SearchContext, toks: string[], end: number, from = 0) {
+  for (let start = Math.max(from, end - ctx.maxWords); start < end; start++) {
+    const hit = areaAt(ctx, toks, start, end);
+    if (hit?.end === end && !inCategoryPhrase(ctx, toks, start, end))
+      return { key: hit.key, start };
+  }
+  return null;
 }
 
 /** Closest gazetteer name for a misspelt phrase ("kaneshi" → Kaneshie). Conservative. */
@@ -286,11 +382,27 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
       }
     }
     if (hit) {
-      const picked = pickArea(ctx.areas.get(hit.key), opts.user);
+      let picked = pickArea(ctx.areas.get(hit.key), opts.user);
+      let end = hit.end;
+      // "in atonsu kumasi": a second name right after the first says which one is meant.
+      const next = end < toks.length ? areaAt(ctx, toks, end) : null;
+      const pairedAfter = next
+        ? pickPair(ctx.areas.get(hit.key), ctx.areas.get(next.key), opts.user)
+        : null;
+      if (next && pairedAfter) {
+        picked = pairedAfter;
+        end = next.end;
+      }
+      // "atonsu in kumasi": the name before the preposition is the town, this one says which.
+      const before = pairedAfter ? null : areaEndingAt(ctx, toks, p.i);
+      const pairedBefore = before
+        ? pickPair(ctx.areas.get(before.key), ctx.areas.get(hit.key), opts.user)
+        : null;
+      if (pairedBefore) picked = pairedBefore;
       if (picked) area = toRef(picked, p.relation);
       // "near osu oxford street": the extra words may name a specific spot within the area.
-      if (toks.slice(hit.end).some((w) => !FILLER.has(w))) anchor = tail.join(' ');
-      cut = p.i;
+      if (toks.slice(end).some((w) => !FILLER.has(w))) anchor = tail.join(' ');
+      cut = before && pairedBefore ? before.start : p.i;
       break;
     }
     // Not an area, but grammatically a location ("near knust"): a landmark for the engine to
@@ -304,7 +416,8 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
   }
 
   // 2. A bare area name at either end ("pharmacy kumasi", "osu waakye").
-  let span: { start: number; end: number; area: Area; trailing: boolean } | null = null;
+  let span: { start: number; end: number; area: Area; trailing: boolean; key: string } | null =
+    null;
   if (!area && !anchor) {
     let first = 0;
     let last = cut - 1;
@@ -317,7 +430,8 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
     ) {
       const hit = areaAt(ctx, toks, start, last + 1);
       const picked = hit?.end === last + 1 ? pickArea(ctx.areas.get(hit.key), opts.user) : null;
-      if (picked) span = { start, end: last + 1, area: picked, trailing: true };
+      if (hit && picked)
+        span = { start, end: last + 1, area: picked, trailing: true, key: hit.key };
     }
     // A misspelt town after a kind of place ("supermarket abelemkpe"). Only with a category in
     // front, so a name ("pizza hut") is never bent into a town.
@@ -325,15 +439,29 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
       if (span || last + 1 - len <= first) continue;
       const tail = toks.slice(last + 1 - len, last + 1);
       if (tail.some((w) => ctx.phrases.has(w) || FILLER.has(w))) continue;
+      // "university of ghana", "bank of ghana": a name, not a misspelt town (Ghanata).
+      if (toks[last - len] === 'of') continue;
       if (!findCategories(ctx, toks.slice(first, last + 1 - len)).length) continue;
       const fuzzy = fuzzyArea(ctx, tail.join(' '));
       const picked = fuzzy ? pickArea(ctx.areas.get(fuzzy), opts.user) : null;
-      if (picked) span = { start: last + 1 - len, end: last + 1, area: picked, trailing: true };
+      if (fuzzy && picked) {
+        span = { start: last + 1 - len, end: last + 1, area: picked, trailing: true, key: fuzzy };
+      }
+    }
+    // "pharmacy atonsu kumasi", "hotel anloga volta": the last name says which town is meant.
+    if (span?.trailing) {
+      const before = areaEndingAt(ctx, toks, span.start, first);
+      const paired = before
+        ? pickPair(ctx.areas.get(before.key), ctx.areas.get(span.key), opts.user)
+        : null;
+      if (before && paired) span = { ...span, start: before.start, area: paired };
     }
     if (!span && last > first) {
       const hit = areaAt(ctx, toks, first, last);
       const picked = hit ? pickArea(ctx.areas.get(hit.key), opts.user) : null;
-      if (hit && picked) span = { start: first, end: hit.end, area: picked, trailing: false };
+      if (hit && picked) {
+        span = { start: first, end: hit.end, area: picked, trailing: false, key: hit.key };
+      }
     }
   }
 

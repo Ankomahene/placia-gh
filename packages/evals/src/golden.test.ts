@@ -1,8 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { GOLDEN, HOLDOUT, HOLDOUT_V2, HOLDOUT_V3, HOLDOUT_V4, LABEL_FIXES } from './golden';
+import {
+  GOLDEN,
+  HOLDOUT,
+  HOLDOUT_V2,
+  HOLDOUT_V3,
+  HOLDOUT_V4,
+  HOLDOUT_V5,
+  LABEL_FIXES,
+} from './golden';
 
 describe('golden sets', () => {
-  const all = [...GOLDEN, ...HOLDOUT, ...HOLDOUT_V2, ...HOLDOUT_V3, ...HOLDOUT_V4];
+  const all = [...GOLDEN, ...HOLDOUT, ...HOLDOUT_V2, ...HOLDOUT_V3, ...HOLDOUT_V4, ...HOLDOUT_V5];
 
   it('has unique ids', () => {
     expect(new Set(all.map((c) => c.id)).size).toBe(all.length);
@@ -32,6 +40,16 @@ describe('golden sets', () => {
     );
     expect(HOLDOUT_V4.filter((c) => seen.has(c.q.toLowerCase()))).toEqual([]);
     expect(HOLDOUT_V4.every((c) => c.id.startsWith('x-'))).toBe(true);
+  });
+
+  it('keeps held-out v5 apart from every earlier set', () => {
+    const seen = new Set(
+      [...GOLDEN, ...HOLDOUT, ...HOLDOUT_V2, ...HOLDOUT_V3, ...HOLDOUT_V4].map((c) =>
+        c.q.toLowerCase(),
+      ),
+    );
+    expect(HOLDOUT_V5.filter((c) => seen.has(c.q.toLowerCase()))).toEqual([]);
+    expect(HOLDOUT_V5.every((c) => c.id.startsWith('y-'))).toBe(true);
   });
 
   it('only uses valid patterns and sensible areas', () => {

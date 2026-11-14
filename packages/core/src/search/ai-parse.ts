@@ -2,7 +2,14 @@ import { z } from 'zod';
 import type { LLMRouter } from '../ai/router';
 import { expandCategory, type SearchContext } from './context';
 import type { Intent, ParseResult } from './intent';
-import { findCategories, fuzzyArea, parseRules, pickArea, rulesUnsure } from './rules';
+import {
+  findCategories,
+  fuzzyArea,
+  pairInPhrase,
+  parseRules,
+  pickArea,
+  rulesUnsure,
+} from './rules';
 import { normalize, words } from './text';
 
 /**
@@ -69,8 +76,13 @@ export function resolveAIIntent(
   let anchor: string | null = null;
   const loc = ai.location ? normalize(ai.location).replace(/^the /, '') : '';
   if (loc) {
-    const key = ctx.areas.has(loc) ? loc : fuzzyArea(ctx, loc);
-    const picked = key ? pickArea(ctx.areas.get(key), user) : null;
+    const exact = ctx.areas.has(loc) ? pickArea(ctx.areas.get(loc), user) : null;
+    const fuzzyKey = exact ? null : fuzzyArea(ctx, loc);
+    // "Atonsu, Kumasi": two names, the second saying which town the first is.
+    const picked =
+      exact ??
+      pairInPhrase(ctx, loc, user) ??
+      (fuzzyKey ? pickArea(ctx.areas.get(fuzzyKey), user) : null);
     if (picked) {
       area = {
         kind: picked.kind,

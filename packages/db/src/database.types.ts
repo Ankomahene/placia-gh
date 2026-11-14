@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      area_mentions: {
+        Row: {
+          district_id: number | null
+          id: number
+          lat: number
+          lon: number
+          name: string
+          places: number
+          refreshed_at: string
+        }
+        Insert: {
+          district_id?: number | null
+          id?: never
+          lat: number
+          lon: number
+          name: string
+          places: number
+          refreshed_at?: string
+        }
+        Update: {
+          district_id?: number | null
+          id?: never
+          lat?: number
+          lon?: number
+          name?: string
+          places?: number
+          refreshed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "area_mentions_district_id_fkey"
+            columns: ["district_id"]
+            isOneToOne: false
+            referencedRelation: "districts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           icon: string | null
@@ -631,8 +669,10 @@ export type Database = {
       }
       ingest_prune: { Args: { p_since: string }; Returns: Json }
       ingest_slugs: { Args: never; Returns: Json }
+      normalize_text: { Args: { t: string }; Returns: string }
       ping: { Args: never; Returns: string }
       place_embedding_input: { Args: { p_id: string }; Returns: string }
+      refresh_area_mentions: { Args: never; Returns: number }
       search_context: { Args: never; Returns: Json }
       search_places: {
         Args: {

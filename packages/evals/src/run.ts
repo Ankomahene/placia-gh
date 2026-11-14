@@ -33,7 +33,15 @@ import {
   search,
 } from '@placia/core/search';
 import { createServiceClient } from '@placia/db';
-import { GOLDEN, type GoldenCase, HOLDOUT, HOLDOUT_V2, HOLDOUT_V3, HOLDOUT_V4 } from './golden';
+import {
+  GOLDEN,
+  type GoldenCase,
+  HOLDOUT,
+  HOLDOUT_V2,
+  HOLDOUT_V3,
+  HOLDOUT_V4,
+  HOLDOUT_V5,
+} from './golden';
 import { hitAt, mean, ndcgAt, percentile, precisionAt, reciprocalRank, round } from './metrics';
 
 const args = process.argv.slice(2);
@@ -53,6 +61,7 @@ const set = (flag('set') ?? 'dev') as
   | 'holdout2'
   | 'holdout3'
   | 'holdout4'
+  | 'holdout5'
   | 'all';
 const suite = set === 'dev' ? 'search-golden-v1' : `search-golden-v1-${set}`;
 const weightsArg = flag('weights')
@@ -378,9 +387,11 @@ async function main() {
           ? HOLDOUT_V3
           : set === 'holdout4'
             ? HOLDOUT_V4
-            : set === 'all'
-              ? [...GOLDEN, ...HOLDOUT]
-              : GOLDEN;
+            : set === 'holdout5'
+              ? HOLDOUT_V5
+              : set === 'all'
+                ? [...GOLDEN, ...HOLDOUT]
+                : GOLDEN;
   const cases = pool.filter((c) => !tag || c.tags.includes(tag));
   // One warm-up so connection setup doesn't land on the first case's latency.
   await search({ q: 'warm up', limit: 1 }, { rpc, context: ctx, llm: null });
@@ -488,7 +499,9 @@ async function main() {
     const s = byTag[t];
     if (!s) continue;
     const k = s.known ? `MRR ${s.known.mrr}` : '';
-    const b = s.browse ? `P@10 ${pct(s.browse.p10)} nDCG ${s.browse.ndcg10}` : '';
+    const b = s.browse
+      ? `P@10 ${pct(s.browse.p10)} nDCG ${s.browse.ndcg10} S@10 ${pct(s.browse.success10)}`
+      : '';
     console.log(
       `  ${t.padEnd(14)} n=${String(s.cases).padStart(3)}  ${[k, b].filter(Boolean).join('  ')}`,
     );

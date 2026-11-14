@@ -33,6 +33,12 @@ Both parsers produce the same `Intent`:
     - A trailing area name filters ("tailor tamale").
     - A leading one only steers ranking ("ridge hospital", "accra mall"), because it is usually part of a name.
   - **Unknown landmarks**: after a preposition, an unknown place ("near knust") becomes an _anchor_. The engine looks it up as a place and searches around it.
+  - **Same-name towns** (Atonsu, Anloga, Mampong, Akropong all exist several times):
+    - **Address evidence**: `area_mentions` clusters places whose name or address names a town ("Atonsu, Lake Road"). A cluster credits the same-name town it sits in. When it outweighs every town of that name the gazetteer has, it stands in for the one it lacks: Kumasi's Atonsu (43 places) is not in the gazetteer, only two villages are.
+    - **A second name decides**: "atonsu kumasi", "anloga volta", "konongo odumasi", "mampong akwapem". The candidate that lies inside the other name (its region, its district, or within reach of its town) wins.
+    - **Otherwise the user's position**: the nearer town wins unless the far one is much better known. Without a position, the best-known town wins.
+    - Bus stops named after a town never win over the town itself.
+    - `meta.area` lists the other same-name towns, each with a `query` that picks it ("atonsu kwahu west"), so the app can offer "Did you mean…".
 - **Selective AI** (`rulesUnsure()`): the rule parse answers whenever it can be trusted, which is most queries. The AI is asked only when the rules are unsure:
   - the query is phrased as a request ("where can i…", "i need…", "somewhere to…");
   - it is vague (more than 3 categories, from a broad word like "food");
@@ -81,6 +87,7 @@ The engine also:
 - why the AI was skipped, if it was;
 - the search centre and radius, and any widening;
 - the resolved anchor;
+- where the searched town is, and other towns with the same name;
 - the fusion weights;
 - per-step timings.
 

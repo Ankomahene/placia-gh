@@ -3,10 +3,11 @@
 `pnpm ingest` builds Placia's place database from open data. It runs locally (DuckDB, no Docker) and loads into Supabase.
 
 ```
-pnpm ingest            # stage → merge → load (→ embed, when OPENAI_API_KEY is set)
+pnpm ingest            # stage → merge → load → mentions (→ embed, when OPENAI_API_KEY is set)
 pnpm ingest stage      # download (cached) and normalise every source
 pnpm ingest merge      # entity resolution + area assignment
 pnpm ingest load       # upsert into Supabase, prune stale rows, record the run
+pnpm ingest mentions   # cluster town names written in addresses (same-name towns)
 pnpm ingest embed      # embed new or edited places for the meaning arm (resumable)
 ```
 
@@ -47,6 +48,7 @@ Raw source payloads stay in `packages/ingest/.cache`. The database only gets nor
    - Published slugs are permanent: existing ones are reused and never handed to another place.
    - `ingest_prune()` removes machine rows a newer run no longer produced. Community data is never pruned.
    - Each run is recorded in `ingest_runs` with source versions and resolver statistics.
+4. **Mentions** (`refresh_area_mentions()`, in Postgres, ~8 s). Finds every town name in place names and addresses, longest name first. "Asokore Mampong" is not a mention of Mampong, and neither is "Mampong Road". Each name's mentions are clustered with DBSCAN (~2 km reach, at least 3 places). Only neighbourhood-sized clusters are kept, since "Accra" written all over the city says nothing about which Accra is meant. 2,032 clusters; the search parser uses them to tell same-name towns apart ([SEARCH.md](SEARCH.md)).
 
 ## Result (2026-11-14)
 

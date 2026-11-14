@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { LLMRouter } from '../ai/router';
 import type { LLMProvider } from '../ai/types';
 import { clearParseCache, parseQuery } from './ai-parse';
-import { buildContext, type RawContext } from './context';
+import { buildContext, type RawContext, sameNameAreas } from './context';
 import { type SearchRpc, search } from './engine';
-import { parseRules } from './rules';
+import { pairInPhrase, parseRules } from './rules';
 
 const raw: RawContext = {
   categories: [
@@ -24,12 +24,21 @@ const raw: RawContext = {
     [17, 'shop', 'Shop', 2, ['shop', 'store']],
     [18, 'mall', 'Mall', 2, []],
     [19, 'driving-school', 'Driving school', 6, ['learn to drive']],
+    [20, 'fuel', 'Fuel station', 6, ['filling station']],
   ],
   regions: [
     [1, 'Ashanti', 6.7, -1.5],
     [2, 'Greater Accra', 5.7, -0.2],
+    [3, 'Volta', 6.6, 0.4],
+    [4, 'Eastern', 6.3, -0.5],
   ],
-  districts: [[1, 'Kumasi Metropolitan', 1, 6.69, -1.62]],
+  districts: [
+    [1, 'Kumasi Metropolitan', 1, 6.69, -1.62],
+    [2, 'Anloga', 3, 5.8, 0.9],
+    [3, 'Kwahu West Municipal', 4, 6.55, -0.8],
+    [4, 'Akwapem North Municipal', 4, 5.95, -0.1],
+    [5, 'Mampong Municipal', 1, 7.06, -1.4],
+  ],
   localities: [
     [1, 'Madina', [], 'town', null, 5.68, -0.166, 400],
     [2, 'Madina', [], 'village', null, 9.0, -1.0, 2],
@@ -40,6 +49,24 @@ const raw: RawContext = {
     [7, 'Circle', [], 'landmark', null, 5.57, -0.215, 0],
     [8, 'Accra', [], 'city', null, 5.56, -0.2, 9000],
     [9, 'Kasoa', [], 'town', null, 5.53, -0.42, 300],
+    // Same-name towns.
+    [10, 'Anloga', [], 'town', 2, 5.794, 0.898, 42],
+    [11, 'Anloga', [], 'suburb', 1, 6.678, -1.592, 33],
+    [12, 'Atonsu', [], 'village', 3, 6.548, -0.82, 0],
+    [13, 'Mampong', [], 'town', 5, 7.056, -1.404, 51],
+    [14, 'Mampong', [], 'village', 4, 5.913, -0.14, 21],
+    [15, 'Mampong', [], 'landmark', null, 5.601, -0.256, 0],
+    // Bus stop names that are also category words, and a town one letter off "Ghana".
+    [16, 'Station', [], 'landmark', null, 5.531, -0.421, 0],
+    [17, 'Ghanata', [], 'village', null, 6.1, -0.5, 1],
+  ],
+  mentions: [
+    // The Kumasi Atonsu, which the gazetteer lacks.
+    [1, 'atonsu', 1, 6.6547, -1.5899, 43],
+    // "Sunyani-Kumasi road": never outweighs Kumasi itself.
+    [2, 'kumasi', null, 7.32, -2.31, 18],
+    // Credits Asante Mampong.
+    [3, 'mampong', 5, 7.0577, -1.4009, 27],
   ],
 };
 const ctx = buildContext(raw);
@@ -110,6 +137,71 @@ describe('rule parser', () => {
       categories: ['university'],
       area: { kind: 'region', name: 'Ashanti' },
     });
+  });
+
+  it('finds a suburb the gazetteer lacks from the addresses that name it', () => {
+    expect(parseRules('pharmacy atonsu', ctx)).toMatchObject({
+      categories: ['pharmacy'],
+      area: { name: 'Atonsu', lat: 6.6547, relation: 'near' },
+      text: 'pharmacy',
+    });
+    expect(ctx.areas.get('kumasi')?.some((a) => a.fromAddresses)).toBe(false);
+    expect(ctx.areas.get('mampong')?.[0]).toMatchObject({ kind: 'town', mentions: 27 });
+  });
+
+  it('never takes a category word for a qualifier, or a name for a misspelt town', () => {
+    expect(parseRules('filling station kasoa', ctx)).toMatchObject({
+      categories: ['fuel'],
+      area: { name: 'Kasoa', kind: 'town' },
+      text: 'filling station',
+    });
+    expect(parseRules('university of ghana', ctx).area).toBeNull();
+  });
+
+  it('lets a second name say which town is meant', () => {
+    expect(parseRules('pharmacy atonsu kumasi', ctx)).toMatchObject({
+      area: { name: 'Atonsu', lat: 6.6547 },
+      text: 'pharmacy',
+    });
+    expect(parseRules('hotel anloga volta', ctx).area).toMatchObject({ kind: 'town', lat: 5.794 });
+    expect(parseRules('hotel in anloga kumasi', ctx).area).toMatchObject({
+      kind: 'suburb',
+      relation: 'in',
+    });
+    expect(parseRules('hotel anloga in kumasi', ctx)).toMatchObject({
+      area: { kind: 'suburb', relation: 'in' },
+      text: 'hotel',
+    });
+    // A district written without its compass word, and misspelt.
+    expect(parseRules('hotel mampong akwapem', ctx).area).toMatchObject({ lat: 5.913 });
+    expect(parseRules('hotel mampong akuapem', ctx).area).toMatchObject({ lat: 5.913 });
+    expect(pairInPhrase(ctx, 'atonsu in kumasi')).toMatchObject({ lat: 6.6547 });
+    // Each lies within the other's reach: the smaller one is meant, whichever comes first.
+    expect(pairInPhrase(ctx, 'kumasi atonsu')).toMatchObject({ lat: 6.6547 });
+    // Two names where neither is in the other are not a town and its qualifier.
+    expect(pairInPhrase(ctx, 'osu kasoa')).toBeNull();
+  });
+
+  it('prefers the nearer same-name town, and a town over a bus stop', () => {
+    const keta = { lat: 5.92, lon: 0.99 };
+    const kumasi = { lat: 6.69, lon: -1.62 };
+    expect(parseRules('pharmacy anloga', ctx, { user: keta }).area?.kind).toBe('town');
+    expect(parseRules('pharmacy anloga', ctx, { user: kumasi }).area?.kind).toBe('suburb');
+    const accra = parseRules('hotel mampong', ctx, { user: { lat: 5.6, lon: -0.19 } });
+    expect(accra.area).toMatchObject({ kind: 'village', lat: 5.913 });
+    expect(parseRules('hotel mampong', ctx).area).toMatchObject({ kind: 'town', lat: 7.056 });
+  });
+
+  it('lists the other towns with the same name, each with a query that picks it', () => {
+    const volta = parseRules('hotel anloga volta', ctx).area;
+    const same = volta && sameNameAreas(ctx, volta);
+    expect(same?.where).toBe('Anloga, Volta');
+    expect(same?.others).toEqual([
+      expect.objectContaining({ name: 'Anloga', where: 'Kumasi, Ashanti', query: 'anloga kumasi' }),
+    ]);
+    expect(parseRules(`hotel ${same?.others[0]?.query}`, ctx).area?.kind).toBe('suburb');
+    const osu = parseRules('hotel osu', ctx).area;
+    expect(osu && sameNameAreas(ctx, osu)?.others).toEqual([]);
   });
 
   it('picks the clashing area name nearest the user', () => {

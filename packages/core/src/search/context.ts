@@ -24,14 +24,25 @@ export interface Area {
   lon: number;
   /** Active places assigned to this locality: a cheap "how well-known is this name" signal. */
   places: number;
+  /** Places whose name or address says this name, clustered here (`area_mentions`). */
+  mentions: number;
+  districtId: number | null;
+  regionId: number | null;
+  /**
+   * Not in the gazetteer: a cluster of addresses that name a place the gazetteer lacks, e.g. the
+   * Kumasi suburb Atonsu. Its id is the `area_mentions` id.
+   */
+  fromAddresses?: true;
 }
 
-/** Raw `search_context()` payload: compact arrays, see the migration. */
+/** Raw `search_context()` payload: compact arrays, see the migrations. */
 export interface RawContext {
   categories: [number, string, string, number | null, string[]][];
   regions: [number, string, number | null, number | null][];
   districts: [number, string, number, number | null, number | null][];
   localities: [number, string, string[], LocalityKind, number | null, number, number, number][];
+  /** [id, normalised name, district id, lat, lon, places]. Older payloads lack it. */
+  mentions?: [number, string, number | null, number, number, number][];
 }
 
 export interface SearchContext {
@@ -44,6 +55,8 @@ export interface SearchContext {
   groupPhrases: Set<string>;
   /** Normalised area name → candidate areas, best first. */
   areas: Map<string, Area[]>;
+  districtNames: Map<number, string>;
+  regionNames: Map<number, string>;
   /** Longest phrase / area name, in words, so scans stay bounded. */
   maxWords: number;
 }
@@ -69,14 +82,29 @@ const KIND_WEIGHT: Record<AreaKind, number> = {
   village: 1,
 };
 
+/** A suburb people write in addresses but the gazetteer lacks ranks between suburb and landmark. */
+const FROM_ADDRESSES_WEIGHT = 2.5;
+
 /** How strongly an area name refers to this particular area; used to break name clashes. */
 export function areaPrior(a: Area) {
-  return KIND_WEIGHT[a.kind] + Math.log1p(a.places);
+  const kind = a.fromAddresses ? FROM_ADDRESSES_WEIGHT : KIND_WEIGHT[a.kind];
+  return kind + Math.log1p(a.places + a.mentions);
+}
+
+/** Straight-line km; plenty accurate at Ghana's latitudes for ranking. */
+export function areaKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
+  const x = (a.lon - b.lon) * 111.32 * Math.cos((((a.lat + b.lat) / 2) * Math.PI) / 180);
+  return Math.hypot(x, (a.lat - b.lat) * 110.57);
 }
 
 /** "Accra Metropolitan" is "Accra" in people's mouths; "Ashanti Region" is "Ashanti". */
 const AREA_SUFFIX =
-  / (metropolitan|municipal|district|municipal assembly|district assembly|region)$/;
+  / (metropolitan|metropolis|municipal|district|municipal assembly|district assembly|region)$/;
+/** "Akwapem North" is also just "Akwapem" ("mampong akwapem"). */
+const COMPASS_SUFFIX =
+  / (north|south|east|west|central|north east|north west|south east|south west)$/;
+
+const LOCALITY_KINDS = new Set<AreaKind>(['city', 'town', 'suburb', 'neighbourhood', 'village']);
 
 export function buildContext(raw: RawContext): SearchContext {
   const categories: Category[] = raw.categories.map(([id, slug, name, parentId, synonyms]) => ({
@@ -135,23 +163,86 @@ export function buildContext(raw: RawContext): SearchContext {
     if (!list.some((a) => a.kind === area.kind && a.id === area.id)) list.push(area);
     areas.set(key, list);
   };
+  const regionNames = new Map<number, string>();
+  const districtNames = new Map<number, string>();
+  const regionOf = new Map<number, number>();
   for (const [id, name, lat, lon] of raw.regions) {
+    regionNames.set(id, name);
     if (lat == null || lon == null) continue;
-    const area: Area = { kind: 'region', id, name, lat, lon, places: 0 };
+    const area: Area = {
+      kind: 'region',
+      id,
+      name,
+      lat,
+      lon,
+      places: 0,
+      mentions: 0,
+      districtId: null,
+      regionId: id,
+    };
     add(name, area);
     add(`${name} region`, area);
   }
-  for (const [id, name, , lat, lon] of raw.districts) {
+  for (const [id, name, regionId, lat, lon] of raw.districts) {
+    districtNames.set(id, name);
+    regionOf.set(id, regionId);
     if (lat == null || lon == null) continue;
-    const area: Area = { kind: 'district', id, name, lat, lon, places: 0 };
+    const area: Area = {
+      kind: 'district',
+      id,
+      name,
+      lat,
+      lon,
+      places: 0,
+      mentions: 0,
+      districtId: id,
+      regionId,
+    };
     add(name, area);
     const short = normalize(name).replace(AREA_SUFFIX, '');
     if (short !== normalize(name)) add(short, area);
+    const stem = short.replace(COMPASS_SUFFIX, '');
+    if (stem !== short && stem.length >= 4) add(stem, area);
   }
-  for (const [id, name, alt, kind, , lat, lon, places] of raw.localities) {
-    const area: Area = { kind, id, name, lat, lon, places };
+  for (const [id, name, alt, kind, districtId, lat, lon, places] of raw.localities) {
+    const regionId = districtId == null ? null : (regionOf.get(districtId) ?? null);
+    const area: Area = { kind, id, name, lat, lon, places, mentions: 0, districtId, regionId };
     add(name, area);
     for (const a of alt ?? []) add(a, area);
+  }
+
+  // Address mentions: credit the same-name town they sit in, or, when they clearly outweigh every
+  // town of that name the gazetteer has, stand in for the one it lacks (Kumasi's Atonsu). A
+  // "kumasi" cluster in Sunyani ("Sunyani-Kumasi road") never outweighs Kumasi, so it is dropped.
+  for (const [id, key, districtId, lat, lon, places] of raw.mentions ?? []) {
+    const towns = (areas.get(key) ?? []).filter((a) => LOCALITY_KINDS.has(a.kind));
+    let home: Area | null = null;
+    let homeKm = Infinity;
+    for (const a of towns) {
+      const km = areaKm(a, { lat, lon });
+      const reach = Math.max(3, AREA_RADIUS_M[a.kind as LocalityKind] / 1000);
+      if (km <= reach && km < homeKm) {
+        home = a;
+        homeKm = km;
+      }
+    }
+    if (home) {
+      home.mentions += places;
+    } else if (towns.length && places > Math.max(...towns.map((a) => a.places + a.mentions))) {
+      const first = towns[0] as Area;
+      areas.get(key)?.push({
+        kind: 'suburb',
+        id,
+        name: first.name,
+        lat,
+        lon,
+        places: 0,
+        mentions: places,
+        districtId,
+        regionId: districtId == null ? null : (regionOf.get(districtId) ?? null),
+        fromAddresses: true,
+      });
+    }
   }
   for (const list of areas.values()) list.sort((a, b) => areaPrior(b) - areaPrior(a));
 
@@ -159,7 +250,70 @@ export function buildContext(raw: RawContext): SearchContext {
   for (const k of phrases.keys()) maxWords = Math.max(maxWords, words(k).length);
   for (const k of areas.keys()) maxWords = Math.max(maxWords, Math.min(5, words(k).length));
 
-  return { categories, bySlug, byId, phrases, groupPhrases: fromGroups, areas, maxWords };
+  return {
+    categories,
+    bySlug,
+    byId,
+    phrases,
+    groupPhrases: fromGroups,
+    areas,
+    districtNames,
+    regionNames,
+    maxWords,
+  };
+}
+
+/** Another town with the same name as the one searched, for a "did you mean" row. */
+export interface AreaChoice {
+  name: string;
+  /** "Kwahu West, Eastern": enough to tell same-name towns apart. */
+  where: string;
+  lat: number;
+  lon: number;
+  /** A location phrase that picks exactly this town ("atonsu kwahu west"). */
+  query: string;
+}
+
+function whereLabel(ctx: SearchContext, a: Area) {
+  const district = a.districtId == null ? null : ctx.districtNames.get(a.districtId);
+  const region = a.regionId == null ? null : ctx.regionNames.get(a.regionId);
+  const short = district
+    ? district.replace(/\s+/g, ' ').replace(/ (Metropolitan|Metropolis|Municipal|District)$/i, '')
+    : null;
+  return { label: [short, region].filter(Boolean).join(', '), short };
+}
+
+/**
+ * Where the chosen area is, and the other towns that share its name (up to `max`, best known
+ * first). Empty `others` when the name is unique or the rest are just stops inside the same town.
+ */
+export function sameNameAreas(
+  ctx: SearchContext,
+  chosen: { kind: AreaKind; id: number; name: string; lat: number; lon: number },
+  max = 3,
+): { where: string; others: AreaChoice[] } | null {
+  const list = ctx.areas.get(normalize(chosen.name)) ?? [];
+  const self = list.find(
+    (a) => a.kind === chosen.kind && a.id === chosen.id && a.lat === chosen.lat,
+  );
+  if (!self || self.kind === 'region' || self.kind === 'district') return null;
+  const others: AreaChoice[] = [];
+  const seen: Area[] = [self];
+  for (const a of list) {
+    if (others.length >= max) break;
+    if (!LOCALITY_KINDS.has(a.kind) || seen.some((s) => areaKm(s, a) < 5)) continue;
+    seen.push(a);
+    const { label, short } = whereLabel(ctx, a);
+    if (!label) continue;
+    others.push({
+      name: a.name,
+      where: label,
+      lat: a.lat,
+      lon: a.lon,
+      query: normalize(`${a.name} ${short ?? label}`),
+    });
+  }
+  return { where: whereLabel(ctx, self).label, others };
 }
 
 /** Leaf slugs under a slug: itself if it is a leaf, its children if it is a group. */

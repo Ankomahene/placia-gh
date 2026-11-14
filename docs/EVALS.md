@@ -12,6 +12,7 @@ pnpm eval --tag typo -v            # one slice, with every miss printed
 pnpm eval --set holdout2           # held-out set v2 (judged the meaning arm and browse weights)
 pnpm eval --set holdout3           # held-out set v3 (judged selective AI)
 pnpm eval --set holdout4           # held-out set v4 (judged fuzzy towns and the AI budget)
+pnpm eval --set holdout5           # held-out set v5 (judged same-name towns)
 pnpm eval --ai always              # AI parse for every query (default: only when the rules are unsure)
 pnpm eval --semantic off           # leave out the meaning (embedding) arm
 pnpm eval --budget 20000           # give the AI parse unlimited time: its quality ceiling
@@ -352,8 +353,56 @@ What it shows:
 - Search fell back to the lexical arms each time, as designed. For those searches the gain the meaning arm gives named places ("KATH kumasi") is lost.
 - On Railway, next to the API, this mostly disappears. On the user's side, a phone on a slow network still never waits on the embedding: the server does.
 
+## Round 3: towns that share a name (held-out v5)
+
+Many Ghanaian towns share a name: there are several Atonsus, Anlogas, Mampongs, Akropongs and Odumasis. "drug store atonsu" picked a village in the Eastern Region, because the Kumasi suburb everyone means is not in the gazetteer at all.
+
+The places data knows better: 43 places in Kumasi say "Atonsu" in their name or address. Three changes ([SEARCH.md](SEARCH.md)):
+
+1. **Learn towns from addresses.**
+   - `area_mentions` clusters the places that name a town (DBSCAN in Postgres, ~8 s per ingest).
+   - A cluster credits the same-name town it sits in.
+   - When a cluster outweighs every same-name town in the gazetteer, it stands in for the missing one.
+   - A "Kumasi" cluster in Sunyani (from "Sunyani–Kumasi" addresses) can never outweigh Kumasi, so it is dropped.
+2. **A second name decides** ("atonsu kumasi", "anloga volta", "konongo odumasi"): the town that lies inside the other name wins.
+3. **Otherwise the user's position.** The nearer town wins unless the farther one is much better known; without a position, the best-known one wins. Bus stops never beat the town they are named after.
+
+**Held-out v5** (30 queries, written and checked against the data before any of this code):
+
+- 4 bare names where one town clearly dominates;
+- 13 names with a qualifier;
+- 9 bare names with a user position;
+- 4 unambiguous controls.
+
+Each label is the town people mean, located from the places that name it. Two labels asked for something with no matching place in that town (a pharmacy in Volta's Anloga); their category was changed before any run.
+
+**Success@10** (is the right town in the top 10?) is the main measure here. Precision can't reach 100% in a town with two pharmacies.
+
+| Held-out v5                 | Success@10  | P@10      |
+| --------------------------- | ----------- | --------- |
+| Before                      | 70%         | 52%       |
+| After                       | **100%**    | **73%**   |
+| · bare names                | 50% → 100%  | 28% → 50% |
+| · with a qualifier          | 54% → 100%  | 37% → 76% |
+| · with the user's position¹ | 89% → 100%  | 68% → 72% |
+| · controls                  | 100% → 100% | 88% → 88% |
+
+¹ Not truly held out. The distance weight (3) was chosen by reasoning through examples like "Akropong from Accra", which are this slice's cases. It shows the rule does what it says, not that it generalises.
+
+- **No AI involved.** With the default selective policy, all 30 queries stayed with the rules: same results, no tokens.
+- **Also fixed on older sets:**
+  - "bank swedru" now finds Agona Swedru (held-out v3, P@10 0 → 100%);
+  - "manhyia palace" and "ridge hospital" resolve to the right town.
+- **Two regressions caught on dev and fixed before this write-up:**
+  - In "filling station kasoa", "station" is also a bus stop's name, so it was taken for a qualifier and the fuel category was lost. Words doing category duty can no longer be qualifiers.
+  - Round 2's misspelt-town fix had bent "university of ghana" into the town Ghanata. Round 2 was judged on v4 without re-running dev, which is how it slipped. Fuzzy matching now skips a word after "of".
+- **Dev after both fixes:** known MRR 0.936 and browse P@10 85%, the same as before.
+
+**A finding about the meaning arm:** "UMaT tarkwa" (v3) ranks UMaT first only when the embedding misses its cutoff. With the meaning arm on, "umat" means little to the embedding and the arm promotes other Tarkwa places (known MRR on v3: 1.0 without the meaning arm, 0.929 with it). Short abbreviations should probably skip the meaning arm.
+
 Next:
 
 - **Claude versus OpenAI** on the same sets once an Anthropic key exists: quality, latency from Ghana, and tokens.
-- **Prefer the suburb over a far-away village** when a town name is ambiguous ("atonsu").
+- **Skip the meaning arm for short abbreviations** ("umat", "upsa"); judge on held-out v6.
+- **Show the "did you mean" towns** (`meta.area.others`) in the app.
 - **Fill the data gaps** with the Foursquare dump and community contributions.

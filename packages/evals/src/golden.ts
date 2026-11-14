@@ -1732,7 +1732,7 @@ export const HOLDOUT_V4: GoldenCase[] = [
     'pure-browse',
     'transport',
   ]),
-  b4('x-church-tafo', 'church tafo', ['church', 'worship'], V4.tafo, 3, 'Tafo', [
+  b4('x-church-tafo', 'churches tafo', ['church', 'worship'], V4.tafo, 3, 'Tafo', [
     'pure-browse',
     'faith',
   ]),
@@ -1904,4 +1904,206 @@ export const HOLDOUT_V4: GoldenCase[] = [
   known('x-k-vvu', 'valley view university', 'valley view', ['education']),
   known('x-k-vvu-typo', 'valley veiw university', 'valley view', ['education', 'typo']),
   known('x-k-upsa', 'UPSA', 'university of professional studies', ['education', 'abbreviation']),
+];
+
+/**
+ * Held-out set v5 (2026-11-14), written before the same-name town work and never looked at
+ * while making it. Many Ghanaian towns share a name (Atonsu, Anloga, Mampong, Akropong, Agogo).
+ * Each label is the town people mean, taken from where the places that name it actually are:
+ * - bare: one candidate clearly dominates, so it should win with no other hint;
+ * - qualified: a second name picks the town ("anloga volta", "konongo odumasi");
+ * - located: a bare name with the user's position; the nearer town should win;
+ * - control: an unambiguous town, which must not get worse.
+ */
+const V5 = {
+  atonsuKsi: [6.652, -1.59],
+  anlogaKsi: [6.687, -1.595],
+  anlogaVolta: [5.794, 0.895],
+  mampongAsh: [7.057, -1.401],
+  mampongAkw: [5.913, -0.14],
+  agogoTown: [6.801, -1.085],
+  agogoKsi: [6.651, -1.593],
+  tafoKsi: [6.734, -1.609],
+  tafoKintampo: [8.03, -1.733],
+  akropongAkw: [5.971, -0.089],
+  akropongAsh: [6.742, -1.731],
+  aboaboKsi: [6.699, -1.598],
+  matahekoAccra: [5.564, -0.253],
+  matahekoAfienya: [5.762, 0.003],
+  odumasiKonongo: [6.623, -1.215],
+  tanosoKsi: [6.697, -1.691],
+  nsutaTarkwa: [5.273, -1.982],
+  koforidua: [6.1, -0.261],
+  sunyani: [7.338, -2.331],
+  adum: [6.694, -1.623],
+  // User positions.
+  kumasi: [6.69, -1.62],
+  keta: [5.92, 0.99],
+  accra: [5.6, -0.19],
+  madina: [5.68, -0.17],
+  tema: [5.7, 0.0],
+  atonsuHome: [6.66, -1.6],
+  kintampo: [8.05, -1.73],
+  tarkwa: [5.3, -1.99],
+} as const satisfies Record<string, LatLon>;
+
+const b5 = (
+  id: string,
+  q: string,
+  categories: string[],
+  at: LatLon,
+  km: number,
+  tags: string[],
+  user?: LatLon,
+) => browse(id, q, categories, at, km, tags, { user });
+
+const PHARMACY = ['pharmacy'];
+const HEALTH = ['hospital', 'clinic'];
+const STAY = ['hotel', 'guest-house'];
+const SCHOOL = ['school', 'shs'];
+
+export const HOLDOUT_V5: GoldenCase[] = [
+  // Bare names: the bigger, better-known town should win.
+  b5('y-pharm-atonsu', 'pharmacy atonsu', PHARMACY, V5.atonsuKsi, 3, ['bare', 'health']),
+  b5('y-school-agogo', 'school agogo', SCHOOL, V5.agogoTown, 5, ['bare', 'education']),
+  b5('y-hosp-mampong', 'hospital mampong', HEALTH, V5.mampongAsh, 5, ['bare', 'health']),
+  b5('y-market-aboabo', 'market aboabo', ['market'], V5.aboaboKsi, 3, ['bare', 'shopping']),
+
+  // Qualified: a second name picks the town.
+  b5('y-drug-atonsu-ksi', 'drug store atonsu kumasi', PHARMACY, V5.atonsuKsi, 3, [
+    'qualified',
+    'health',
+  ]),
+  b5('y-church-anloga-ksi', 'church in anloga kumasi', ['church'], V5.anlogaKsi, 3, [
+    'qualified',
+    'faith',
+  ]),
+  b5('y-hotel-anloga-volta', 'hotel anloga volta', STAY, V5.anlogaVolta, 6, ['qualified', 'stay']),
+  b5('y-hosp-mampong-akw', 'hospital mampong akwapem', HEALTH, V5.mampongAkw, 4, [
+    'qualified',
+    'health',
+  ]),
+  b5('y-school-akropong-akw', 'school akropong akuapem', SCHOOL, V5.akropongAkw, 4, [
+    'qualified',
+    'education',
+  ]),
+  b5('y-bank-mampong-ash', 'bank mampong ashanti', ['bank'], V5.mampongAsh, 5, [
+    'qualified',
+    'money',
+  ]),
+  b5('y-school-tafo-ksi', 'school in tafo kumasi', SCHOOL, V5.tafoKsi, 3, [
+    'qualified',
+    'education',
+  ]),
+  b5('y-hotel-nsuta-tarkwa', 'hotel nsuta tarkwa', STAY, V5.nsutaTarkwa, 5, ['qualified', 'stay']),
+  b5('y-church-konongo-odumasi', 'church konongo odumasi', ['church'], V5.odumasiKonongo, 4, [
+    'qualified',
+    'faith',
+  ]),
+  b5(
+    'y-rest-mataheko-accra',
+    'restaurant mataheko accra',
+    ['restaurant', 'local-food', 'fast-food'],
+    V5.matahekoAccra,
+    3,
+    ['qualified', 'food'],
+  ),
+  b5('y-pharm-aboabo-ksi', 'pharmacy aboabo, kumasi', PHARMACY, V5.aboaboKsi, 3, [
+    'qualified',
+    'health',
+  ]),
+  b5('y-fuel-tanoso-ksi', 'fuel station in tanoso kumasi', ['fuel'], V5.tanosoKsi, 3, [
+    'qualified',
+    'transport',
+  ]),
+  b5('y-hotel-agogo-ash', 'hotel agogo ashanti', STAY, V5.agogoTown, 6, ['qualified', 'stay']),
+
+  // Located: a bare name and the user's position; the nearer town should win.
+  b5(
+    'y-pharm-anloga-ksi',
+    'pharmacy anloga',
+    PHARMACY,
+    V5.anlogaKsi,
+    3,
+    ['located', 'health'],
+    V5.kumasi,
+  ),
+  b5(
+    'y-school-anloga-keta',
+    'schools anloga',
+    SCHOOL,
+    V5.anlogaVolta,
+    6,
+    ['located', 'education'],
+    V5.keta,
+  ),
+  b5(
+    'y-hotel-akropong-accra',
+    'hotel akropong',
+    STAY,
+    V5.akropongAkw,
+    5,
+    ['located', 'stay'],
+    V5.accra,
+  ),
+  b5(
+    'y-gh-akropong-ksi',
+    'guest house akropong',
+    STAY,
+    V5.akropongAsh,
+    5,
+    ['located', 'stay'],
+    V5.kumasi,
+  ),
+  b5(
+    'y-clinic-mampong-madina',
+    'clinic mampong',
+    HEALTH,
+    V5.mampongAkw,
+    5,
+    ['located', 'health'],
+    V5.madina,
+  ),
+  b5(
+    'y-church-mataheko-tema',
+    'church mataheko',
+    ['church'],
+    V5.matahekoAfienya,
+    4,
+    ['located', 'faith'],
+    V5.tema,
+  ),
+  b5(
+    'y-school-agogo-ksi',
+    'basic school agogo',
+    SCHOOL,
+    V5.agogoKsi,
+    2.5,
+    ['located', 'education'],
+    V5.atonsuHome,
+  ),
+  b5(
+    'y-church-tafo-kintampo',
+    'chapel tafo',
+    ['church'],
+    V5.tafoKintampo,
+    4,
+    ['located', 'faith'],
+    V5.kintampo,
+  ),
+  b5(
+    'y-pharm-nsuta-tarkwa',
+    'pharmacy nsuta',
+    PHARMACY,
+    V5.nsutaTarkwa,
+    5,
+    ['located', 'health'],
+    V5.tarkwa,
+  ),
+
+  // Controls: one obvious town.
+  b5('y-hotel-koforidua', 'hotel koforidua', STAY, V5.koforidua, 6, ['control', 'stay']),
+  b5('y-bank-sunyani', 'bank sunyani', ['bank'], V5.sunyani, 6, ['control', 'money']),
+  b5('y-super-adum', 'supermarket adum', ['supermarket'], V5.adum, 2, ['control', 'shopping']),
+  b5('y-pharm-ayigya', 'pharmacy ayigya', PHARMACY, [6.692, -1.578], 2.5, ['control', 'health']),
 ];
