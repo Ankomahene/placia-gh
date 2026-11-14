@@ -248,6 +248,32 @@ export type Database = {
           },
         ]
       }
+      place_embeddings: {
+        Row: {
+          embedded_at: string
+          embedding: unknown
+          place_id: string
+        }
+        Insert: {
+          embedded_at?: string
+          embedding: unknown
+          place_id: string
+        }
+        Update: {
+          embedded_at?: string
+          embedding?: unknown
+          place_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_embeddings_place_id_fkey"
+            columns: ["place_id"]
+            isOneToOne: true
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_photos: {
         Row: {
           cloudinary_public_id: string
@@ -351,7 +377,6 @@ export type Database = {
           description: string | null
           district_id: number | null
           email: string | null
-          embedding: unknown
           id: string
           locality_id: number | null
           location: unknown
@@ -379,7 +404,6 @@ export type Database = {
           description?: string | null
           district_id?: number | null
           email?: string | null
-          embedding?: unknown
           id?: string
           locality_id?: number | null
           location: unknown
@@ -407,7 +431,6 @@ export type Database = {
           description?: string | null
           district_id?: number | null
           email?: string | null
-          embedding?: unknown
           id?: string
           locality_id?: number | null
           location?: unknown
@@ -599,9 +622,17 @@ export type Database = {
     Functions: {
       admin_data_quality: { Args: never; Returns: Json }
       admin_overview: { Args: never; Returns: Json }
+      embedding_queue: {
+        Args: { p_limit?: number }
+        Returns: {
+          id: string
+          input: string
+        }[]
+      }
       ingest_prune: { Args: { p_since: string }; Returns: Json }
       ingest_slugs: { Args: never; Returns: Json }
       ping: { Args: never; Returns: string }
+      place_embedding_input: { Args: { p_id: string }; Returns: string }
       search_context: { Args: never; Returns: Json }
       search_places: {
         Args: {
@@ -633,6 +664,10 @@ export type Database = {
           score: number
           slug: string
         }[]
+      }
+      set_embeddings: {
+        Args: { p_ids: string[]; p_vectors: string[] }
+        Returns: number
       }
     }
     Enums: {

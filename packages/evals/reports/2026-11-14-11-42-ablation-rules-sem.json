@@ -1,0 +1,367 @@
+{
+  "suite": "search-golden-v1",
+  "at": "2026-11-14T11:42:20.174Z",
+  "mode": "rules",
+  "rows": [
+    {
+      "variant": "all signals",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.936,
+          "hit1": 0.911,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.846,
+          "ndcg10": 0.867,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 799,
+          "p95": 2962,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 772,
+          "dbP95": 2044
+        }
+      }
+    },
+    {
+      "variant": "− title",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.891,
+          "hit1": 0.821,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.87,
+          "ndcg10": 0.891,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 525,
+          "p95": 1332,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 525,
+          "dbP95": 1207
+        }
+      }
+    },
+    {
+      "variant": "− full-text",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.943,
+          "hit1": 0.911,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.874,
+          "ndcg10": 0.889,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 576,
+          "p95": 3112,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 576,
+          "dbP95": 3112
+        }
+      }
+    },
+    {
+      "variant": "− trigram name",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.879,
+          "hit1": 0.804,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.868,
+          "ndcg10": 0.891,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 517,
+          "p95": 1067,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 517,
+          "dbP95": 1024
+        }
+      }
+    },
+    {
+      "variant": "− category",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.938,
+          "hit1": 0.911,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.724,
+          "ndcg10": 0.746,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 530,
+          "p95": 1147,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 530,
+          "dbP95": 1147
+        }
+      }
+    },
+    {
+      "variant": "− proximity",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.927,
+          "hit1": 0.893,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.77,
+          "ndcg10": 0.789,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 589,
+          "p95": 1389,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 589,
+          "dbP95": 1389
+        }
+      }
+    },
+    {
+      "variant": "− confidence",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.938,
+          "hit1": 0.911,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.859,
+          "ndcg10": 0.874,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 847,
+          "p95": 2040,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 847,
+          "dbP95": 2040
+        }
+      }
+    },
+    {
+      "variant": "− semantic",
+      "overall": {
+        "cases": 158,
+        "known": {
+          "n": 56,
+          "mrr": 0.908,
+          "hit1": 0.875,
+          "hit10": 0.982
+        },
+        "browse": {
+          "n": 102,
+          "p10": 0.848,
+          "ndcg10": 0.87,
+          "success10": 0.971
+        },
+        "zeroResultRate": 0.006,
+        "errors": 0,
+        "parse": {
+          "n": 102,
+          "categories": 0.941,
+          "area": 1,
+          "nearMe": 1,
+          "openNow": 1,
+          "cheap": 1,
+          "allCorrect": 0.941
+        },
+        "tokens": null,
+        "fallbacks": {
+          "not_configured": 158
+        },
+        "paths": {
+          "rules": 158
+        },
+        "latencyMs": {
+          "p50": 675,
+          "p95": 2050,
+          "parseP50": 0,
+          "embedP50": 0,
+          "parseP95": 0,
+          "dbP50": 675,
+          "dbP95": 2049
+        }
+      }
+    }
+  ]
+}

@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { LLMRouter } from '../ai/router';
 import { expandCategory, type SearchContext } from './context';
 import type { Intent, ParseResult } from './intent';
-import { findCategories, fuzzyArea, parseRules, pickArea } from './rules';
+import { findCategories, fuzzyArea, parseRules, pickArea, rulesUnsure } from './rules';
 import { normalize, words } from './text';
 
 /**
@@ -125,6 +125,11 @@ export interface ParseOptions {
   user?: { lat: number; lon: number } | null;
   /** Force a path, for evals and debugging. */
   mode?: 'auto' | 'rules' | 'ai';
+  /**
+   * 'selective' (default): call the AI only when the rule parse is unsure (rulesUnsure()).
+   * 'always': every query goes to the AI first.
+   */
+  aiPolicy?: 'selective' | 'always';
 }
 
 /** Parse a query: AI when configured and fast enough, rules otherwise. Never throws. */
@@ -144,9 +149,25 @@ export async function parseQuery(
       fallback: opts.mode === 'rules' ? undefined : 'not_configured',
     };
   }
+  // The rules are sure of most queries: answer at once, no AI latency or cost.
+  let aiReason: string | undefined;
+  if (opts.mode !== 'ai' && (opts.aiPolicy ?? 'selective') === 'selective') {
+    const intent = rules();
+    const reason = rulesUnsure(query, intent, ctx);
+    if (!reason) {
+      return { intent, path: 'rules', latencyMs: elapsed(), fallback: 'rules_confident' };
+    }
+    aiReason = reason;
+  }
   // Every provider recently failed: answer from rules now, the breaker retries later.
   if (opts.mode !== 'ai' && !opts.llm.available()) {
-    return { intent: rules(), path: 'rules', latencyMs: elapsed(), fallback: 'circuit_open' };
+    return {
+      intent: rules(),
+      path: 'rules',
+      latencyMs: elapsed(),
+      fallback: 'circuit_open',
+      aiReason,
+    };
   }
 
   const key = normalize(query);
@@ -159,6 +180,7 @@ export async function parseQuery(
       provider: hit.provider,
       model: hit.model,
       cached: true,
+      aiReason,
     };
   }
 
@@ -195,6 +217,7 @@ export async function parseQuery(
       model: res.model,
       inputTokens: res.usage.inputTokens,
       outputTokens: res.usage.outputTokens,
+      aiReason,
     };
   } catch (err) {
     return {
@@ -202,6 +225,7 @@ export async function parseQuery(
       path: 'rules',
       latencyMs: elapsed(),
       fallback: err instanceof Error ? err.message.slice(0, 200) : 'ai_failed',
+      aiReason,
     };
   } finally {
     clearTimeout(timer);

@@ -6,11 +6,21 @@
  *   pnpm eval --chaos hang         # AI "configured" but hangs: measures graceful degradation
  *   pnpm eval --tag typo -v        # one slice, print every miss
  *   pnpm eval --save               # write reports/ and record the run in eval_runs
+ *   pnpm eval --semantic off       # leave out the embedding arm (on whenever OPENAI_API_KEY is set)
+ *   pnpm eval --browse-weights '{"semantic":0.3}'   # weights for pure category queries only
+ *   pnpm eval --ai always          # AI parse for every query (default: selective, only when rules are unsure)
+ *   pnpm eval --budget 20000       # AI parse time budget in ms (production: 2500); a high value measures the AI's ceiling
  */
 import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { aiConfigFromEnv, createLLM, type LLMProvider, LLMRouter } from '@placia/core/ai';
+import {
+  aiConfigFromEnv,
+  createEmbedder,
+  createLLM,
+  type LLMProvider,
+  LLMRouter,
+} from '@placia/core/ai';
 import {
   expandCategory,
   type FusionWeights,
@@ -23,7 +33,7 @@ import {
   search,
 } from '@placia/core/search';
 import { createServiceClient } from '@placia/db';
-import { GOLDEN, type GoldenCase, HOLDOUT } from './golden';
+import { GOLDEN, type GoldenCase, HOLDOUT, HOLDOUT_V2, HOLDOUT_V3, HOLDOUT_V4 } from './golden';
 import { hitAt, mean, ndcgAt, percentile, precisionAt, reciprocalRank, round } from './metrics';
 
 const args = process.argv.slice(2);
@@ -37,10 +47,22 @@ const tag = flag('tag');
 const verbose = args.includes('-v') || args.includes('--verbose');
 const save = args.includes('--save');
 const ablate = args.includes('--ablate');
-const set = (flag('set') ?? 'dev') as 'dev' | 'holdout' | 'all';
+const set = (flag('set') ?? 'dev') as
+  | 'dev'
+  | 'holdout'
+  | 'holdout2'
+  | 'holdout3'
+  | 'holdout4'
+  | 'all';
 const suite = set === 'dev' ? 'search-golden-v1' : `search-golden-v1-${set}`;
 const weightsArg = flag('weights')
   ? (JSON.parse(flag('weights') as string) as Partial<FusionWeights>)
+  : undefined;
+const semanticFlag = flag('semantic');
+const budgetMs = Number(flag('budget') ?? 2500);
+const aiPolicy = (flag('ai') ?? 'selective') as 'selective' | 'always';
+const browseArg = flag('browse-weights')
+  ? (JSON.parse(flag('browse-weights') as string) as Partial<FusionWeights>)
   : undefined;
 const K = 10;
 
@@ -76,6 +98,17 @@ function makeLLM() {
   }
   return createLLM(cfg);
 }
+
+function makeEmbedder() {
+  if (semanticFlag === 'off') return null;
+  const cfg = aiConfigFromEnv();
+  if (!cfg.openaiApiKey) {
+    if (semanticFlag === 'on') throw new Error('--semantic on needs OPENAI_API_KEY');
+    return null;
+  }
+  return createEmbedder(cfg);
+}
+const embedder = makeEmbedder();
 
 function relevant(c: GoldenCase, r: SearchResponse['results'][number], ctx: SearchContext) {
   const e = c.expect;
@@ -126,7 +159,9 @@ interface CaseResult {
   parse: Record<string, boolean> | null;
   path: string;
   fallback?: string;
-  ms: { total: number; parse: number; db: number };
+  aiReason?: string;
+  ms: { total: number; parse: number; db: number; embed: number };
+  tokens: { in: number; out: number } | null;
   top: string[];
   intent: Intent;
   error?: string;
@@ -152,7 +187,10 @@ async function runCases(
         rpc,
         context: ctx,
         llm,
-        aiBudgetMs: 2500,
+        embedder,
+        browseWeights: browseArg,
+        aiPolicy,
+        aiBudgetMs: budgetMs,
       });
       const rel = res.results.map((r) => relevant(c, r, ctx));
       results.push({
@@ -169,11 +207,17 @@ async function runCases(
         parse: scoreParse(c, res.intent, ctx),
         path: res.meta.parse.path,
         fallback: res.meta.parse.fallback,
+        aiReason: res.meta.parse.aiReason,
         ms: {
           total: res.meta.timings.totalMs,
           parse: res.meta.timings.parseMs,
           db: res.meta.timings.dbMs + res.meta.timings.anchorMs,
+          embed: res.meta.timings.embedMs,
         },
+        tokens:
+          res.meta.parse.inputTokens != null
+            ? { in: res.meta.parse.inputTokens, out: res.meta.parse.outputTokens ?? 0 }
+            : null,
         top: res.results
           .slice(0, 5)
           .map(
@@ -196,7 +240,8 @@ async function runCases(
         ndcg10: 0,
         parse: null,
         path: 'error',
-        ms: { total: 0, parse: 0, db: 0 },
+        ms: { total: 0, parse: 0, db: 0, embed: 0 },
+        tokens: null,
         top: [],
         intent: {} as Intent,
         error: err instanceof Error ? err.message : String(err),
@@ -249,6 +294,30 @@ function summarise(rs: CaseResult[]) {
           ),
         }
       : null,
+    // Mean tokens per AI-parsed query (cache hits and fallbacks excluded).
+    tokens: (() => {
+      const t = rs.filter((r) => r.tokens).map((r) => r.tokens as { in: number; out: number });
+      return t.length
+        ? {
+            n: t.length,
+            in: round(mean(t.map((x) => x.in))),
+            out: round(mean(t.map((x) => x.out))),
+          }
+        : null;
+    })(),
+    fallbacks: Object.fromEntries(
+      [...new Set(rs.map((r) => r.fallback).filter((x): x is string => !!x))].map((f) => [
+        f,
+        rs.filter((r) => r.fallback === f).length,
+      ]),
+    ),
+    // Why the rules were judged unsure (selective policy): how often, and for what.
+    aiReasons: Object.fromEntries(
+      [...new Set(rs.map((r) => r.aiReason).filter((x): x is string => !!x))].map((a) => [
+        a,
+        rs.filter((r) => r.aiReason === a).length,
+      ]),
+    ),
     paths: Object.fromEntries(
       [...new Set(rs.map((r) => r.path))].map((p) => [p, rs.filter((r) => r.path === p).length]),
     ),
@@ -260,6 +329,14 @@ function summarise(rs: CaseResult[]) {
       p95: percentile(
         rs.map((r) => r.ms.total),
         95,
+      ),
+      parseP50: percentile(
+        rs.map((r) => r.ms.parse),
+        50,
+      ),
+      embedP50: percentile(
+        rs.map((r) => r.ms.embed),
+        50,
       ),
       parseP95: percentile(
         rs.map((r) => r.ms.parse),
@@ -286,12 +363,24 @@ const ABLATIONS: [string, Partial<FusionWeights>][] = [
   ['− category', { category: 0 }],
   ['− proximity', { proximity: 0 }],
   ['− confidence', { confidence: 0 }],
+  ['− semantic', { semantic: 0 }],
 ];
 
 async function main() {
   const ctx = await loadSearchContext(rpc as never);
   const llm = makeLLM();
-  const pool = set === 'holdout' ? HOLDOUT : set === 'all' ? [...GOLDEN, ...HOLDOUT] : GOLDEN;
+  const pool =
+    set === 'holdout'
+      ? HOLDOUT
+      : set === 'holdout2'
+        ? HOLDOUT_V2
+        : set === 'holdout3'
+          ? HOLDOUT_V3
+          : set === 'holdout4'
+            ? HOLDOUT_V4
+            : set === 'all'
+              ? [...GOLDEN, ...HOLDOUT]
+              : GOLDEN;
   const cases = pool.filter((c) => !tag || c.tags.includes(tag));
   // One warm-up so connection setup doesn't land on the first case's latency.
   await search({ q: 'warm up', limit: 1 }, { rpc, context: ctx, llm: null });
@@ -312,7 +401,7 @@ async function main() {
       const dir = path.join(import.meta.dirname, '..', 'reports');
       fs.mkdirSync(dir, { recursive: true });
       const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-      const file = path.join(dir, `${stamp}-ablation-${mode}.json`);
+      const file = path.join(dir, `${stamp}-ablation-${mode}${embedder ? '-sem' : ''}.json`);
       fs.writeFileSync(
         file,
         `${JSON.stringify({ suite, at: new Date().toISOString(), mode, rows }, null, 2)}\n`,
@@ -359,8 +448,11 @@ async function main() {
     k: K,
     provider: llm?.primary.name ?? null,
     model: llm?.primary.model ?? null,
-    semantic: false,
+    semantic: embedder ? `${embedder.model}@${embedder.dimensions}` : false,
+    aiBudgetMs: budgetMs,
+    aiPolicy,
     weights: weightsArg ?? null,
+    browseWeights: browseArg ?? null,
     networkRttMs: rttMs,
     dirty,
   };
@@ -368,7 +460,7 @@ async function main() {
   // ---- Console report ----
   const pct = (x: number | null | undefined) => (x == null ? '—' : `${Math.round(x * 100)}%`);
   console.log(
-    `\nSearch eval · ${results.length} cases · mode=${mode}${chaos ? ` chaos=${chaos}` : ''} · ${sha ?? ''}${dirty ? '+dirty' : ''}`,
+    `\nSearch eval · ${set} · ${results.length} cases · mode=${mode}${chaos ? ` chaos=${chaos}` : ''} · ${sha ?? ''}${dirty ? '+dirty' : ''}`,
   );
   if (overall.known)
     console.log(
@@ -386,7 +478,10 @@ async function main() {
     `Zero results ${pct(overall.zeroResultRate)}  errors ${overall.errors}  paths ${JSON.stringify(overall.paths)}`,
   );
   console.log(
-    `Latency ms   p50 ${overall.latencyMs.p50}  p95 ${overall.latencyMs.p95}  (db p50 ${overall.latencyMs.dbP50} / p95 ${overall.latencyMs.dbP95}, parse p95 ${overall.latencyMs.parseP95}; network RTT ${rttMs})`,
+    `Latency ms   p50 ${overall.latencyMs.p50}  p95 ${overall.latencyMs.p95}  (db p50 ${overall.latencyMs.dbP50} / p95 ${overall.latencyMs.dbP95}, parse p50 ${overall.latencyMs.parseP50} / p95 ${overall.latencyMs.parseP95}, embed p50 ${overall.latencyMs.embedP50}; network RTT ${rttMs})`,
+  );
+  console.log(
+    `AI           ${aiPolicy} · asked ${JSON.stringify(overall.aiReasons)} · budget ${budgetMs} ms  semantic ${config.semantic || 'off'}  tokens/query ${overall.tokens ? `${overall.tokens.in} in + ${overall.tokens.out} out (n=${overall.tokens.n})` : '—'}  fallbacks ${JSON.stringify(overall.fallbacks)}`,
   );
   console.log('\nBy tag');
   for (const t of tags) {
@@ -431,7 +526,18 @@ async function main() {
     const dir = path.join(import.meta.dirname, '..', 'reports');
     fs.mkdirSync(dir, { recursive: true });
     const stamp = new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
-    const name = `${stamp}-${set}-${chaos ? `chaos-${chaos}` : mode}`;
+    const name = [
+      stamp,
+      set,
+      chaos ? `chaos-${chaos}` : mode,
+      embedder ? 'sem' : null,
+      budgetMs !== 2500 ? `b${budgetMs}` : null,
+      llm && !chaos && aiPolicy === 'always' ? 'ai-always' : null,
+      browseArg ? 'browsew' : null,
+      tag,
+    ]
+      .filter(Boolean)
+      .join('-');
     const report = {
       suite,
       at: new Date().toISOString(),

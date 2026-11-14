@@ -3,20 +3,24 @@
 `GET /api/search?q=…[&lat=…&lon=…]` turns a plain-English query into ranked places. Two stages, each with a fallback:
 
 ```
-query ──► understand ──────────────► retrieve + rank (Postgres) ──► results + meta
-          AI parse (Claude → OpenAI)   search_places(): 6 arms fused with RRF
-          ↘ rule parse on timeout,      no LLM in this step
-            error or open breaker
+query ──► understand ─────────────────► retrieve + rank (Postgres) ──► results + meta
+          rule parse; sure? ── yes ──►  search_places(): 6 arms fused with RRF
+              │ no                       no LLM in this step
+              ▼
+          AI parse (Claude → OpenAI)
+          ↘ rule parse on timeout, error or open breaker
 ```
 
-Code: `packages/core/src/search` (framework-free), SQL: `supabase/migrations/2026111400020*`–`400`, route: `apps/web/app/api/search/route.ts`.
+Code: `packages/core/src/search` (framework-free), SQL: `supabase/migrations/2026111400020*`–`700`, route: `apps/web/app/api/search/route.ts`. Place embeddings: `pnpm ingest embed`.
 
 ## 1. Understanding the query
 
 Both parsers produce the same `Intent`:
 
 ```ts
-{ text, categories, area, anchor, nearMe, openNow, cheap }
+{
+  text, categories, area, anchor, nearMe, openNow, cheap;
+}
 // "cheap hotel around kaneshi"  →  text "hotel", categories [hotel],
 //   area Kaneshie (suburb, near), cheap: true
 ```
@@ -28,7 +32,14 @@ Both parsers produce the same `Intent`:
   - **Area position matters:**
     - A trailing area name filters ("tailor tamale").
     - A leading one only steers ranking ("ridge hospital", "accra mall"), because it is usually part of a name.
-  - **Unknown landmarks**: after a preposition, an unknown place ("near knust") becomes an *anchor*. The engine looks it up as a place and searches around it.
+  - **Unknown landmarks**: after a preposition, an unknown place ("near knust") becomes an _anchor_. The engine looks it up as a place and searches around it.
+- **Selective AI** (`rulesUnsure()`): the rule parse answers whenever it can be trusted, which is most queries. The AI is asked only when the rules are unsure:
+  - the query is phrased as a request ("where can i…", "i need…", "somewhere to…");
+  - it is vague (more than 3 categories, from a broad word like "food");
+  - it contradicts itself ("near me" plus a named area);
+  - it is four or more words the rules don't know.
+
+  On short category and name queries the AI is no better and sometimes worse, and it costs about 1.6 s and ~600 tokens. `meta.parse.aiReason` says why the AI was asked; `fallback: rules_confident` says it wasn't. Measured in [EVALS.md](EVALS.md), "Selective AI".
 - **AI parser** (`ai-parse.ts`): Claude, with OpenAI as fallback, returns structured output against a fixed schema.
   - **Nothing it says reaches SQL unchecked**: categories must be real slugs, and locations must resolve in our gazetteer.
   - **Time budget**: 2.5 s in total, then the rule parse is used. A late AI answer is still cached for the next identical query.
@@ -38,20 +49,22 @@ Both parsers produce the same `Intent`:
 
 `search_places()` runs cheap retrieval arms over one scope (status, radius, district, region). It fuses their ranks with Reciprocal Rank Fusion, `Σ wᵢ / (60 + rankᵢ)`:
 
-| Arm      | Finds                                                      | Why                                        |
-| -------- | ---------------------------------------------------------- | ------------------------------------------ |
-| title    | every query word in the place's own name                   | known items: "labadi beach hotel"          |
+| Arm      | Finds                                                     | Why                                        |
+| -------- | --------------------------------------------------------- | ------------------------------------------ |
+| title    | every query word in the place's own name                  | known items: "labadi beach hotel"          |
 | fts      | weighted full text: name A, category B, area C, address D | general relevance; AND-matches rank first  |
-| name     | trigram word similarity on the name                        | misspellings: "acra mall", "korlebu"       |
-| category | places in the parsed categories, nearest first             | "pharmacy" finds pharmacies not so named   |
-| semantic | pgvector cosine distance (when embeddings exist)           | descriptive queries (pending embeddings)   |
-| near     | nearest places, when there is nothing else to go on        | "what's near me"                           |
+| name     | trigram word similarity on the name                       | misspellings: "acra mall", "korlebu"       |
+| category | places in the parsed categories, nearest first            | "pharmacy" finds pharmacies not so named   |
+| semantic | pgvector cosine distance to the query's embedding         | partial names, abbreviations, descriptions |
+| near     | nearest places, when there is nothing else to go on       | "what's near me"                           |
 
 - **Proximity** to the search centre is fused as one more ranking.
 - **Confidence** (from source agreement) scales the final score.
 - **Intent-aware weights** (`fusionWeights()`):
   - A "kind of place around here" query raises proximity.
   - A query with a town name in its text lowers the trigram arm.
+  - A pure category query (every content word is a category word) switches the meaning arm off and halves the title and trigram arms. It is never embedded.
+- **Query embedding** runs alongside the AI parse, on the rule parse's "what" (area words stripped). It is cached, and it is abandoned after 1.2 s, in which case the other arms answer alone.
 - **Result metadata**: each result carries the arm ranks that found it (`arms`), so every ranking can be explained.
 
 The engine also:

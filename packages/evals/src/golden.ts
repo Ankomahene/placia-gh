@@ -36,6 +36,16 @@ export const LABEL_FIXES = [
     was: '^achimota mall$',
     why: 'the mall was renamed Achimota Retail Centre',
   },
+  {
+    id: 'x-k-tamale-mosque',
+    was: 'tamale central mosque',
+    why: 'the data names it "Central Mosque", in Tamale',
+  },
+  {
+    id: 'x-k-palace-mall',
+    was: 'palace mall',
+    why: '"Palace Shopping Mall" is the same mall',
+  },
 ] as const;
 
 export type LatLon = readonly [number, number];
@@ -1106,4 +1116,792 @@ export const HOLDOUT: GoldenCase[] = [
   browse('h-post-ho', 'post office ho', ['post-office'], AT.ho, 8, ['public'], {
     parse: { categories: ['post-office'], area: 'Ho' },
   }),
+];
+
+/**
+ * Held-out set v2 (2026-11-14), written before the pure-browse weights were chosen and never
+ * looked at while choosing them. It judges that change and the meaning (embedding) arm.
+ * Towns not used in the dev set; weighted toward pure category queries, descriptive requests
+ * and known items, the three kinds the change can move.
+ */
+const V2 = {
+  ashaiman: [5.69, -0.03],
+  elmina: [5.085, -1.35],
+  nungua: [5.6, -0.08],
+  obuasi: [6.2, -1.67],
+  nkawkaw: [6.55, -0.77],
+  dodowa: [5.88, -0.1],
+  keta: [5.92, 0.99],
+  dome: [5.65, -0.23],
+  ejisu: [6.72, -1.47],
+  tarkwa: [5.3, -1.99],
+  weija: [5.56, -0.33],
+  haatso: [5.68, -0.2],
+  yendi: [9.44, -0.01],
+  aflao: [6.12, 1.19],
+  dzorwulu: [5.61, -0.2],
+  suame: [6.72, -1.63],
+  asokwa: [6.67, -1.61],
+} as const satisfies Record<string, LatLon>;
+
+const pb = (
+  id: string,
+  q: string,
+  categories: string[],
+  at: LatLon,
+  km: number,
+  area: string,
+  tags: string[] = [],
+) =>
+  browse(id, q, categories, at, km, ['pure-browse', ...tags], {
+    parse: { categories: [categories[0] as string], area },
+  });
+
+export const HOLDOUT_V2: GoldenCase[] = [
+  // Pure category queries.
+  pb('v-pharm-ashaiman', 'pharmacy ashaiman', ['pharmacy'], V2.ashaiman, 4, 'Ashaiman', ['health']),
+  pb('v-hotel-elmina', 'hotels in elmina', ['hotel', 'guest-house'], V2.elmina, 5, 'Elmina', [
+    'stay',
+  ]),
+  pb('v-chopbar-nungua', 'chop bar nungua', ['local-food', 'restaurant'], V2.nungua, 4, 'Nungua', [
+    'food',
+    'slang',
+  ]),
+  pb('v-bank-obuasi', 'bank in obuasi', ['bank'], V2.obuasi, 6, 'Obuasi', ['money']),
+  pb('v-fuel-nkawkaw', 'fuel station nkawkaw', ['fuel'], V2.nkawkaw, 6, 'Nkawkaw', ['transport']),
+  pb('v-school-dodowa', 'school dodowa', ['school', 'shs', 'creche'], V2.dodowa, 5, 'Dodowa', [
+    'education',
+  ]),
+  pb('v-church-ashaiman', 'church ashaiman', ['church', 'worship'], V2.ashaiman, 4, 'Ashaiman', [
+    'faith',
+  ]),
+  pb('v-market-keta', 'market keta', ['market'], V2.keta, 6, 'Keta', ['shopping']),
+  pb('v-clinic-dome', 'clinic in dome', ['clinic', 'hospital'], V2.dome, 3, 'Dome', ['health']),
+  pb(
+    'v-rest-labone',
+    'restaurant labone',
+    ['restaurant', 'local-food', 'fast-food', 'cafe'],
+    AT.labone,
+    2.5,
+    'Labone',
+    ['food'],
+  ),
+  pb('v-gym-tema', 'gym in tema', ['sports'], AT.tema, 8, 'Tema', ['leisure']),
+  pb('v-salon-ejisu', 'salon ejisu', ['salon'], V2.ejisu, 5, 'Ejisu', ['services']),
+  pb('v-police-tarkwa', 'police tarkwa', ['police'], V2.tarkwa, 6, 'Tarkwa', ['public']),
+  pb('v-atm-weija', 'atm weija', ['atm', 'bank'], V2.weija, 4, 'Weija', ['money']),
+  pb(
+    'v-prov-haatso',
+    'provision shop haatso',
+    ['provisions', 'supermarket', 'shop'],
+    V2.haatso,
+    3,
+    'Haatso',
+    ['shopping', 'slang'],
+  ),
+  pb('v-hosp-yendi', 'hospital yendi', ['hospital', 'clinic'], V2.yendi, 6, 'Yendi', ['health']),
+  pb('v-gh-aflao', 'guest house aflao', ['guest-house', 'hotel'], V2.aflao, 5, 'Aflao', ['stay']),
+  pb('v-bar-dzorwulu', 'drinking spot dzorwulu', ['bar', 'nightclub'], V2.dzorwulu, 3, 'Dzorwulu', [
+    'food',
+    'slang',
+  ]),
+  pb('v-print-suame', 'printing shop suame', ['printing'], V2.suame, 4, 'Suame', ['services']),
+  pb('v-fitter-suame', 'fitting shop suame', ['car-repair', 'auto-parts'], V2.suame, 4, 'Suame', [
+    'transport',
+    'slang',
+  ]),
+  browse(
+    'v-fuel-me',
+    'filling station near me',
+    ['fuel'],
+    V2.ejisu,
+    5,
+    ['near-me', 'pure-browse'],
+    {
+      user: V2.ejisu,
+      parse: { categories: ['fuel'], area: null, nearMe: true },
+    },
+  ),
+  browse(
+    'v-chem-me',
+    'chemist close to me',
+    ['pharmacy'],
+    V2.asokwa,
+    4,
+    ['near-me', 'pure-browse'],
+    {
+      user: V2.asokwa,
+      parse: { categories: ['pharmacy'], area: null, nearMe: true },
+    },
+  ),
+
+  // Known items.
+  known(
+    'v-k-uhas',
+    'university of health and allied sciences',
+    'university of health and allied sciences',
+    ['education'],
+  ),
+  known('v-k-elmina-castle', 'elmina castle', 'elmina castle|st\\.? george', ['leisure']),
+  known('v-k-elmina-typo', 'elmina castel', 'elmina castle|st\\.? george', ['leisure', 'typo']),
+  known('v-k-legon-hosp', 'legon hospital', 'legon hospital|university hospital', ['health']),
+  known('v-k-lekma', 'lekma hospital', 'lekma', ['health']),
+  known('v-k-tema-gh', 'tema general hospital', 'tema general hospital', ['health']),
+  known('v-k-tema-gh-typo', 'tema genral hospital', 'tema general hospital', ['health', 'typo']),
+  known('v-k-atu', 'accra technical university', '^accra technical university', ['education']),
+  known('v-k-aliu', 'aliu mahama stadium', 'aliu mahama', ['leisure']),
+  known('v-k-wli', 'wli waterfalls', '\\bwli\\b', ['leisure']),
+  known('v-k-paga', 'paga crocodile pond', 'paga crocodile', ['leisure']),
+  known('v-k-cc-hosp', 'cape coast teaching hospital', 'cape coast teaching hospital', ['health']),
+  known('v-k-peduase', 'peduase lodge', 'peduase', ['stay']),
+  known('v-k-tulip-kumasi', 'golden tulip kumasi', 'golden tulip', ['stay'], {
+    at: AT.kumasi,
+    km: 15,
+  }),
+
+  // Descriptive requests.
+  browse(
+    'v-d-photocopy',
+    'where can i photocopy documents in madina',
+    ['printing'],
+    AT.madina,
+    4,
+    ['descriptive', 'services'],
+    {
+      parse: { categories: ['printing'], area: 'Madina' },
+    },
+  ),
+  browse(
+    'v-d-fix-car',
+    'someone to fix my car in suame',
+    ['car-repair', 'auto-parts'],
+    V2.suame,
+    4,
+    ['descriptive', 'transport'],
+    {
+      parse: { categories: ['car-repair'], area: 'Suame' },
+    },
+  ),
+  browse(
+    'v-d-cash',
+    'where can i withdraw money in tarkwa',
+    ['atm', 'bank', 'mobile-money'],
+    V2.tarkwa,
+    6,
+    ['descriptive', 'money'],
+    {
+      parse: { categories: ['atm', 'bank', 'mobile-money'], area: 'Tarkwa' },
+    },
+  ),
+  browse(
+    'v-d-sew',
+    'where to sew a dress in ho',
+    ['tailor', 'fashion'],
+    AT.ho,
+    8,
+    ['descriptive', 'services'],
+    {
+      parse: { categories: ['tailor'], area: 'Ho' },
+    },
+  ),
+  browse(
+    'v-d-pray',
+    'place to pray in tamale',
+    ['church', 'mosque', 'worship'],
+    AT.tamale,
+    10,
+    ['descriptive', 'faith'],
+    {
+      parse: { categories: ['church', 'mosque', 'worship'], area: 'Tamale' },
+    },
+  ),
+  browse(
+    'v-d-sea',
+    'where to relax by the sea in elmina',
+    ['beach', 'hotel'],
+    V2.elmina,
+    6,
+    ['descriptive', 'leisure'],
+    {
+      parse: { categories: ['beach', 'hotel'], area: 'Elmina' },
+    },
+  ),
+  browse(
+    'v-d-veg',
+    'buy fresh vegetables in ashaiman',
+    ['market', 'provisions', 'supermarket'],
+    V2.ashaiman,
+    4,
+    ['descriptive', 'shopping'],
+    {
+      parse: { categories: ['market', 'provisions', 'supermarket'], area: 'Ashaiman' },
+    },
+  ),
+  browse(
+    'v-d-sick',
+    'my child is sick need a doctor in dome',
+    ['clinic', 'hospital', 'healthcare'],
+    V2.dome,
+    4,
+    ['descriptive', 'health'],
+    {
+      parse: { categories: ['clinic', 'hospital', 'healthcare'], area: 'Dome' },
+    },
+  ),
+];
+
+/**
+ * Held-out set v3 (2026-11-14), written before the selective-AI rule was designed and never
+ * looked at while designing it. It judges when to call the AI parse. The mix is closer to real
+ * traffic than v2: plain category queries, named places, local terms and plain-English requests.
+ */
+const V3 = {
+  berekum: [7.45, -2.58],
+  akimOda: [5.93, -0.98],
+  swedru: [5.53, -0.7],
+  somanya: [6.1, -0.01],
+  saltpond: [5.21, -1.06],
+  kwadaso: [6.69, -1.66],
+  amasaman: [5.7, -0.3],
+  navrongo: [10.89, -1.09],
+  tesano: [5.6, -0.23],
+  bawku: [11.06, -0.24],
+  konongo: [6.62, -1.21],
+  abelemkpe: [5.6, -0.21],
+  adabraka: [5.56, -0.21],
+  kintampo: [8.05, -1.73],
+  ahodwo: [6.66, -1.63],
+  kwabenya: [5.7, -0.24],
+  mankessim: [5.27, -1.02],
+  akropong: [5.97, -0.09],
+  pokuase: [5.7, -0.28],
+  prampram: [5.71, 0.11],
+  kpando: [6.99, 0.29],
+  tarkwa: [5.3, -1.99],
+  sunyani: [7.34, -2.33],
+} as const satisfies Record<string, LatLon>;
+
+const b3 = (
+  id: string,
+  q: string,
+  categories: string[],
+  at: LatLon,
+  km: number,
+  area: string | null,
+  tags: string[],
+  extra: { user?: LatLon; nearMe?: boolean } = {},
+) =>
+  browse(id, q, categories, at, km, tags, {
+    user: extra.user,
+    parse: { categories, area, ...(extra.nearMe ? { nearMe: true } : {}) },
+  });
+
+export const HOLDOUT_V3: GoldenCase[] = [
+  // Plain category queries.
+  b3('w-hosp-berekum', 'hospital in berekum', ['hospital', 'clinic'], V3.berekum, 6, 'Berekum', [
+    'pure-browse',
+    'health',
+  ]),
+  b3('w-hotel-oda', 'hotel akim oda', ['hotel', 'guest-house'], V3.akimOda, 6, 'Akim Oda', [
+    'pure-browse',
+    'stay',
+  ]),
+  b3('w-bank-swedru', 'bank swedru', ['bank'], V3.swedru, 6, 'Swedru', ['pure-browse', 'money']),
+  b3('w-pharm-somanya', 'pharmacy in somanya', ['pharmacy'], V3.somanya, 5, 'Somanya', [
+    'pure-browse',
+    'health',
+  ]),
+  b3('w-fuel-saltpond', 'fuel station saltpond', ['fuel'], V3.saltpond, 6, 'Saltpond', [
+    'pure-browse',
+    'transport',
+  ]),
+  b3('w-church-kwadaso', 'church kwadaso', ['church', 'worship'], V3.kwadaso, 3, 'Kwadaso', [
+    'pure-browse',
+    'faith',
+  ]),
+  b3(
+    'w-school-amasaman',
+    'school in amasaman',
+    ['school', 'shs', 'creche'],
+    V3.amasaman,
+    4,
+    'Amasaman',
+    ['pure-browse', 'education'],
+  ),
+  b3('w-atm-navrongo', 'atm in navrongo', ['atm', 'bank'], V3.navrongo, 6, 'Navrongo', [
+    'pure-browse',
+    'money',
+  ]),
+  b3(
+    'w-rest-tesano',
+    'restaurant tesano',
+    ['restaurant', 'local-food', 'fast-food', 'cafe'],
+    V3.tesano,
+    3,
+    'Tesano',
+    ['pure-browse', 'food'],
+  ),
+  b3('w-police-bawku', 'police station bawku', ['police'], V3.bawku, 6, 'Bawku', [
+    'pure-browse',
+    'public',
+  ]),
+  b3('w-market-konongo', 'market konongo', ['market'], V3.konongo, 6, 'Konongo', [
+    'pure-browse',
+    'shopping',
+  ]),
+  b3(
+    'w-super-abelemkpe',
+    'supermarket abelemkpe',
+    ['supermarket', 'provisions', 'mall'],
+    V3.abelemkpe,
+    3,
+    'Abelemkpe',
+    ['pure-browse', 'shopping'],
+  ),
+
+  // Local terms.
+  b3(
+    'w-kenkey-prampram',
+    'kenkey seller in prampram',
+    ['local-food', 'restaurant'],
+    V3.prampram,
+    5,
+    'Prampram',
+    ['slang', 'food'],
+  ),
+  b3('w-trotro-kpando', 'trotro station kpando', ['bus-station'], V3.kpando, 5, 'Kpando', [
+    'slang',
+    'transport',
+  ]),
+  b3('w-momo-berekum', 'mobile money vendor berekum', ['mobile-money'], V3.berekum, 6, 'Berekum', [
+    'slang',
+    'money',
+  ]),
+  b3('w-chem-konongo', 'chemist shop konongo', ['pharmacy'], V3.konongo, 6, 'Konongo', [
+    'slang',
+    'health',
+  ]),
+  b3(
+    'w-prov-bawku',
+    'provisions store bawku',
+    ['provisions', 'supermarket', 'shop'],
+    V3.bawku,
+    6,
+    'Bawku',
+    ['slang', 'shopping'],
+  ),
+
+  // Plain-English requests.
+  b3(
+    'w-d-charger',
+    'where can i buy a phone charger in adabraka',
+    ['phones-electronics', 'shop'],
+    V3.adabraka,
+    3,
+    'Adabraka',
+    ['descriptive', 'shopping'],
+  ),
+  b3(
+    'w-d-send-money',
+    'i want to send money home from navrongo',
+    ['mobile-money', 'bank'],
+    V3.navrongo,
+    6,
+    'Navrongo',
+    ['descriptive', 'money'],
+  ),
+  b3('w-d-medicine', 'where to buy medicine in tesano', ['pharmacy'], V3.tesano, 3, 'Tesano', [
+    'descriptive',
+    'health',
+  ]),
+  b3(
+    'w-d-room',
+    'need a room for tonight in kintampo',
+    ['hotel', 'guest-house', 'hostel'],
+    V3.kintampo,
+    6,
+    'Kintampo',
+    ['descriptive', 'stay'],
+  ),
+  b3(
+    'w-d-jollof',
+    'good spot for jollof in ahodwo',
+    ['restaurant', 'local-food', 'fast-food'],
+    V3.ahodwo,
+    3,
+    'Ahodwo',
+    ['descriptive', 'food'],
+  ),
+  b3(
+    'w-d-party',
+    'where do people go to party in kumasi',
+    ['nightclub', 'bar'],
+    AT.kumasi,
+    15,
+    'Kumasi',
+    ['descriptive', 'food'],
+  ),
+  b3(
+    'w-d-laptop',
+    'place to fix my laptop in kwabenya',
+    ['repairs', 'phones-electronics'],
+    V3.kwabenya,
+    4,
+    'Kwabenya',
+    ['descriptive', 'services'],
+  ),
+  b3(
+    'w-d-breakdown',
+    'my car broke down near mankessim',
+    ['car-repair', 'auto-parts'],
+    V3.mankessim,
+    5,
+    'Mankessim',
+    ['descriptive', 'transport'],
+  ),
+  b3(
+    'w-d-print-cv',
+    'somewhere to print my cv in akropong',
+    ['printing', 'internet'],
+    V3.akropong,
+    5,
+    'Akropong',
+    ['descriptive', 'services'],
+  ),
+  b3(
+    'w-d-kids-tema',
+    'where can kids play in tema',
+    ['park', 'entertainment', 'sports', 'attraction'],
+    AT.tema,
+    8,
+    'Tema',
+    ['descriptive', 'leisure'],
+  ),
+  b3(
+    'w-d-building',
+    'where to buy building materials in pokuase',
+    ['hardware'],
+    V3.pokuase,
+    4,
+    'Pokuase',
+    ['descriptive', 'shopping'],
+  ),
+
+  // Near me.
+  b3(
+    'w-food-me',
+    'food joint around me',
+    ['local-food', 'restaurant', 'fast-food'],
+    V3.ahodwo,
+    3,
+    null,
+    ['near-me', 'food'],
+    { user: V3.ahodwo, nearMe: true },
+  ),
+  b3(
+    'w-hosp-me',
+    'where is the closest hospital',
+    ['hospital', 'clinic'],
+    V3.kwabenya,
+    5,
+    null,
+    ['near-me', 'health'],
+    { user: V3.kwabenya, nearMe: true },
+  ),
+
+  // Named places.
+  known('w-k-umat', 'university of mines and technology', 'university of mines', ['education'], {
+    at: V3.tarkwa,
+    km: 10,
+  }),
+  known('w-k-umat-abbr', 'UMaT tarkwa', 'university of mines', ['education', 'abbreviation'], {
+    at: V3.tarkwa,
+    km: 10,
+  }),
+  known('w-k-uenr', 'university of energy and natural resources', 'university of energy', [
+    'education',
+  ]),
+  known('w-k-kintampo-falls', 'kintampo waterfalls', 'kintampo.*(falls|waterfall)', ['leisure']),
+  known('w-k-bunso', 'bunso arboretum', 'bunso', ['leisure']),
+  known('w-k-htu', 'ho technical university', '^ho technical university', ['education']),
+  known('w-k-ktu', 'koforidua technical university', 'koforidua technical university', [
+    'education',
+  ]),
+  known('w-k-manhyia-hosp', 'manhyia hospital', 'manhyia.*hospital', ['health']),
+  known('w-k-lister', 'lister hospital', 'lister', ['health']),
+  known('w-k-lister-typo', 'lister hosptal', 'lister', ['health', 'typo']),
+  known('w-k-nyaho', 'nyaho clinic', 'nyaho', ['health']),
+  known('w-k-holiday-inn', 'holiday inn accra', 'holiday inn', ['stay'], { at: AT.accra, km: 15 }),
+  known('w-k-silverbird', 'silverbird cinema', 'silverbird', ['leisure']),
+  known('w-k-gij', 'ghana institute of journalism', 'ghana institute of journalism', ['education']),
+];
+
+/**
+ * Held-out set v4 (2026-11-14), written before the second round of rule fixes (misspelt areas,
+ * unrecognised words) and the routed-query AI budget, and never looked at while making them.
+ * Leans on what those changes target: misspelt town names and requests phrased as sentences.
+ */
+const V4 = {
+  nima: [5.585, -0.2],
+  kotobabi: [5.59, -0.21],
+  abeka: [5.6, -0.24],
+  lashibi: [5.64, -0.06],
+  sakumono: [5.62, -0.06],
+  kpone: [5.69, 0.04],
+  oyarifa: [5.76, -0.18],
+  ofankor: [5.66, -0.27],
+  mallam: [5.57, -0.29],
+  tafo: [6.73, -1.61],
+  ayeduase: [6.67, -1.56],
+  atonsu: [6.65, -1.6],
+  akatsi: [6.13, 0.8],
+  sogakope: [5.99, 0.6],
+  asamankese: [5.86, -0.66],
+  bibiani: [6.46, -2.32],
+  wenchi: [7.74, -2.1],
+  damongo: [9.08, -1.82],
+  savelugu: [9.62, -0.83],
+  walewale: [10.35, -0.8],
+  lawra: [10.65, -2.9],
+  axim: [4.87, -2.24],
+} as const satisfies Record<string, LatLon>;
+
+const b4 = (
+  id: string,
+  q: string,
+  categories: string[],
+  at: LatLon,
+  km: number,
+  area: string | null,
+  tags: string[],
+  extra: { user?: LatLon; nearMe?: boolean; openNow?: boolean } = {},
+) =>
+  browse(id, q, categories, at, km, tags, {
+    user: extra.user,
+    parse: {
+      categories,
+      area,
+      ...(extra.nearMe ? { nearMe: true } : {}),
+      ...(extra.openNow ? { openNow: true } : {}),
+    },
+  });
+
+export const HOLDOUT_V4: GoldenCase[] = [
+  // Misspelt town names.
+  b4('x-pharm-lashibi', 'pharmacy lashibe', ['pharmacy'], V4.lashibi, 3, 'Lashibi', [
+    'typo-area',
+    'health',
+  ]),
+  b4('x-gh-sogakope', 'guest house sogakpe', ['guest-house', 'hotel'], V4.sogakope, 5, 'Sogakope', [
+    'typo-area',
+    'stay',
+  ]),
+  b4('x-bank-asamankese', 'bank asamankesse', ['bank'], V4.asamankese, 5, 'Asamankese', [
+    'typo-area',
+    'money',
+  ]),
+  b4(
+    'x-school-oyarifa',
+    'school in oyarefa',
+    ['school', 'shs', 'creche'],
+    V4.oyarifa,
+    3,
+    'Oyarifa',
+    ['typo-area', 'education'],
+  ),
+  b4('x-market-savelugu', 'market in savelegu', ['market'], V4.savelugu, 5, 'Savelugu', [
+    'typo-area',
+    'shopping',
+  ]),
+  b4(
+    'x-rest-ayeduase',
+    'restaurant ayeduasi',
+    ['restaurant', 'local-food', 'fast-food', 'cafe'],
+    V4.ayeduase,
+    3,
+    'Ayeduase',
+    ['typo-area', 'food'],
+  ),
+
+  // Plain category queries.
+  b4('x-hosp-wenchi', 'hospital wenchi', ['hospital', 'clinic'], V4.wenchi, 6, 'Wenchi', [
+    'pure-browse',
+    'health',
+  ]),
+  b4('x-fuel-damongo', 'fuel station damongo', ['fuel'], V4.damongo, 6, 'Damongo', [
+    'pure-browse',
+    'transport',
+  ]),
+  b4('x-church-tafo', 'church tafo', ['church', 'worship'], V4.tafo, 3, 'Tafo', [
+    'pure-browse',
+    'faith',
+  ]),
+  b4('x-atm-nima', 'atm nima', ['atm', 'bank'], V4.nima, 2.5, 'Nima', ['pure-browse', 'money']),
+  b4('x-hotel-axim', 'hotel axim', ['hotel', 'guest-house'], V4.axim, 6, 'Axim', [
+    'pure-browse',
+    'stay',
+  ]),
+  b4('x-police-walewale', 'police walewale', ['police'], V4.walewale, 6, 'Walewale', [
+    'pure-browse',
+    'public',
+  ]),
+  b4('x-pharm-bibiani', 'pharmacy bibiani', ['pharmacy'], V4.bibiani, 6, 'Bibiani', [
+    'pure-browse',
+    'health',
+  ]),
+  b4(
+    'x-super-sakumono',
+    'supermarket sakumono',
+    ['supermarket', 'provisions', 'mall'],
+    V4.sakumono,
+    3,
+    'Sakumono',
+    ['pure-browse', 'shopping'],
+  ),
+  b4('x-school-lawra', 'school lawra', ['school', 'shs', 'creche'], V4.lawra, 6, 'Lawra', [
+    'pure-browse',
+    'education',
+  ]),
+  b4('x-mosque-nima', 'mosque nima', ['mosque', 'worship'], V4.nima, 2.5, 'Nima', [
+    'pure-browse',
+    'faith',
+  ]),
+
+  // Local terms.
+  b4('x-chopbar-kpone', 'chop bar kpone', ['local-food', 'restaurant'], V4.kpone, 5, 'Kpone', [
+    'slang',
+    'food',
+  ]),
+  b4('x-trotro-mallam', 'trotro station mallam', ['bus-station'], V4.mallam, 3, 'Mallam', [
+    'slang',
+    'transport',
+  ]),
+  b4('x-drug-atonsu', 'drug store atonsu', ['pharmacy'], V4.atonsu, 3, 'Atonsu', [
+    'slang',
+    'health',
+  ]),
+  b4('x-momo-akatsi', 'momo point akatsi', ['mobile-money'], V4.akatsi, 5, 'Akatsi', [
+    'slang',
+    'money',
+  ]),
+
+  // Requests phrased as sentences.
+  b4(
+    'x-d-fabric',
+    'where can i buy fabric in kotobabi',
+    ['fashion', 'market'],
+    V4.kotobabi,
+    3,
+    'Kotobabi',
+    ['descriptive', 'shopping'],
+  ),
+  b4('x-d-mechanic', 'i need a mechanic in abeka', ['car-repair'], V4.abeka, 3, 'Abeka', [
+    'descriptive',
+    'transport',
+  ]),
+  b4(
+    'x-d-waakye',
+    'somewhere to eat waakye in nima',
+    ['local-food', 'restaurant'],
+    V4.nima,
+    2.5,
+    'Nima',
+    ['descriptive', 'food'],
+  ),
+  b4('x-d-photos', 'where can i print photos in ofankor', ['printing'], V4.ofankor, 3, 'Ofankor', [
+    'descriptive',
+    'services',
+  ]),
+  b4(
+    'x-d-screen',
+    'my phone screen is broken where can i fix it in tafo',
+    ['repairs', 'phones-electronics'],
+    V4.tafo,
+    3,
+    'Tafo',
+    ['descriptive', 'services'],
+  ),
+  b4(
+    'x-d-fridge',
+    'where to buy a fridge in kpone',
+    ['phones-electronics', 'shop', 'furniture'],
+    V4.kpone,
+    5,
+    'Kpone',
+    ['descriptive', 'shopping'],
+  ),
+  b4(
+    'x-d-overnight',
+    'place to stay overnight in damongo',
+    ['hotel', 'guest-house', 'hostel'],
+    V4.damongo,
+    6,
+    'Damongo',
+    ['descriptive', 'stay'],
+  ),
+  b4(
+    'x-d-braids',
+    'where do i get my hair braided in ayeduase',
+    ['salon'],
+    V4.ayeduase,
+    3,
+    'Ayeduase',
+    ['descriptive', 'services'],
+  ),
+  b4(
+    'x-d-open-pharm',
+    'need a pharmacy that is open in sakumono',
+    ['pharmacy'],
+    V4.sakumono,
+    3,
+    'Sakumono',
+    ['descriptive', 'health'],
+    { openNow: true },
+  ),
+  b4(
+    'x-d-movie',
+    'where can i watch a movie in kumasi',
+    ['entertainment'],
+    AT.kumasi,
+    15,
+    'Kumasi',
+    ['descriptive', 'leisure'],
+  ),
+
+  // Near me.
+  b4('x-fuel-me', 'nearest fuel station', ['fuel'], V4.lashibi, 4, null, ['near-me', 'transport'], {
+    user: V4.lashibi,
+    nearMe: true,
+  }),
+  b4(
+    'x-clinic-me',
+    'any clinic near me',
+    ['clinic', 'hospital'],
+    V4.tafo,
+    4,
+    null,
+    ['near-me', 'health'],
+    { user: V4.tafo, nearMe: true },
+  ),
+
+  // Named places.
+  known('x-k-mole-motel', 'mole motel', 'mole motel', ['stay']),
+  known('x-k-larabanga', 'larabanga mosque', 'larabanga', ['faith']),
+  known('x-k-nzulezo', 'nzulezo', 'nzulezo', ['leisure']),
+  known('x-k-st-jago', 'fort st jago', 'st\\.? ?jago|fort jago', ['leisure']),
+  known('x-k-kcc', 'kumasi cultural centre', 'cultural cent', ['leisure'], {
+    at: AT.kumasi,
+    km: 15,
+  }),
+  known('x-k-tamale-mosque', 'tamale central mosque', 'central mosque', ['faith'], {
+    at: AT.tamale,
+    km: 5,
+  }),
+  known('x-k-palace-mall', 'palace mall', 'palace (shopping )?mall', ['shopping']),
+  known('x-k-ac-mall', 'a&c mall', 'a ?& ?c mall', ['shopping']),
+  known('x-k-botanical', 'legon botanical garden', 'legon botanical', ['leisure']),
+  known('x-k-central-uni', 'central university', '^central university', ['education']),
+  known('x-k-vvu', 'valley view university', 'valley view', ['education']),
+  known('x-k-vvu-typo', 'valley veiw university', 'valley view', ['education', 'typo']),
+  known('x-k-upsa', 'UPSA', 'university of professional studies', ['education', 'abbreviation']),
 ];

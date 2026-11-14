@@ -3,6 +3,7 @@ import type { Embedder } from '../ai/types';
 import { type ParseOptions, parseQuery } from './ai-parse';
 import { AREA_RADIUS_M, type LocalityKind, type SearchContext } from './context';
 import type { Intent, ParseResult } from './intent';
+import { onlyCategoryWords, parseRules } from './rules';
 import { normalize, words } from './text';
 
 /** The one database call search needs. Kept structural so core stays framework-free. */
@@ -50,10 +51,24 @@ export const DEFAULT_WEIGHTS: FusionWeights = {
  * that carries a town name as text turns the trigram arm down, because every "Kumasi …" name is
  * a fuzzy match for "kath kumasi".
  */
-export function fusionWeights(intent: Intent, hasCentre: boolean): Partial<FusionWeights> {
+/**
+ * Pure "kind of place" queries ("pharmacy in madina", "chop bar") are answered by the category arm
+ * and distance. Name and meaning arms add places merely *called* "… Pharmacy" or *similar to*
+ * one, so they step back. Chosen by a sweep on the dev set, judged on held-out v2
+ * (docs/EVALS.md, "Pure browse weights"). With semantic 0 the query is never embedded.
+ */
+export const BROWSE_WEIGHTS: Partial<FusionWeights> = { semantic: 0, title: 0.5, name: 0.5 };
+
+export function fusionWeights(
+  intent: Intent,
+  hasCentre: boolean,
+  pureBrowse = false,
+  browse: Partial<FusionWeights> = BROWSE_WEIGHTS,
+): Partial<FusionWeights> {
   const w: Partial<FusionWeights> = {};
   if (intent.categories.length && hasCentre && intent.area?.relation !== 'soft') w.proximity = 1.5;
   if (intent.area?.relation === 'soft') w.name = 0.5;
+  if (pureBrowse) Object.assign(w, browse);
   return w;
 }
 
@@ -90,6 +105,8 @@ export interface SearchResponse {
     anchor: { text: string; place: string | null } | null;
     weights: FusionWeights;
     semantic: boolean;
+    /** Only category words in the text: name and meaning arms step back. */
+    pureBrowse: boolean;
     timings: { parseMs: number; anchorMs: number; embedMs: number; dbMs: number; totalMs: number };
   };
 }
@@ -101,12 +118,45 @@ export interface SearchDeps {
   embedder?: Embedder | null;
   /** AI parse budget; past it the rules parse is used. */
   aiBudgetMs?: number;
+  /** When to ask the AI parse; see ParseOptions. */
+  aiPolicy?: 'selective' | 'always';
+  /** Override BROWSE_WEIGHTS (evals). */
+  browseWeights?: Partial<FusionWeights>;
 }
 
 const NEAR_ME_RADIUS = 5_000;
 const ANCHOR_RADIUS = 2_000;
 const MIN_RESULTS = 3;
 const MAX_RADIUS = 100_000;
+/** The semantic arm is optional: past this the lexical arms answer alone. */
+const EMBED_BUDGET_MS = 1200;
+
+const vectorCache = new Map<string, string>();
+const VECTOR_CACHE_MAX = 2000;
+
+/** pgvector literal for the query, or null when there's nothing to embed or the call fails. */
+async function embedQuery(embedder: Embedder, text: string) {
+  const t0 = performance.now();
+  const key = normalize(text);
+  if (!key) return { vector: null, ms: 0 };
+  const hit = vectorCache.get(key);
+  if (hit) return { vector: hit, ms: 0 };
+  const ac = new AbortController();
+  const timer = setTimeout(() => ac.abort(), EMBED_BUDGET_MS);
+  try {
+    const { vectors } = await embedder.embed([key], ac.signal);
+    if (!vectors[0]) return { vector: null, ms: Math.round(performance.now() - t0) };
+    const vector = `[${vectors[0].map((x) => x.toFixed(5)).join(',')}]`;
+    if (vectorCache.size >= VECTOR_CACHE_MAX)
+      vectorCache.delete(vectorCache.keys().next().value as string);
+    vectorCache.set(key, vector);
+    return { vector, ms: Math.round(performance.now() - t0) };
+  } catch {
+    return { vector: null, ms: Math.round(performance.now() - t0) };
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 interface Row {
   id: string;
@@ -163,11 +213,26 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
   const limit = Math.min(Math.max(req.limit ?? 20, 1), 50);
   const offset = Math.max(req.offset ?? 0, 0);
 
+  // The query embedding doesn't wait for the AI parse: it embeds what the rule parse says is being
+  // looked for (area words stripped), so the two network calls overlap.
+  // A pure category query gets no meaning arm, so it skips the embedding call (time and money).
+  const quick = parseRules(req.q, deps.context, { user });
+  const browse = deps.browseWeights ?? BROWSE_WEIGHTS;
+  const skipEmbed =
+    browse.semantic === 0 &&
+    quick.categories.length > 0 &&
+    onlyCategoryWords(deps.context, quick.text);
+  const embedding =
+    deps.embedder && !skipEmbed
+      ? embedQuery(deps.embedder, quick.text || quick.categories.join(' '))
+      : Promise.resolve({ vector: null, ms: 0 });
+
   const parsed = await parseQuery(req.q, deps.context, {
     llm: deps.llm,
     budgetMs: deps.aiBudgetMs,
     user,
     mode: req.mode,
+    aiPolicy: deps.aiPolicy,
   });
   const { intent, ...parseMeta } = parsed;
   const parseMs = parsed.latencyMs;
@@ -223,28 +288,17 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
   // No place named at all: still prefer what's close to the user, without excluding anything.
   if (!centre && !districtId && !regionId && user) centre = { ...user, from: 'user' };
 
-  let embedding: string | null = null;
-  let embedMs = 0;
-  const embedText = text || intent.categories.join(' ');
-  if (deps.embedder && embedText) {
-    const te = performance.now();
-    try {
-      const ac = new AbortController();
-      const timer = setTimeout(() => ac.abort(), 1200);
-      const { vectors } = await deps.embedder.embed([embedText], ac.signal);
-      clearTimeout(timer);
-      if (vectors[0]) embedding = `[${vectors[0].join(',')}]`;
-    } catch {
-      // Semantic arm is optional; lexical arms still answer.
-    }
-    embedMs = ms(te);
-  }
+  const { vector, ms: embedMs } = await embedding;
 
   const categoryIds = intent.categories
     .map((s) => deps.context.bySlug.get(s)?.id)
     .filter((x): x is number => x != null);
 
-  const weights = { ...fusionWeights({ ...intent, text }, centre != null), ...req.weights };
+  const pureBrowse = intent.categories.length > 0 && onlyCategoryWords(deps.context, text);
+  const weights = {
+    ...fusionWeights({ ...intent, text }, centre != null, pureBrowse, deps.browseWeights),
+    ...req.weights,
+  };
 
   const args = (r: number | null) => ({
     p_text: text || null,
@@ -254,7 +308,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
     p_radius_m: r,
     p_district_id: districtId,
     p_region_id: regionId,
-    p_embedding: embedding,
+    p_embedding: vector,
     p_limit: limit,
     p_offset: offset,
     p_weights: Object.keys(weights).length ? weights : null,
@@ -263,7 +317,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
   const td = performance.now();
   let rows: Row[] = [];
   let widenedTo: number | null = null;
-  if (text || categoryIds.length || embedding || centre || districtId || regionId) {
+  if (text || categoryIds.length || vector || centre || districtId || regionId) {
     rows = await callSearch(deps.rpc, args(radius));
     // Too little nearby: widen the circle rather than show an empty screen.
     let r = radius;
@@ -287,7 +341,8 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
       needsLocation,
       anchor: anchorMeta,
       weights: { ...DEFAULT_WEIGHTS, ...weights },
-      semantic: embedding != null,
+      semantic: vector != null,
+      pureBrowse,
       timings: { parseMs, anchorMs, embedMs, dbMs, totalMs: ms(t0) },
     },
   };

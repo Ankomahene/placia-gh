@@ -43,7 +43,9 @@ export interface ParseResult {
   model?: string;
   inputTokens?: number;
   outputTokens?: number;
-  /** Why the AI parse was not used, when it was attempted. */
+  /** Why the AI parse was not used: rules_confident, circuit_open, budget_exceeded, … */
   fallback?: string;
+  /** Why the rule parse was judged unsure, when the AI was asked (selective policy). */
+  aiReason?: string;
   cached?: boolean;
 }

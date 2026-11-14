@@ -184,6 +184,57 @@ export function findCategories(ctx: SearchContext, toks: string[], skip = new Se
   return found.length > 1 ? found.filter((s) => s !== 'shop') : found;
 }
 
+/**
+ * True when every content word of the text is part of a category phrase ("pharmacy",
+ * "chop bar", "where to buy cement"): a pure "kind of place" query with no name in it.
+ */
+export function onlyCategoryWords(ctx: SearchContext, text: string) {
+  const toks = words(normalize(text));
+  return toks.some((w) => !FILLER.has(w)) && otherWords(ctx, toks).length === 0;
+}
+
+/** Content words not covered by any category phrase: names, or words the rules don't know. */
+function otherWords(ctx: SearchContext, toks: string[]) {
+  const out: string[] = [];
+  let i = 0;
+  while (i < toks.length) {
+    let matched = 0;
+    for (let end = Math.min(toks.length, i + ctx.maxWords); end > i; end--) {
+      const phrase = toks.slice(i, end).join(' ');
+      if (ctx.phrases.has(phrase) || ctx.phrases.has(singular(phrase))) {
+        matched = end - i;
+        break;
+      }
+    }
+    if (!matched && !FILLER.has(toks[i] as string)) out.push(toks[i] as string);
+    i += matched || 1;
+  }
+  return out;
+}
+
+// A request phrased as a sentence ("where can i…", "i need…", "somewhere to…", "my car…").
+const REQUEST =
+  /^(where|what|which|how|who|any|is there|are there|i|im|i m|my|we|need|want|looking|somewhere|someone|anywhere|place to|places to|good|best|nice|recommend)\b/;
+/** More categories than this means the rules only caught a broad group word. */
+const MAX_CONFIDENT_CATEGORIES = 3;
+
+/**
+ * Why the rule parse might be wrong, or null when it can be trusted as is. The AI parse is only
+ * worth its latency and cost for these queries (docs/EVALS.md, "Selective AI"): on short
+ * category and name queries the rules are as good or better.
+ */
+export function rulesUnsure(query: string, intent: Intent, ctx: SearchContext): string | null {
+  const n = normalize(query);
+  if (REQUEST.test(n)) return 'request';
+  if (intent.categories.length > MAX_CONFIDENT_CATEGORIES) return 'vague';
+  if (intent.nearMe && (intent.area || intent.anchor)) return 'conflict';
+  if (!intent.categories.length && !intent.area && !intent.anchor) {
+    // Three unknown words is usually a name ("black star square"); four is usually a sentence.
+    if (otherWords(ctx, words(normalize(intent.text))).length >= 4) return 'unknown_words';
+  }
+  return null;
+}
+
 function prepositionAt(toks: string[], i: number) {
   for (const [p, relation] of PREPOSITIONS) {
     if (p.every((w, j) => toks[i + j] === w)) return { len: p.length, relation };
@@ -267,6 +318,17 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
       const hit = areaAt(ctx, toks, start, last + 1);
       const picked = hit?.end === last + 1 ? pickArea(ctx.areas.get(hit.key), opts.user) : null;
       if (picked) span = { start, end: last + 1, area: picked, trailing: true };
+    }
+    // A misspelt town after a kind of place ("supermarket abelemkpe"). Only with a category in
+    // front, so a name ("pizza hut") is never bent into a town.
+    for (const len of [2, 1]) {
+      if (span || last + 1 - len <= first) continue;
+      const tail = toks.slice(last + 1 - len, last + 1);
+      if (tail.some((w) => ctx.phrases.has(w) || FILLER.has(w))) continue;
+      if (!findCategories(ctx, toks.slice(first, last + 1 - len)).length) continue;
+      const fuzzy = fuzzyArea(ctx, tail.join(' '));
+      const picked = fuzzy ? pickArea(ctx.areas.get(fuzzy), opts.user) : null;
+      if (picked) span = { start: last + 1 - len, end: last + 1, area: picked, trailing: true };
     }
     if (!span && last > first) {
       const hit = areaAt(ctx, toks, first, last);

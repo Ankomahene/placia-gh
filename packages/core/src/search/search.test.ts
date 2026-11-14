@@ -83,6 +83,15 @@ describe('rule parser', () => {
     expect(parseRules('pharmacy open now', ctx).openNow).toBe(true);
   });
 
+  it('fixes a misspelt town after a kind of place, but never bends a name into a town', () => {
+    expect(parseRules('hotel kaneshi', ctx)).toMatchObject({
+      categories: ['hotel'],
+      area: { name: 'Kaneshie', relation: 'near' },
+      text: 'hotel',
+    });
+    expect(parseRules('kaneshi', ctx).area).toBeNull();
+  });
+
   it('flags near-me without inventing an area', () => {
     const i = parseRules('nearest pharmacy', ctx);
     expect(i).toMatchObject({ nearMe: true, area: null, categories: ['pharmacy'] });
@@ -153,11 +162,42 @@ describe('AI parse', () => {
   it('falls back to rules within the budget when the model hangs', async () => {
     const llm = new LLMRouter([provider(() => new Promise(() => {}))]);
     const t0 = Date.now();
-    const r = await parseQuery('pharmacy in madina', ctx, { llm, budgetMs: 50 });
+    const r = await parseQuery('pharmacy in madina', ctx, {
+      llm,
+      budgetMs: 50,
+      aiPolicy: 'always',
+    });
     expect(Date.now() - t0).toBeLessThan(500);
     expect(r.path).toBe('rules');
     expect(r.fallback).toBe('budget_exceeded');
     expect(r.intent.categories).toEqual(['pharmacy']);
+  });
+
+  it('asks the model only when the rules are unsure', async () => {
+    let calls = 0;
+    const llm = new LLMRouter([
+      provider(async () => {
+        calls++;
+        return {
+          what: 'tailor',
+          categories: ['tailor'],
+          location: 'Osu',
+          location_relation: 'in',
+          near_me: false,
+          open_now: false,
+          cheap: false,
+        };
+      }),
+    ]);
+    const sure = await parseQuery('pharmacy in madina', ctx, { llm });
+    expect(sure).toMatchObject({ path: 'rules', fallback: 'rules_confident' });
+    expect((await parseQuery('accra mall', ctx, { llm })).fallback).toBe('rules_confident');
+    expect(calls).toBe(0);
+
+    const asked = await parseQuery('where can i get a dress sewn in osu', ctx, { llm });
+    expect(asked).toMatchObject({ path: 'ai', aiReason: 'request' });
+    expect((await parseQuery('pharmacy near me in osu', ctx, { llm })).aiReason).toBe('conflict');
+    expect(calls).toBe(2);
   });
 
   it('skips the model entirely while its circuit breaker is open', async () => {
@@ -165,9 +205,10 @@ describe('AI parse', () => {
       [provider(() => Promise.reject(Object.assign(new Error('down'), { status: 529 })))],
       { failureThreshold: 2 },
     );
-    await parseQuery('a', ctx, { llm });
-    await parseQuery('b', ctx, { llm });
-    const r = await parseQuery('c', ctx, { llm });
+    const always = { llm, aiPolicy: 'always' as const };
+    await parseQuery('a', ctx, always);
+    await parseQuery('b', ctx, always);
+    const r = await parseQuery('c', ctx, always);
     expect(r.fallback).toBe('circuit_open');
   });
 });
@@ -207,6 +248,56 @@ describe('search engine', () => {
     const rpc: SearchRpc = async () => ({ data: [], error: null });
     const res = await search({ q: 'pharmacy near me' }, { rpc, context: ctx });
     expect(res.meta.needsLocation).toBe(true);
+  });
+
+  it('embeds what is being looked for, not where', async () => {
+    const seen: string[][] = [];
+    const embedder = {
+      model: 'test',
+      dimensions: 2,
+      embed: async (texts: string[]) => {
+        seen.push(texts);
+        return { vectors: [[0.1, 0.2]], usage: { inputTokens: 1, outputTokens: 0 } };
+      },
+    };
+    let sent: unknown;
+    const rpc: SearchRpc = async (_fn, args) => {
+      sent = args.p_embedding;
+      return { data: [row('a'), row('b'), row('c')], error: null };
+    };
+    const res = await search({ q: 'watch football in osu' }, { rpc, context: ctx, embedder });
+    expect(seen).toEqual([['watch football']]);
+    expect(sent).toBe('[0.10000,0.20000]');
+    expect(res.meta.semantic).toBe(true);
+  });
+
+  it('treats a pure category query as browsing: no embedding, name arms turned down', async () => {
+    let embedded = false;
+    const embedder = {
+      model: 'test',
+      dimensions: 2,
+      embed: async () => {
+        embedded = true;
+        return { vectors: [[0.1, 0.2]], usage: { inputTokens: 1, outputTokens: 0 } };
+      },
+    };
+    const rpc: SearchRpc = async () => ({ data: [row('a'), row('b'), row('c')], error: null });
+    const res = await search({ q: 'pharmacy in madina' }, { rpc, context: ctx, embedder });
+    expect(embedded).toBe(false);
+    expect(res.meta.pureBrowse).toBe(true);
+    expect(res.meta.weights).toMatchObject({ semantic: 0, title: 0.5, name: 0.5 });
+  });
+
+  it('still answers when the embedding call fails', async () => {
+    const embedder = {
+      model: 'test',
+      dimensions: 2,
+      embed: () => Promise.reject(new Error('down')),
+    };
+    const rpc: SearchRpc = async () => ({ data: [row('a'), row('b'), row('c')], error: null });
+    const res = await search({ q: 'pharmacy in kasoa' }, { rpc, context: ctx, embedder });
+    expect(res.meta.semantic).toBe(false);
+    expect(res.results).toHaveLength(3);
   });
 
   it('searches around a landmark it can find', async () => {

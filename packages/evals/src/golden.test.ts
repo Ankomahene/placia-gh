@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { GOLDEN, HOLDOUT, LABEL_FIXES } from './golden';
+import { GOLDEN, HOLDOUT, HOLDOUT_V2, HOLDOUT_V3, HOLDOUT_V4, LABEL_FIXES } from './golden';
 
 describe('golden sets', () => {
-  const all = [...GOLDEN, ...HOLDOUT];
+  const all = [...GOLDEN, ...HOLDOUT, ...HOLDOUT_V2, ...HOLDOUT_V3, ...HOLDOUT_V4];
 
   it('has unique ids', () => {
     expect(new Set(all.map((c) => c.id)).size).toBe(all.length);
@@ -12,6 +12,26 @@ describe('golden sets', () => {
     const dev = new Set(GOLDEN.map((c) => c.q.toLowerCase()));
     expect(HOLDOUT.filter((c) => dev.has(c.q.toLowerCase()))).toEqual([]);
     expect(HOLDOUT.every((c) => c.id.startsWith('h-'))).toBe(true);
+  });
+
+  it('keeps held-out v2 apart from both earlier sets', () => {
+    const seen = new Set([...GOLDEN, ...HOLDOUT].map((c) => c.q.toLowerCase()));
+    expect(HOLDOUT_V2.filter((c) => seen.has(c.q.toLowerCase()))).toEqual([]);
+    expect(HOLDOUT_V2.every((c) => c.id.startsWith('v-'))).toBe(true);
+  });
+
+  it('keeps held-out v3 apart from every earlier set', () => {
+    const seen = new Set([...GOLDEN, ...HOLDOUT, ...HOLDOUT_V2].map((c) => c.q.toLowerCase()));
+    expect(HOLDOUT_V3.filter((c) => seen.has(c.q.toLowerCase()))).toEqual([]);
+    expect(HOLDOUT_V3.every((c) => c.id.startsWith('w-'))).toBe(true);
+  });
+
+  it('keeps held-out v4 apart from every earlier set', () => {
+    const seen = new Set(
+      [...GOLDEN, ...HOLDOUT, ...HOLDOUT_V2, ...HOLDOUT_V3].map((c) => c.q.toLowerCase()),
+    );
+    expect(HOLDOUT_V4.filter((c) => seen.has(c.q.toLowerCase()))).toEqual([]);
+    expect(HOLDOUT_V4.every((c) => c.id.startsWith('x-'))).toBe(true);
   });
 
   it('only uses valid patterns and sensible areas', () => {

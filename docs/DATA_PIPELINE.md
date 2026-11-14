@@ -3,20 +3,21 @@
 `pnpm ingest` builds Placia's place database from open data. It runs locally (DuckDB, no Docker) and loads into Supabase.
 
 ```
-pnpm ingest            # stage → merge → load
+pnpm ingest            # stage → merge → load (→ embed, when OPENAI_API_KEY is set)
 pnpm ingest stage      # download (cached) and normalise every source
 pnpm ingest merge      # entity resolution + area assignment
 pnpm ingest load       # upsert into Supabase, prune stale rows, record the run
+pnpm ingest embed      # embed new or edited places for the meaning arm (resumable)
 ```
 
 ## Sources
 
-| Source | Licence | What we take | Records (2026-11-14) |
-| --- | --- | --- | --- |
-| OpenStreetMap (Geofabrik Ghana extract) | ODbL 1.0 | Named POIs (nodes, ways, multipolygons), settlements, named bus stops | 31,727 places · 11,551 localities |
-| Overture Maps places, release 2026-10-21.0 | CDLA-Permissive 2.0 | Ghana-bbox Parquet read directly from S3 | 29,664 places |
-| Foursquare-only Overture records | Apache 2.0 | Kept with their own source tag | 72 |
-| geoBoundaries gbOpen (commit 9469f09) | PD / CC BY-SA 2.0 / CC BY 4.0 | Country, 16 regions, 260 districts | 277 shapes |
+| Source                                     | Licence                       | What we take                                                          | Records (2026-11-14)              |
+| ------------------------------------------ | ----------------------------- | --------------------------------------------------------------------- | --------------------------------- |
+| OpenStreetMap (Geofabrik Ghana extract)    | ODbL 1.0                      | Named POIs (nodes, ways, multipolygons), settlements, named bus stops | 31,727 places · 11,551 localities |
+| Overture Maps places, release 2026-10-21.0 | CDLA-Permissive 2.0           | Ghana-bbox Parquet read directly from S3                              | 29,664 places                     |
+| Foursquare-only Overture records           | Apache 2.0                    | Kept with their own source tag                                        | 72                                |
+| geoBoundaries gbOpen (commit 9469f09)      | PD / CC BY-SA 2.0 / CC BY 4.0 | Country, 16 regions, 260 districts                                    | 277 shapes                        |
 
 Raw source payloads stay in `packages/ingest/.cache`. The database only gets normalised fields, which keeps the free tier's 500 MB in reach: the full load uses **123 MB**.
 
@@ -53,15 +54,15 @@ Raw source payloads stay in `packages/ingest/.cache`. The database only gets nor
 - Field coverage: district 100%, locality 99%, address 53%, phone 48%, website 26%, opening hours 7%.
 - Merges by rule:
 
-  | Rule | Merges |
-  | --- | --- |
-  | name | 1,615 |
-  | containment | 838 |
-  | OSM duplicate | 495 |
-  | phone | 431 |
-  | co-located | 265 |
-  | website | 178 |
-  | name + category | 39 |
+  | Rule            | Merges |
+  | --------------- | ------ |
+  | name            | 1,615  |
+  | containment     | 838    |
+  | OSM duplicate   | 495    |
+  | phone           | 431    |
+  | co-located      | 265    |
+  | website         | 178    |
+  | name + category | 39     |
 
 - Guards blocked 114 merges (OSM guard) and 27 (spread).
 - Re-running `load` is idempotent: 0 rows pruned, all 57,607 slugs identical.

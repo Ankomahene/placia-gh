@@ -1,4 +1,10 @@
-import { aiConfigFromEnv, createLLM, type LLMRouter } from '@placia/core/ai';
+import {
+  aiConfigFromEnv,
+  createEmbedder,
+  createLLM,
+  type Embedder,
+  type LLMRouter,
+} from '@placia/core/ai';
 import { loadSearchContext, search, toSearchEvent } from '@placia/core/search';
 import { createServiceClient } from '@placia/db';
 import { after, type NextRequest, NextResponse } from 'next/server';
@@ -26,6 +32,7 @@ const Params = z
 // Shared, stateless clients: safe to reuse across requests (no per-user state lives here).
 let db: ReturnType<typeof createServiceClient> | null = null;
 let llm: LLMRouter | null | undefined;
+let embedder: Embedder | null | undefined;
 
 function deps() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -35,8 +42,9 @@ function deps() {
   if (llm === undefined) {
     const cfg = aiConfigFromEnv();
     llm = cfg.anthropicApiKey || cfg.openaiApiKey ? createLLM(cfg) : null;
+    embedder = cfg.openaiApiKey ? createEmbedder(cfg) : null;
   }
-  return { db, llm };
+  return { db, llm, embedder: embedder ?? null };
 }
 
 export async function GET(req: NextRequest) {
@@ -62,7 +70,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const context = await loadSearchContext(rpc as never);
-    const res = await search(request, { rpc, context, llm: d.llm, aiBudgetMs: 2500 });
+    const res = await search(request, {
+      rpc,
+      context,
+      llm: d.llm,
+      embedder: d.embedder,
+      aiBudgetMs: 2500,
+    });
     if (p.offset === 0) {
       after(async () => {
         await d.db.from('search_events').insert(toSearchEvent(res, request) as never);
@@ -74,6 +88,7 @@ export async function GET(req: NextRequest) {
         'Cache-Control': p.lat == null ? 'public, max-age=60, s-maxage=300' : 'private, no-store',
         'Server-Timing': [
           `parse;dur=${res.meta.timings.parseMs};desc="${res.meta.parse.path}"`,
+          `embed;dur=${res.meta.timings.embedMs}`,
           `db;dur=${res.meta.timings.dbMs + res.meta.timings.anchorMs}`,
           `total;dur=${res.meta.timings.totalMs}`,
         ].join(', '),

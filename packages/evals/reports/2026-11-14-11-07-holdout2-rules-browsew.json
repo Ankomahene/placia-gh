@@ -1,0 +1,2881 @@
+{
+  "suite": "search-golden-v1-holdout2",
+  "at": "2026-11-14T11:07:21.956Z",
+  "git": "f999606",
+  "config": {
+    "mode": "rules",
+    "chaos": null,
+    "tag": null,
+    "k": 10,
+    "provider": null,
+    "model": null,
+    "semantic": false,
+    "aiBudgetMs": 2500,
+    "weights": null,
+    "browseWeights": {},
+    "networkRttMs": 278,
+    "dirty": true
+  },
+  "overall": {
+    "cases": 44,
+    "known": {
+      "n": 14,
+      "mrr": 0.821,
+      "hit1": 0.786,
+      "hit10": 0.857
+    },
+    "browse": {
+      "n": 30,
+      "p10": 0.568,
+      "ndcg10": 0.626,
+      "success10": 0.867
+    },
+    "zeroResultRate": 0,
+    "errors": 0,
+    "parse": {
+      "n": 30,
+      "categories": 0.833,
+      "area": 0.967,
+      "nearMe": 1,
+      "openNow": 1,
+      "cheap": 1,
+      "allCorrect": 0.833
+    },
+    "tokens": null,
+    "fallbacks": {
+      "not_configured": 44
+    },
+    "paths": {
+      "rules": 44
+    },
+    "latencyMs": {
+      "p50": 415,
+      "p95": 930,
+      "parseP50": 0,
+      "embedP50": 0,
+      "parseP95": 0,
+      "dbP50": 414,
+      "dbP95": 929
+    }
+  },
+  "byTag": {
+    "browse": {
+      "cases": 30,
+      "known": null,
+      "browse": {
+        "n": 30,
+        "p10": 0.568,
+        "ndcg10": 0.626,
+        "success10": 0.867
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 30,
+        "categories": 0.833,
+        "area": 0.967,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.833
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 30
+      },
+      "paths": {
+        "rules": 30
+      },
+      "latencyMs": {
+        "p50": 346,
+        "p95": 773,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 346,
+        "dbP95": 773
+      }
+    },
+    "descriptive": {
+      "cases": 8,
+      "known": null,
+      "browse": {
+        "n": 8,
+        "p10": 0.563,
+        "ndcg10": 0.581,
+        "success10": 0.75
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 8,
+        "categories": 0.5,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.5
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 8
+      },
+      "paths": {
+        "rules": 8
+      },
+      "latencyMs": {
+        "p50": 346,
+        "p95": 1026,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 346,
+        "dbP95": 1025
+      }
+    },
+    "education": {
+      "cases": 3,
+      "known": {
+        "n": 2,
+        "mrr": 1,
+        "hit1": 1,
+        "hit10": 1
+      },
+      "browse": {
+        "n": 1,
+        "p10": 0.5,
+        "ndcg10": 0.587,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 1,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 3
+      },
+      "paths": {
+        "rules": 3
+      },
+      "latencyMs": {
+        "p50": 930,
+        "p95": 1691,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 929,
+        "dbP95": 1690
+      }
+    },
+    "faith": {
+      "cases": 2,
+      "known": null,
+      "browse": {
+        "n": 2,
+        "p10": 1,
+        "ndcg10": 1,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 2,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 2
+      },
+      "paths": {
+        "rules": 2
+      },
+      "latencyMs": {
+        "p50": 324,
+        "p95": 393,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 324,
+        "dbP95": 393
+      }
+    },
+    "food": {
+      "cases": 3,
+      "known": null,
+      "browse": {
+        "n": 3,
+        "p10": 0.567,
+        "ndcg10": 0.635,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 3,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 3
+      },
+      "paths": {
+        "rules": 3
+      },
+      "latencyMs": {
+        "p50": 421,
+        "p95": 430,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 420,
+        "dbP95": 430
+      }
+    },
+    "health": {
+      "cases": 9,
+      "known": {
+        "n": 5,
+        "mrr": 1,
+        "hit1": 1,
+        "hit10": 1
+      },
+      "browse": {
+        "n": 4,
+        "p10": 0.643,
+        "ndcg10": 0.72,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 4,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 9
+      },
+      "paths": {
+        "rules": 9
+      },
+      "latencyMs": {
+        "p50": 754,
+        "p95": 899,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 754,
+        "dbP95": 898
+      }
+    },
+    "known-item": {
+      "cases": 14,
+      "known": {
+        "n": 14,
+        "mrr": 0.821,
+        "hit1": 0.786,
+        "hit10": 0.857
+      },
+      "browse": null,
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 14
+      },
+      "paths": {
+        "rules": 14
+      },
+      "latencyMs": {
+        "p50": 767,
+        "p95": 1691,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 767,
+        "dbP95": 1690
+      }
+    },
+    "leisure": {
+      "cases": 7,
+      "known": {
+        "n": 5,
+        "mrr": 0.5,
+        "hit1": 0.4,
+        "hit10": 0.6
+      },
+      "browse": {
+        "n": 2,
+        "p10": 0.15,
+        "ndcg10": 0.235,
+        "success10": 0.5
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 2,
+        "categories": 0.5,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.5
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 7
+      },
+      "paths": {
+        "rules": 7
+      },
+      "latencyMs": {
+        "p50": 695,
+        "p95": 767,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 695,
+        "dbP95": 767
+      }
+    },
+    "money": {
+      "cases": 3,
+      "known": null,
+      "browse": {
+        "n": 3,
+        "p10": 0.667,
+        "ndcg10": 0.744,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 3,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 3
+      },
+      "paths": {
+        "rules": 3
+      },
+      "latencyMs": {
+        "p50": 319,
+        "p95": 321,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 319,
+        "dbP95": 321
+      }
+    },
+    "near-me": {
+      "cases": 2,
+      "known": null,
+      "browse": {
+        "n": 2,
+        "p10": 0.3,
+        "ndcg10": 0.361,
+        "success10": 0.5
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 2,
+        "categories": 0.5,
+        "area": 0.5,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.5
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 2
+      },
+      "paths": {
+        "rules": 2
+      },
+      "latencyMs": {
+        "p50": 369,
+        "p95": 773,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 369,
+        "dbP95": 773
+      }
+    },
+    "public": {
+      "cases": 1,
+      "known": null,
+      "browse": {
+        "n": 1,
+        "p10": 0.667,
+        "ndcg10": 0.704,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 1,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 1
+      },
+      "paths": {
+        "rules": 1
+      },
+      "latencyMs": {
+        "p50": 287,
+        "p95": 287,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 287,
+        "dbP95": 287
+      }
+    },
+    "pure-browse": {
+      "cases": 22,
+      "known": null,
+      "browse": {
+        "n": 22,
+        "p10": 0.57,
+        "ndcg10": 0.642,
+        "success10": 0.909
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 22,
+        "categories": 0.955,
+        "area": 0.955,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.955
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 22
+      },
+      "paths": {
+        "rules": 22
+      },
+      "latencyMs": {
+        "p50": 337,
+        "p95": 679,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 336,
+        "dbP95": 679
+      }
+    },
+    "services": {
+      "cases": 4,
+      "known": null,
+      "browse": {
+        "n": 4,
+        "p10": 0.35,
+        "ndcg10": 0.386,
+        "success10": 0.5
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 4,
+        "categories": 0.75,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.75
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 575,
+        "p95": 1026,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 574,
+        "dbP95": 1025
+      }
+    },
+    "shopping": {
+      "cases": 3,
+      "known": null,
+      "browse": {
+        "n": 3,
+        "p10": 0.611,
+        "ndcg10": 0.698,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 3,
+        "categories": 0.667,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.667
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 3
+      },
+      "paths": {
+        "rules": 3
+      },
+      "latencyMs": {
+        "p50": 337,
+        "p95": 353,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 336,
+        "dbP95": 353
+      }
+    },
+    "slang": {
+      "cases": 4,
+      "known": null,
+      "browse": {
+        "n": 4,
+        "p10": 0.625,
+        "ndcg10": 0.694,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 4,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 337,
+        "p95": 430,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 336,
+        "dbP95": 430
+      }
+    },
+    "stay": {
+      "cases": 4,
+      "known": {
+        "n": 2,
+        "mrr": 1,
+        "hit1": 1,
+        "hit10": 1
+      },
+      "browse": {
+        "n": 2,
+        "p10": 0.833,
+        "ndcg10": 0.883,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 2,
+        "categories": 1,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 1
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 321,
+        "p95": 809,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 320,
+        "dbP95": 809
+      }
+    },
+    "transport": {
+      "cases": 3,
+      "known": null,
+      "browse": {
+        "n": 3,
+        "p10": 0.6,
+        "ndcg10": 0.627,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": {
+        "n": 3,
+        "categories": 0.667,
+        "area": 1,
+        "nearMe": 1,
+        "openNow": 1,
+        "cheap": 1,
+        "allCorrect": 0.667
+      },
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 3
+      },
+      "paths": {
+        "rules": 3
+      },
+      "latencyMs": {
+        "p50": 330,
+        "p95": 346,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 330,
+        "dbP95": 346
+      }
+    },
+    "typo": {
+      "cases": 2,
+      "known": {
+        "n": 2,
+        "mrr": 0.5,
+        "hit1": 0.5,
+        "hit10": 0.5
+      },
+      "browse": null,
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 2
+      },
+      "paths": {
+        "rules": 2
+      },
+      "latencyMs": {
+        "p50": 695,
+        "p95": 790,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 695,
+        "dbP95": 789
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "v-pharm-ashaiman",
+      "q": "pharmacy ashaiman",
+      "tags": ["browse", "pure-browse", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.9,
+      "ndcg10": 0.933745776545611,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 584,
+        "parse": 0,
+        "db": 582,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Gap Pharmacy (pharmacy, Tulaku)",
+        "✓ SiMart Pharmacy (pharmacy, Ashaiman)",
+        "✓ Alive Pharmacy (pharmacy, Ashaiman)",
+        "✓ Senes Pharmacy (pharmacy, New Town)",
+        "✓ Widama Pharmacy (pharmacy, Ashaiman)"
+      ],
+      "intent": {
+        "text": "pharmacy",
+        "categories": ["pharmacy"],
+        "area": {
+          "kind": "town",
+          "id": 10872,
+          "name": "Ashaiman",
+          "lat": 5.69439,
+          "lon": -0.02953,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-hotel-elmina",
+      "q": "hotels in elmina",
+      "tags": ["browse", "pure-browse", "stay"],
+      "kind": "browse",
+      "n": 17,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 274,
+        "parse": 0,
+        "db": 273,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Golden Hill Parker Hotel (hotel, Elmina)",
+        "✓ Hotel Karick (hotel, Iture)",
+        "✓ Royal Elmount Hotel (hotel, Elmina)",
+        "✓ Davies Villa Hotel (hotel, Elmina)",
+        "✓ Bridge House Hotel (hotel, Elmina)"
+      ],
+      "intent": {
+        "text": "hotels",
+        "categories": ["hotel"],
+        "area": {
+          "kind": "town",
+          "id": 10208,
+          "name": "Elmina",
+          "lat": 5.08588,
+          "lon": -1.35058,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-chopbar-nungua",
+      "q": "chop bar nungua",
+      "tags": ["browse", "pure-browse", "food", "slang"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 430,
+        "parse": 0,
+        "db": 430,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Onyame Tumi So Chop Bar (local-food, Nungua)",
+        "✓ Twins Chop Bar (restaurant, Greda Estate)",
+        "✓ God is King Chop Bar (restaurant, Teshie Nungua Estates)",
+        "· Chop Bar (fast-food, Tema)",
+        "· Rahmania Chop Bar (restaurant, Okpoi Gonno)"
+      ],
+      "intent": {
+        "text": "chop bar",
+        "categories": ["local-food"],
+        "area": {
+          "kind": "town",
+          "id": 7301,
+          "name": "Nungua",
+          "lat": 5.60114,
+          "lon": -0.07039,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-bank-obuasi",
+      "q": "bank in obuasi",
+      "tags": ["browse", "pure-browse", "money"],
+      "kind": "browse",
+      "n": 10,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.7,
+      "ndcg10": 0.7631925784528223,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 319,
+        "parse": 0,
+        "db": 319,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ National Investment Bank (bank, Kwabrafoso)",
+        "✓ Odotobiri Rural Bank (bank, Obuasi Central)",
+        "✓ GCB Bank (bank, A.G.A)",
+        "· Adansi Rural BANK Limited (finance, Obuasi)",
+        "✓ ADB (bank, A.G.A)"
+      ],
+      "intent": {
+        "text": "bank",
+        "categories": ["bank"],
+        "area": {
+          "kind": "city",
+          "id": 10585,
+          "name": "Obuasi",
+          "lat": 6.21154,
+          "lon": -1.6894,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-fuel-nkawkaw",
+      "q": "fuel station nkawkaw",
+      "tags": ["browse", "pure-browse", "transport"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.8,
+      "ndcg10": 0.8553475075669357,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 281,
+        "parse": 0,
+        "db": 280,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Nkawkaw 2 TotalEnergies Service Station (fuel, Nkawkaw)",
+        "✓ MERIDIAN ROAD TotalEnergies Service Station (fuel, Nkawkaw)",
+        "✓ NKAWKAW BYPASS TotalEnergies Service Station (fuel, Abepotia)",
+        "✓ Castro Petro - Gas Station (fuel, Mpraeso)",
+        "✓ Shell (fuel, Nkawkaw)"
+      ],
+      "intent": {
+        "text": "fuel station",
+        "categories": ["fuel"],
+        "area": {
+          "kind": "town",
+          "id": 5065,
+          "name": "Nkawkaw",
+          "lat": 6.5528,
+          "lon": -0.76981,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-school-dodowa",
+      "q": "school dodowa",
+      "tags": ["browse", "pure-browse", "education"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.5,
+      "ndcg10": 0.5868924718493931,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 374,
+        "parse": 0,
+        "db": 374,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ The Dodowa School (school, Dodowa)",
+        "✓ The Morning Star International High School (school, Wedokum)",
+        "· Ridge Hills School (school, Seduase)",
+        "· Accra Grammar School (school, Oyibi)",
+        "✓ Dodowa Newtown School (school, Wedokum)"
+      ],
+      "intent": {
+        "text": "school",
+        "categories": ["school"],
+        "area": {
+          "kind": "town",
+          "id": 2391,
+          "name": "Dodowa",
+          "lat": 5.88003,
+          "lon": -0.10466,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-church-ashaiman",
+      "q": "church ashaiman",
+      "tags": ["browse", "pure-browse", "faith"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 393,
+        "parse": 0,
+        "db": 393,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ St. Peter's Methodist Church (church, Ashaiman)",
+        "✓ Assemblies of God Church (church, Ashaiman)",
+        "✓ Wordlife Church, Ghana (church, Ashaiman)",
+        "✓ Action city church, Ashaiman (church, Ashaiman)",
+        "✓ The Apostolic Church (church, Ashaiman)"
+      ],
+      "intent": {
+        "text": "church",
+        "categories": ["church"],
+        "area": {
+          "kind": "town",
+          "id": 10872,
+          "name": "Ashaiman",
+          "lat": 5.69439,
+          "lon": -0.02953,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-market-keta",
+      "q": "market keta",
+      "tags": ["browse", "pure-browse", "shopping"],
+      "kind": "browse",
+      "n": 3,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3333333333333333,
+      "ndcg10": 0.46927872602275644,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 269,
+        "parse": 0,
+        "db": 268,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Keta Market (market, Keta)",
+        "· SandCity TV (professional, Keta)",
+        "· Sandcity Radio 88.9 (professional, Keta)"
+      ],
+      "intent": {
+        "text": "market",
+        "categories": ["market"],
+        "area": {
+          "kind": "town",
+          "id": 11186,
+          "name": "Keta",
+          "lat": 5.92157,
+          "lon": 0.99107,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-clinic-dome",
+      "q": "clinic in dome",
+      "tags": ["browse", "pure-browse", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.2,
+      "ndcg10": 0.3589542101716347,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 415,
+        "parse": 0,
+        "db": 414,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Penbrose Clinic (clinic, Dome)",
+        "✓ Trust Clinic Dome (clinic, Dome)",
+        "· Mini Clinic (clinic, North Legon)",
+        "· Top Herbal Clinic (clinic, Agbogba)",
+        "· Accra Physiotherapy & Sports Injury Clinic (clinic, Abelenkpe)"
+      ],
+      "intent": {
+        "text": "clinic",
+        "categories": ["clinic"],
+        "area": {
+          "kind": "town",
+          "id": 10023,
+          "name": "Dome",
+          "lat": 5.65542,
+          "lon": -0.23288,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-rest-labone",
+      "q": "restaurant labone",
+      "tags": ["browse", "pure-browse", "food"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 421,
+        "parse": 0,
+        "db": 420,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Le Pavillon Restaurant (restaurant, Labone)",
+        "✓ Pantita (restaurant, Labone)",
+        "✓ Bosphorus (restaurant, Labone)",
+        "✓ No. X Restaurant and Lounge (restaurant, Labone)",
+        "✓ Tandoor (restaurant, Labone)"
+      ],
+      "intent": {
+        "text": "restaurant",
+        "categories": ["restaurant"],
+        "area": {
+          "kind": "suburb",
+          "id": 4115,
+          "name": "Labone",
+          "lat": 5.56982,
+          "lon": -0.17208,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-gym-tema",
+      "q": "gym in tema",
+      "tags": ["browse", "pure-browse", "leisure"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 362,
+        "parse": 0,
+        "db": 361,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Pyvot Gym (sports, Tema)",
+        "✓ Bling Body Gym (sports, Community 18)",
+        "✓ Secure Gym and Fitness Centres (sports, Community 15)",
+        "· Benny’s Gym (sports, Addogonno)",
+        "· Ultimate Classic Gym (sports, Teshie)"
+      ],
+      "intent": {
+        "text": "gym",
+        "categories": ["sports"],
+        "area": {
+          "kind": "city",
+          "id": 4614,
+          "name": "Tema",
+          "lat": 5.65964,
+          "lon": -0.00968,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-salon-ejisu",
+      "q": "salon ejisu",
+      "tags": ["browse", "pure-browse", "services"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 679,
+        "parse": 0,
+        "db": 679,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Fravero Unisex barbering salon (salon, Oforikrom)",
+        "· Lady B Beauty Salon (shop, Domeabra)",
+        "· Infinity Salon And Gents Palour (salon, Kumasi)",
+        "· Premier Barber Salon (shop, Ayeduase)",
+        "· Salon De Lyre (shop, Ayeduase)"
+      ],
+      "intent": {
+        "text": "salon",
+        "categories": ["salon"],
+        "area": {
+          "kind": "town",
+          "id": 925,
+          "name": "Ejisu",
+          "lat": 6.71399,
+          "lon": -1.46658,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-police-tarkwa",
+      "q": "police tarkwa",
+      "tags": ["browse", "pure-browse", "public"],
+      "kind": "browse",
+      "n": 3,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.6666666666666666,
+      "ndcg10": 0.7039180890341347,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 287,
+        "parse": 0,
+        "db": 287,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Tarkwa Police (police, Tarkwa)",
+        "· Aboso Police Station (police, Aboso)",
+        "✓ Tarkwa Railways Police Station (police, Tarkwa)"
+      ],
+      "intent": {
+        "text": "police",
+        "categories": ["police"],
+        "area": {
+          "kind": "town",
+          "id": 2001,
+          "name": "Tarkwa",
+          "lat": 5.31094,
+          "lon": -1.99243,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-atm-weija",
+      "q": "atm weija",
+      "tags": ["browse", "pure-browse", "money"],
+      "kind": "browse",
+      "n": 16,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 321,
+        "parse": 0,
+        "db": 321,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Standard Chartered ATM (atm, New Weija)",
+        "✓ Absa ATM (atm, Mandela)",
+        "✓ Absa ATM (atm, New Weija)",
+        "· Standard Chartered ATM (atm, Mallam)",
+        "· Absa ATM (atm, Kokompe)"
+      ],
+      "intent": {
+        "text": "atm",
+        "categories": ["atm"],
+        "area": {
+          "kind": "town",
+          "id": 3972,
+          "name": "Weija",
+          "lat": 5.57923,
+          "lon": -0.33068,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-prov-haatso",
+      "q": "provision shop haatso",
+      "tags": ["browse", "pure-browse", "shopping", "slang"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 337,
+        "parse": 0,
+        "db": 336,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Don't Mind The Body Provision Store (provisions, Madina)",
+        "✓ Provisions and More (provisions, Madina)",
+        "✓ Bonjour Haatso (provisions, Haatso)",
+        "✓ Options (provisions, Legon)",
+        "✓ El Tarsh Ventires (provisions, North Legon)"
+      ],
+      "intent": {
+        "text": "provision shop",
+        "categories": ["provisions"],
+        "area": {
+          "kind": "suburb",
+          "id": 5031,
+          "name": "Haatso",
+          "lat": 5.67068,
+          "lon": -0.20335,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-hosp-yendi",
+      "q": "hospital yendi",
+      "tags": ["browse", "pure-browse", "health"],
+      "kind": "browse",
+      "n": 7,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.5714285714285714,
+      "ndcg10": 0.652553596282728,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 294,
+        "parse": 0,
+        "db": 294,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Yendi Hospital (hospital, Yendi)",
+        "✓ Yendi Municipal Hospital (hospital, Yendi)",
+        "· Sambu Health Center (hospital, Sambu)",
+        "· Ambulant Station Bachabordo (hospital, Bachabordo)",
+        "✓ Yendi Dist. Hosp. (hospital, Yendi)"
+      ],
+      "intent": {
+        "text": "hospital",
+        "categories": ["hospital"],
+        "area": {
+          "kind": "city",
+          "id": 4328,
+          "name": "Yendi",
+          "lat": 9.44665,
+          "lon": -0.00351,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-gh-aflao",
+      "q": "guest house aflao",
+      "tags": ["browse", "pure-browse", "stay"],
+      "kind": "browse",
+      "n": 3,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.6666666666666666,
+      "ndcg10": 0.7653606369886217,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 321,
+        "parse": 0,
+        "db": 320,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Palace Club House (guest-house, Viepe)",
+        "✓ Teranga Lodge (guest-house, Aflao)",
+        "· Light House Chapel International (church, Denu)"
+      ],
+      "intent": {
+        "text": "guest house",
+        "categories": ["guest-house"],
+        "area": {
+          "kind": "town",
+          "id": 29,
+          "name": "Aflao",
+          "lat": 6.11605,
+          "lon": 1.1914,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-bar-dzorwulu",
+      "q": "drinking spot dzorwulu",
+      "tags": ["browse", "pure-browse", "food", "slang"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.4,
+      "ndcg10": 0.4354747455750672,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 358,
+        "parse": 0,
+        "db": 358,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Lizzies Drinking Spot (bar, Agbadzena)",
+        "· Dadia's Drinking Spot (bar, Accra)",
+        "· Enso Nyame Ye Drinking Spot (bar, Achimota)",
+        "· King Midas Drinking Spot (bar, Akweteyman)",
+        "· Nkwa Na Ehia Heineken Drinking Spot (bar, Akweteyman)"
+      ],
+      "intent": {
+        "text": "drinking spot",
+        "categories": ["bar"],
+        "area": {
+          "kind": "suburb",
+          "id": 1104,
+          "name": "Dzorwulu",
+          "lat": 5.61231,
+          "lon": -0.20384,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-print-suame",
+      "q": "printing shop suame",
+      "tags": ["browse", "pure-browse", "services"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.5,
+      "ndcg10": 0.6086182388744239,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 287,
+        "parse": 0,
+        "db": 287,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Big Joe Production (printing, Kumasi)",
+        "✓ Angel FM (printing, Kumasi)",
+        "✓ Holy Uriel Printers (printing, Kumasi)",
+        "· MJ Steel Limited (shop, Kumasi)",
+        "· Obaa Feli Make Up Shop (shop, Kumasi)"
+      ],
+      "intent": {
+        "text": "printing shop",
+        "categories": ["printing"],
+        "area": {
+          "kind": "suburb",
+          "id": 2282,
+          "name": "Suame",
+          "lat": 6.71636,
+          "lon": -1.63692,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-fitter-suame",
+      "q": "fitting shop suame",
+      "tags": ["browse", "pure-browse", "transport", "slang"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.8,
+      "ndcg10": 0.8701249883466593,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 330,
+        "parse": 0,
+        "db": 330,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Kobby Chris Automobiles (car-repair, Kumasi)",
+        "✓ Mechanical Lloyd Co. Ltd (car-repair, Kumasi)",
+        "✓ Adams Apple Motors (car-repair, Kumasi)",
+        "✓ Gariba Auto diagnostics (car-repair, Tarkwa)",
+        "✓ Grace of God mechanic and Trade enterprises (car-repair, Tarkwa)"
+      ],
+      "intent": {
+        "text": "fitting shop",
+        "categories": ["car-repair"],
+        "area": {
+          "kind": "suburb",
+          "id": 2282,
+          "name": "Suame",
+          "lat": 6.71636,
+          "lon": -1.63692,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-fuel-me",
+      "q": "filling station near me",
+      "tags": ["browse", "near-me", "pure-browse"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0.0625,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": {
+        "categories": false,
+        "area": false,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 773,
+        "parse": 0,
+        "db": 773,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Shell (fuel, Teiman)",
+        "· Goil Filling Station (fuel, Ashaley Botwe)",
+        "· Shell (fuel, Elmina)",
+        "· SWL Gas Filling Station (fuel, Pokuase)",
+        "· Engen Filling Station (fuel, Oyarifa)"
+      ],
+      "intent": {
+        "text": "filling station",
+        "categories": ["bus-station"],
+        "area": {
+          "kind": "landmark",
+          "id": 3882,
+          "name": "Filling",
+          "lat": 5.76801,
+          "lon": -0.18046,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": true,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-chem-me",
+      "q": "chemist close to me",
+      "tags": ["browse", "near-me", "pure-browse"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.6,
+      "ndcg10": 0.7222954974312066,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 369,
+        "parse": 0,
+        "db": 369,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Ernest Chemist (pharmacy, Kumasi)",
+        "✓ Mainoo Chemist (pharmacy, Amakom)",
+        "✓ Pida Chemist Limited (pharmacy, Kumasi)",
+        "✓ Unicom Chemist Ltd. - Bantama (Retail & Wholesale) (pharmacy, Kumasi)",
+        "✓ Bandy Chemist (pharmacy, Kumasi)"
+      ],
+      "intent": {
+        "text": "chemist",
+        "categories": ["pharmacy"],
+        "area": null,
+        "anchor": null,
+        "nearMe": true,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-uhas",
+      "q": "university of health and allied sciences",
+      "tags": ["known-item", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 930,
+        "parse": 0,
+        "db": 929,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ University of Health and Allied Sciences (university, Hohoe)",
+        "✓ University of Health and Allied Sciences (university, Ho)",
+        "✓ University of Health and Allied Sciences (university, Ho)",
+        "· School of Biomedical and Allied Health Sciences (university, Korle Gonno)",
+        "· School Of Allied Health Sciences (university, Cape Coast)"
+      ],
+      "intent": {
+        "text": "university health allied sciences",
+        "categories": ["university"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-elmina-castle",
+      "q": "elmina castle",
+      "tags": ["known-item", "leisure"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 745,
+        "parse": 0,
+        "db": 745,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Saint George’s Castle (attraction, Elmina)",
+        "· Elmina Java Museum (attraction, Elmina)",
+        "· Elmina Chapel Square (attraction, Elmina)",
+        "· Posuban Shrine 1 (attraction, Elmina)",
+        "· Fort Coenraadsburg (attraction, Elmina)"
+      ],
+      "intent": {
+        "text": "elmina castle",
+        "categories": ["attraction"],
+        "area": {
+          "kind": "town",
+          "id": 10208,
+          "name": "Elmina",
+          "lat": 5.08588,
+          "lon": -1.35058,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-elmina-typo",
+      "q": "elmina castel",
+      "tags": ["known-item", "leisure", "typo"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 695,
+        "parse": 0,
+        "db": 695,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Elmina Car Station (other, Elmina)",
+        "· Ghana Revenue Authority - Elmina Sub Office (government, Elmina)",
+        "· Saint George’s Castle (attraction, Elmina)",
+        "· Elmina Beach Resort (hotel, Elmina)",
+        "· Mabel's Table Restaurant and a Guest House Elmina Cape Coast. (hotel, Cape Coast)"
+      ],
+      "intent": {
+        "text": "elmina castel",
+        "categories": [],
+        "area": {
+          "kind": "town",
+          "id": 10208,
+          "name": "Elmina",
+          "lat": 5.08588,
+          "lon": -1.35058,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-legon-hosp",
+      "q": "legon hospital",
+      "tags": ["known-item", "health"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 874,
+        "parse": 0,
+        "db": 874,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ North Legon Hospital (hospital, North Legon)",
+        "✓ Legon Hospital Bus Station (bus-station, Legon)",
+        "✓ University Hospital Legon (hospital, Legon)",
+        "· Medifem Multi-Specialist Hospital & Fertility Centre (hospital, Legon)",
+        "· Battor Catholic Mission Hospital (hospital, Battor)"
+      ],
+      "intent": {
+        "text": "legon hospital",
+        "categories": ["university", "hospital"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-lekma",
+      "q": "lekma hospital",
+      "tags": ["known-item", "health"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4537425745411855,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 754,
+        "parse": 0,
+        "db": 754,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Lekma Hospital (hospital, Teshie)",
+        "✓ Lekma Hospital_Official (hospital, Teshie)",
+        "· Lister Hospital (hospital, Martey Tsuru)",
+        "✓ LEKMA Polyclinic (hospital, Addogonno)",
+        "· Ridge Hospital (hospital, Accra)"
+      ],
+      "intent": {
+        "text": "lekma hospital",
+        "categories": ["hospital"],
+        "area": {
+          "kind": "landmark",
+          "id": 4985,
+          "name": "Lekma",
+          "lat": 5.60388,
+          "lon": -0.12129,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-tema-gh",
+      "q": "tema general hospital",
+      "tags": ["known-item", "health"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.22009176629808017,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 899,
+        "parse": 0,
+        "db": 898,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Tema General Hospital (hospital, Tema)",
+        "· Pro Vita Specialist Hospital (hospital, Community 6)",
+        "· Tema Women's Hospital (hospital, Tema)",
+        "· Kasa Family Hospital (hospital, Tema)",
+        "· Mamobi General Hospital (hospital, Maamobi)"
+      ],
+      "intent": {
+        "text": "tema general hospital",
+        "categories": ["hospital"],
+        "area": {
+          "kind": "city",
+          "id": 4614,
+          "name": "Tema",
+          "lat": 5.65964,
+          "lon": -0.00968,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-tema-gh-typo",
+      "q": "tema genral hospital",
+      "tags": ["known-item", "health", "typo"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.22009176629808017,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 790,
+        "parse": 0,
+        "db": 789,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Tema General Hospital (hospital, Tema)",
+        "· Pro Vita Specialist Hospital (hospital, Community 6)",
+        "· Tema Women's Hospital (hospital, Tema)",
+        "· Narh-Bita Hospital (hospital, Tema)",
+        "· International Maritime Hospital Ghana Limited (hospital, Community 3)"
+      ],
+      "intent": {
+        "text": "tema genral hospital",
+        "categories": ["hospital"],
+        "area": {
+          "kind": "city",
+          "id": 4614,
+          "name": "Tema",
+          "lat": 5.65964,
+          "lon": -0.00968,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-atu",
+      "q": "accra technical university",
+      "tags": ["known-item", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.22009176629808017,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1691,
+        "parse": 0,
+        "db": 1690,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Accra Technical University (university, Accra)",
+        "· Accra College of Medicine (university, Accra)",
+        "· Wisconsin International University College, Ghana (university, Accra)",
+        "· University of Ghana - City Campus (university, Accra)",
+        "· Accra City Campus (university, Accra)"
+      ],
+      "intent": {
+        "text": "accra technical university",
+        "categories": ["university"],
+        "area": {
+          "kind": "city",
+          "id": 5458,
+          "name": "Accra",
+          "lat": 5.55711,
+          "lon": -0.20124,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-aliu",
+      "q": "aliu mahama stadium",
+      "tags": ["known-item", "leisure"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.2,
+      "ndcg10": 0.3589542101716347,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 767,
+        "parse": 0,
+        "db": 767,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Aliu Mahama Sports Stadium (sports, Tamale)",
+        "✓ Aliu Mahama Sports Stadium (sports, Tamale)",
+        "· Baba Yara Sport Stadium (sports, Lobito)",
+        "· Sekondi Sports Stadium -Takoradi (sports, Aboadze)",
+        "· Theodosia Okoh Hockey Stadium (sports, Accra)"
+      ],
+      "intent": {
+        "text": "aliu mahama stadium",
+        "categories": ["sports"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-wli",
+      "q": "wli waterfalls",
+      "tags": ["known-item", "leisure"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.4,
+      "ndcg10": 0.5388856921828065,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 695,
+        "parse": 0,
+        "db": 695,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Wli Waterfall Inn (hostel, Wli Afegame)",
+        "✓ Wli Waterfalls Camping (camping, Yikpa-Dafo)",
+        "· Kintampo Waterfalls (attraction, Kintampo)",
+        "✓ Wli Agumatsa Waterfalls (professional, Hohoe)",
+        "✓ Wli Agumatsa waterfalls tourist site (professional, Wli Afegame)"
+      ],
+      "intent": {
+        "text": "wli waterfalls",
+        "categories": ["attraction"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-paga",
+      "q": "paga crocodile pond",
+      "tags": ["known-item", "leisure"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.5,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.13886244387355454,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 735,
+        "parse": 0,
+        "db": 735,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Paga Chief Crocodile Pond Information Center (other, Paga)",
+        "✓ Paga Crocodile Pond (attraction, Paga)",
+        "· Paga Market (market, Paga)",
+        "· Paga District Hospital (hospital, Paga)",
+        "· We Paga Restaurant (restaurant, Paga)"
+      ],
+      "intent": {
+        "text": "paga crocodile pond",
+        "categories": [],
+        "area": {
+          "kind": "town",
+          "id": 10149,
+          "name": "Paga",
+          "lat": 10.97004,
+          "lon": -1.10167,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-cc-hosp",
+      "q": "cape coast teaching hospital",
+      "tags": ["known-item", "health"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 888,
+        "parse": 0,
+        "db": 887,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Cape Coast Teaching Hospital (hospital, Cape Coast)",
+        "✓ Cape Coast Teaching Hospital (hospital, Pedu)",
+        "✓ Cape Coast Teaching Hospital (hospital, Cape Coast)",
+        "· Cape Coast Health And Wellness Center (hospital, Cape Coast)",
+        "· Cape Coast District Hospital (hospital, Cape Coast)"
+      ],
+      "intent": {
+        "text": "cape coast teaching hospital",
+        "categories": ["hospital"],
+        "area": {
+          "kind": "city",
+          "id": 10267,
+          "name": "Cape Coast",
+          "lat": 5.10809,
+          "lon": -1.24171,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-peduase",
+      "q": "peduase lodge",
+      "tags": ["known-item", "stay"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 703,
+        "parse": 0,
+        "db": 703,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Peduase Lodge (hotel, Peduase)",
+        "✓ Peduase Lodge (government, Peduase)",
+        "✓ Peduase Valley Resort (hotel, Peduase)",
+        "· Lodge Tavern (hotel, Peduase)",
+        "· The Lodge Tavern Wine and Restaurant (restaurant, Peduase)"
+      ],
+      "intent": {
+        "text": "peduase lodge",
+        "categories": ["hotel"],
+        "area": {
+          "kind": "village",
+          "id": 767,
+          "name": "Peduase",
+          "lat": 5.80519,
+          "lon": -0.18377,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-k-tulip-kumasi",
+      "q": "golden tulip kumasi",
+      "tags": ["known-item", "stay"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.2,
+      "ndcg10": 0.2863459897524692,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 809,
+        "parse": 0,
+        "db": 809,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Golden Tulip Hotel (hotel, Nhyiaeso)",
+        "· Kumasi General Post Office (post-office, Kumasi)",
+        "· Lancaster Kumasi City (hotel, Kumasi)",
+        "· Kumasi Technical University (university, Asem)",
+        "· Golden Tulip Hotel (hotel, Accra)"
+      ],
+      "intent": {
+        "text": "golden tulip kumasi",
+        "categories": [],
+        "area": {
+          "kind": "city",
+          "id": 1454,
+          "name": "Kumasi",
+          "lat": 6.69856,
+          "lon": -1.62331,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-photocopy",
+      "q": "where can i photocopy documents in madina",
+      "tags": ["browse", "descriptive", "services"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.9,
+      "ndcg10": 0.9363792118010483,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 575,
+        "parse": 0,
+        "db": 574,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Net 2 TV (printing, Madina)",
+        "✓ Radio Univers (printing, Legon)",
+        "✓ Oman FM (printing, Madina)",
+        "✓ Antique Brands Gh (printing, Dzen Ayor)",
+        "✓ Divinity Graphics (printing, North Legon)"
+      ],
+      "intent": {
+        "text": "photocopy documents",
+        "categories": ["printing"],
+        "area": {
+          "kind": "town",
+          "id": 1741,
+          "name": "Madina",
+          "lat": 5.6865,
+          "lon": -0.16771,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-fix-car",
+      "q": "someone to fix my car in suame",
+      "tags": ["browse", "descriptive", "transport"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 0.2,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.2,
+      "ndcg10": 0.15457433957839825,
+      "parse": {
+        "categories": false,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 346,
+        "parse": 0,
+        "db": 346,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· God Partnership Building Constructions - Kumasi Ghana (repairs, Kropo)",
+        "· Emass Electricals (repairs, Kumasi)",
+        "· Suame Bus Station (bus-station, Kumasi)",
+        "· Shell (fuel, Kumasi)",
+        "✓ Kobby Chris Automobiles (car-repair, Kumasi)"
+      ],
+      "intent": {
+        "text": "someone fix car",
+        "categories": [
+          "salon",
+          "tailor",
+          "laundry",
+          "printing",
+          "repairs",
+          "internet",
+          "professional",
+          "fuel",
+          "bus-station",
+          "taxi",
+          "airport",
+          "car-repair",
+          "car-rental",
+          "parking",
+          "driving-school"
+        ],
+        "area": {
+          "kind": "suburb",
+          "id": 2282,
+          "name": "Suame",
+          "lat": 6.71636,
+          "lon": -1.63692,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-cash",
+      "q": "where can i withdraw money in tarkwa",
+      "tags": ["browse", "descriptive", "money"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 284,
+        "parse": 0,
+        "db": 283,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Absa (atm, Tarkwa)",
+        "✓ Absa ATM (atm, Tarkwa)",
+        "✓ CAL Bank (atm, Tarkwa Na Aboso)",
+        "✓ GCB Bank (atm, Tarkwa)",
+        "✓ Access Bank (atm, Tarkwa)"
+      ],
+      "intent": {
+        "text": "withdraw money",
+        "categories": ["atm"],
+        "area": {
+          "kind": "town",
+          "id": 2001,
+          "name": "Tarkwa",
+          "lat": 5.31094,
+          "lon": -1.99243,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-sew",
+      "q": "where to sew a dress in ho",
+      "tags": ["browse", "descriptive", "services"],
+      "kind": "browse",
+      "n": 4,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": {
+        "categories": false,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1026,
+        "parse": 0,
+        "db": 1025,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Purple Princess Designs (tailor, Akatsi)",
+        "· Atelier de couture (tailor, Aflao)",
+        "· Pleyo Fashion Designer & Seamstress (tailor, Oplenyo)",
+        "· Golden Bel Fashion (tailor, Dzodze)"
+      ],
+      "intent": {
+        "text": "sew dress",
+        "categories": [],
+        "area": {
+          "kind": "city",
+          "id": 164,
+          "name": "Ho",
+          "lat": 6.61266,
+          "lon": 0.46889,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-pray",
+      "q": "place to pray in tamale",
+      "tags": ["browse", "descriptive", "faith"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 324,
+        "parse": 0,
+        "db": 324,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Power Grace Prayer Ministry -PGPM (church, Tamale)",
+        "✓ Kingdom Prayer Center. - Wlf (worship, Lamashegu)",
+        "✓ Central Mosque (mosque, Tamale)",
+        "✓ Afa Ajura Mosque (mosque, Tamale)",
+        "✓ Darul Tawheed Institute (worship, Tamale)"
+      ],
+      "intent": {
+        "text": "pray",
+        "categories": ["worship", "church", "mosque"],
+        "area": {
+          "kind": "city",
+          "id": 5365,
+          "name": "Tamale",
+          "lat": 9.4052,
+          "lon": -0.8424,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-sea",
+      "q": "where to relax by the sea in elmina",
+      "tags": ["browse", "descriptive", "leisure"],
+      "kind": "browse",
+      "n": 19,
+      "rr": 0.07692307692307693,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": {
+        "categories": false,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 282,
+        "parse": 0,
+        "db": 281,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Elmina Java Museum (attraction, Elmina)",
+        "· Saint George’s Castle (attraction, Elmina)",
+        "· Fort Coenraadsburg (attraction, Elmina)",
+        "· Posuban Shrine 1 (attraction, Elmina)",
+        "· Posuban Shrine 2 (attraction, Elmina)"
+      ],
+      "intent": {
+        "text": "relax by sea",
+        "categories": ["beach", "attraction", "park", "sports", "entertainment"],
+        "area": {
+          "kind": "town",
+          "id": 10208,
+          "name": "Elmina",
+          "lat": 5.08588,
+          "lon": -1.35058,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-veg",
+      "q": "buy fresh vegetables in ashaiman",
+      "tags": ["browse", "descriptive", "shopping"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.5,
+      "ndcg10": 0.6235744328990731,
+      "parse": {
+        "categories": false,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 353,
+        "parse": 0,
+        "db": 353,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Ashaiman Main Market (market, Ashaiman)",
+        "✓ Mandela Market (market, Ashaiman)",
+        "✓ Perez Frozen Foods (market, Ashaiman)",
+        "· Chris Boutique (fashion, Ashaiman)",
+        "✓ Nii Adjor Market/ Lorry Terminal (market, Ashaiman)"
+      ],
+      "intent": {
+        "text": "buy fresh vegetables",
+        "categories": [
+          "mall",
+          "supermarket",
+          "provisions",
+          "market",
+          "phones-electronics",
+          "fashion",
+          "beauty-supplies",
+          "hardware",
+          "furniture",
+          "books-stationery",
+          "auto-parts"
+        ],
+        "area": {
+          "kind": "town",
+          "id": 10872,
+          "name": "Ashaiman",
+          "lat": 5.69439,
+          "lon": -0.02953,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "v-d-sick",
+      "q": "my child is sick need a doctor in dome",
+      "tags": ["browse", "descriptive", "health"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.9,
+      "ndcg10": 0.933745776545611,
+      "parse": {
+        "categories": true,
+        "area": true,
+        "nearMe": true,
+        "openNow": true,
+        "cheap": true
+      },
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 505,
+        "parse": 0,
+        "db": 505,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Penbrose Clinic (clinic, Dome)",
+        "✓ Life Health Care (clinic, Dome)",
+        "✓ Trust Clinic Dome (clinic, Dome)",
+        "✓ Medline (clinic, Dome)",
+        "✓ Champion Divine (clinic, Tantra Hill)"
+      ],
+      "intent": {
+        "text": "child sick doctor",
+        "categories": ["clinic"],
+        "area": {
+          "kind": "town",
+          "id": 10023,
+          "name": "Dome",
+          "lat": 5.65542,
+          "lon": -0.23288,
+          "relation": "in"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    }
+  ]
+}
