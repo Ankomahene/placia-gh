@@ -1,0 +1,2023 @@
+{
+  "suite": "search-golden-v1-holdout6",
+  "at": "2026-11-14T16:10:58.288Z",
+  "git": "0f2dc41",
+  "config": {
+    "mode": "rules",
+    "chaos": null,
+    "tag": null,
+    "k": 10,
+    "provider": null,
+    "model": null,
+    "semantic": "text-embedding-3-small@512",
+    "aiBudgetMs": 2500,
+    "aiPolicy": "selective",
+    "weights": null,
+    "browseWeights": null,
+    "networkRttMs": 257,
+    "dirty": true
+  },
+  "overall": {
+    "cases": 36,
+    "known": {
+      "n": 30,
+      "mrr": 0.313,
+      "hit1": 0.233,
+      "hit10": 0.5
+    },
+    "browse": {
+      "n": 6,
+      "p10": 0.667,
+      "ndcg10": 0.738,
+      "success10": 1
+    },
+    "zeroResultRate": 0.028,
+    "errors": 0,
+    "parse": null,
+    "tokens": null,
+    "fallbacks": {
+      "not_configured": 36
+    },
+    "aiReasons": {},
+    "paths": {
+      "rules": 36
+    },
+    "latencyMs": {
+      "p50": 1368,
+      "p95": 3871,
+      "parseP50": 0,
+      "embedP50": 412,
+      "parseP95": 0,
+      "dbP50": 791,
+      "dbP95": 3158
+    }
+  },
+  "byTag": {
+    "abbreviation": {
+      "cases": 30,
+      "known": {
+        "n": 30,
+        "mrr": 0.313,
+        "hit1": 0.233,
+        "hit10": 0.5
+      },
+      "browse": null,
+      "zeroResultRate": 0.033,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 30
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 30
+      },
+      "latencyMs": {
+        "p50": 1510,
+        "p95": 3871,
+        "parseP50": 0,
+        "embedP50": 596,
+        "parseP95": 0,
+        "dbP50": 796,
+        "dbP95": 3158
+      }
+    },
+    "acronym": {
+      "cases": 24,
+      "known": {
+        "n": 24,
+        "mrr": 0.208,
+        "hit1": 0.125,
+        "hit10": 0.417
+      },
+      "browse": null,
+      "zeroResultRate": 0.042,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 24
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 24
+      },
+      "latencyMs": {
+        "p50": 1510,
+        "p95": 3023,
+        "parseP50": 0,
+        "embedP50": 654,
+        "parseP95": 0,
+        "dbP50": 796,
+        "dbP95": 2038
+      }
+    },
+    "beauty": {
+      "cases": 1,
+      "known": null,
+      "browse": {
+        "n": 1,
+        "p10": 0.7,
+        "ndcg10": 0.766,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 1
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 1
+      },
+      "latencyMs": {
+        "p50": 564,
+        "p95": 564,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 563,
+        "dbP95": 563
+      }
+    },
+    "browse": {
+      "cases": 6,
+      "known": null,
+      "browse": {
+        "n": 6,
+        "p10": 0.667,
+        "ndcg10": 0.738,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 6
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 6
+      },
+      "latencyMs": {
+        "p50": 564,
+        "p95": 837,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 563,
+        "dbP95": 837
+      }
+    },
+    "control": {
+      "cases": 6,
+      "known": null,
+      "browse": {
+        "n": 6,
+        "p10": 0.667,
+        "ndcg10": 0.738,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 6
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 6
+      },
+      "latencyMs": {
+        "p50": 564,
+        "p95": 837,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 563,
+        "dbP95": 837
+      }
+    },
+    "dotted": {
+      "cases": 2,
+      "known": {
+        "n": 2,
+        "mrr": 0.198,
+        "hit1": 0,
+        "hit10": 0.5
+      },
+      "browse": null,
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 2
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 2
+      },
+      "latencyMs": {
+        "p50": 1573,
+        "p95": 3871,
+        "parseP50": 0,
+        "embedP50": 596,
+        "parseP95": 0,
+        "dbP50": 977,
+        "dbP95": 3158
+      }
+    },
+    "education": {
+      "cases": 17,
+      "known": {
+        "n": 17,
+        "mrr": 0.297,
+        "hit1": 0.176,
+        "hit10": 0.588
+      },
+      "browse": null,
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 17
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 17
+      },
+      "latencyMs": {
+        "p50": 1510,
+        "p95": 3871,
+        "parseP50": 0,
+        "embedP50": 596,
+        "parseP95": 0,
+        "dbP50": 791,
+        "dbP95": 3158
+      }
+    },
+    "food": {
+      "cases": 3,
+      "known": {
+        "n": 1,
+        "mrr": 1,
+        "hit1": 1,
+        "hit10": 1
+      },
+      "browse": {
+        "n": 2,
+        "p10": 0.85,
+        "ndcg10": 0.886,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 3
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 3
+      },
+      "latencyMs": {
+        "p50": 803,
+        "p95": 837,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 802,
+        "dbP95": 837
+      }
+    },
+    "health": {
+      "cases": 4,
+      "known": {
+        "n": 4,
+        "mrr": 0,
+        "hit1": 0,
+        "hit10": 0
+      },
+      "browse": null,
+      "zeroResultRate": 0.25,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 1507,
+        "p95": 4381,
+        "parseP50": 0,
+        "embedP50": 711,
+        "parseP95": 0,
+        "dbP50": 773,
+        "dbP95": 3427
+      }
+    },
+    "known-item": {
+      "cases": 30,
+      "known": {
+        "n": 30,
+        "mrr": 0.313,
+        "hit1": 0.233,
+        "hit10": 0.5
+      },
+      "browse": null,
+      "zeroResultRate": 0.033,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 30
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 30
+      },
+      "latencyMs": {
+        "p50": 1510,
+        "p95": 3871,
+        "parseP50": 0,
+        "embedP50": 596,
+        "parseP95": 0,
+        "dbP50": 796,
+        "dbP95": 3158
+      }
+    },
+    "leisure": {
+      "cases": 1,
+      "known": null,
+      "browse": {
+        "n": 1,
+        "p10": 0.3,
+        "ndcg10": 0.379,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 1
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 1
+      },
+      "latencyMs": {
+        "p50": 713,
+        "p95": 713,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 713,
+        "dbP95": 713
+      }
+    },
+    "money": {
+      "cases": 3,
+      "known": {
+        "n": 2,
+        "mrr": 0.5,
+        "hit1": 0.5,
+        "hit10": 0.5
+      },
+      "browse": {
+        "n": 1,
+        "p10": 0.5,
+        "ndcg10": 0.642,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 3
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 3
+      },
+      "latencyMs": {
+        "p50": 404,
+        "p95": 3023,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 404,
+        "dbP95": 2038
+      }
+    },
+    "named": {
+      "cases": 4,
+      "known": {
+        "n": 4,
+        "mrr": 1,
+        "hit1": 1,
+        "hit10": 1
+      },
+      "browse": null,
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 4
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 4
+      },
+      "latencyMs": {
+        "p50": 515,
+        "p95": 2225,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 514,
+        "dbP95": 1011
+      }
+    },
+    "phones": {
+      "cases": 1,
+      "known": {
+        "n": 1,
+        "mrr": 1,
+        "hit1": 1,
+        "hit10": 1
+      },
+      "browse": null,
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 1
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 1
+      },
+      "latencyMs": {
+        "p50": 765,
+        "p95": 765,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 765,
+        "dbP95": 765
+      }
+    },
+    "public": {
+      "cases": 5,
+      "known": {
+        "n": 5,
+        "mrr": 0.267,
+        "hit1": 0.2,
+        "hit10": 0.4
+      },
+      "browse": null,
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 5
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 5
+      },
+      "latencyMs": {
+        "p50": 2041,
+        "p95": 2225,
+        "parseP50": 0,
+        "embedP50": 406,
+        "parseP95": 0,
+        "dbP50": 1104,
+        "dbP95": 1662
+      }
+    },
+    "shopping": {
+      "cases": 1,
+      "known": null,
+      "browse": {
+        "n": 1,
+        "p10": 0.8,
+        "ndcg10": 0.87,
+        "success10": 1
+      },
+      "zeroResultRate": 0,
+      "errors": 0,
+      "parse": null,
+      "tokens": null,
+      "fallbacks": {
+        "not_configured": 1
+      },
+      "aiReasons": {},
+      "paths": {
+        "rules": 1
+      },
+      "latencyMs": {
+        "p50": 415,
+        "p95": 415,
+        "parseP50": 0,
+        "embedP50": 0,
+        "parseP95": 0,
+        "dbP50": 414,
+        "dbP95": 414
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "z-kbth",
+      "q": "kbth",
+      "tags": ["known-item", "abbreviation", "acronym", "health"],
+      "kind": "known",
+      "n": 0,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1924,
+        "parse": 0,
+        "db": 704,
+        "embed": 1219
+      },
+      "tokens": null,
+      "top": [],
+      "intent": {
+        "text": "kbth",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-kbth-accra",
+      "q": "KBTH accra",
+      "tags": ["known-item", "abbreviation", "acronym", "health"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 4381,
+        "parse": 0,
+        "db": 3427,
+        "embed": 953
+      },
+      "tokens": null,
+      "top": [
+        "· Accra Technical University (university, Accra)",
+        "· AHWC - Bethel (church, Accra)",
+        "· First National Bank (bank, Accra)",
+        "· Accra Metropolitan Assembly (government, Accra)",
+        "· Ridge Hospital (hospital, Accra)"
+      ],
+      "intent": {
+        "text": "kbth accra",
+        "categories": [],
+        "area": {
+          "kind": "city",
+          "id": 5458,
+          "name": "Accra",
+          "lat": 5.55711,
+          "lon": -0.20124,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-tth",
+      "q": "tth",
+      "tags": ["known-item", "abbreviation", "acronym", "health"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1507,
+        "parse": 0,
+        "db": 796,
+        "embed": 711
+      },
+      "tokens": null,
+      "top": [
+        "· TTH Labor ward (hospital, Tamale)",
+        "· TTH Central Mosque (mosque, Tamale)",
+        "· Farko Track (professional, Tamale)",
+        "· T T medicine shop (pharmacy, Kete Krachi)",
+        "· Tiadene chips compound (clinic, Tiadene)"
+      ],
+      "intent": {
+        "text": "tth",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-ccth",
+      "q": "ccth",
+      "tags": ["known-item", "abbreviation", "acronym", "health"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1427,
+        "parse": 0,
+        "db": 773,
+        "embed": 654
+      },
+      "tokens": null,
+      "top": [
+        "· CCTU Clinic (clinic, Amisano/Nanabakrom)",
+        "· CCTU Field (sports, Amisano/Nanabakrom)",
+        "· Casa-Cctu (worship, Cape Coast)",
+        "· Kumasi Centre for Collaborative Research in Tropical Medicine (KCCR) (university, Four Star Estates)",
+        "· Ccic (church, Community 5)"
+      ],
+      "intent": {
+        "text": "ccth",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-ucc",
+      "q": "ucc",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.16666666666666666,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.07839826897867533,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 620,
+        "parse": 0,
+        "db": 620,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· New Examination Centre (university, Kwapro)",
+        "· College of Education (university, Cape Coast)",
+        "· Pax Romana Ucc (university, Cape Coast)",
+        "· Ogua Hall-UCC (university, Apewosika)",
+        "· University Of Cape Coast (UCC) (university, Cape Coast)"
+      ],
+      "intent": {
+        "text": "ucc",
+        "categories": ["university"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-uew",
+      "q": "uew",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1368,
+        "parse": 0,
+        "db": 772,
+        "embed": 596
+      },
+      "tokens": null,
+      "top": [
+        "· UEW central mosques (mosque, Winneba)",
+        "· UEW, College of Languages - Ajumako Campus (university, Ajumako)",
+        "· Uew North Campus (university, Winneba)",
+        "· Casa Uew Tv (worship, Winneba)",
+        "· Pcm_uew_ (worship, Winneba)"
+      ],
+      "intent": {
+        "text": "uew",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-uew-ksi",
+      "q": "uew kumasi campus",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.16666666666666666,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.21408371436984167,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2366,
+        "parse": 0,
+        "db": 1159,
+        "embed": 1207
+      },
+      "tokens": null,
+      "top": [
+        "· Knutsford University College Kumasi Campus (university, Kumasi)",
+        "· Valley View University, Kumasi Campus (university, Asokwa)",
+        "· Knutsford University College Kumasi Campus (university, Bomso)",
+        "· Gulf City College-Kumasi Campus (university, Asokwa)",
+        "· University of Skills Training and Entrepreneurial Development (university, Apatrapa)"
+      ],
+      "intent": {
+        "text": "uew kumasi campus",
+        "categories": ["university"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-uds-tamale",
+      "q": "uds tamale",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2081,
+        "parse": 0,
+        "db": 878,
+        "embed": 1203
+      },
+      "tokens": null,
+      "top": [
+        "· UDS - Tamale Campus (university, Dungu)",
+        "· UDS-Tamale Post Office (post-office, Guunayili)",
+        "· Uds Tamale Campus (university, Tamale)",
+        "· Tamale Library (library, Tamale)",
+        "· Tamale Central Market (market, Tamale)"
+      ],
+      "intent": {
+        "text": "uds tamale",
+        "categories": [],
+        "area": {
+          "kind": "city",
+          "id": 5365,
+          "name": "Tamale",
+          "lat": 9.4052,
+          "lon": -0.8424,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-uhas",
+      "q": "uhas",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1510,
+        "parse": 0,
+        "db": 756,
+        "embed": 753
+      },
+      "tokens": null,
+      "top": [
+        "· Blw Uhas (worship, Ho)",
+        "· Uhas Sonam Office (university, Ho)",
+        "· University of Engineering and Agricultural Sciences (university, New Nsutam)",
+        "· Hwidiem RC basic. School (school, Hwidiem)",
+        "· University of Business and Integrated Development Studies - Old Campus (university, Wa)"
+      ],
+      "intent": {
+        "text": "uhas",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-uenr",
+      "q": "uenr sunyani",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.22009176629808017,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1644,
+        "parse": 0,
+        "db": 897,
+        "embed": 747
+      },
+      "tokens": null,
+      "top": [
+        "✓ University of Energy and Natural Resources (UENR) (school, Sunyani)",
+        "· UENR Cafeteria (restaurant, Sunyani)",
+        "· Sunyani Technical University (university, Sunyani)",
+        "· Sunyani Susec (university, Sunyani)",
+        "· UENR Basic School (school, Sunyani)"
+      ],
+      "intent": {
+        "text": "uenr sunyani",
+        "categories": [],
+        "area": {
+          "kind": "city",
+          "id": 4532,
+          "name": "Sunyani",
+          "lat": 7.33844,
+          "lon": -2.33092,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-gctu",
+      "q": "gctu",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.5,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.13886244387355454,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1542,
+        "parse": 0,
+        "db": 829,
+        "embed": 713
+      },
+      "tokens": null,
+      "top": [
+        "· GCTU Bush Canteen (local-food, Tesano)",
+        "✓ Ghana Communication Technology University (university, Tesano)",
+        "· Mission Training Centre - MTC (school, Accra)",
+        "· GTP School (school, Tema)",
+        "· CCTU Field (sports, Amisano/Nanabakrom)"
+      ],
+      "intent": {
+        "text": "gctu",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-atu",
+      "q": "atu",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.06666666666666667,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1636,
+        "parse": 0,
+        "db": 791,
+        "embed": 844
+      },
+      "tokens": null,
+      "top": [
+        "· Atula Hotel (hotel, Azinsum)",
+        "· Atua Government Hospital (hospital, Adzikpo Yokunya)",
+        "· Atuahene Automobile Consult (auto-parts, Kwesimintsim)",
+        "· Atuahenekrom MA Basic (school, Atuahenekrom)",
+        "· Atuna Central Mosque (mosque, Atuna)"
+      ],
+      "intent": {
+        "text": "atu",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-ktu",
+      "q": "ktu kumasi",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.22009176629808017,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1357,
+        "parse": 0,
+        "db": 844,
+        "embed": 513
+      },
+      "tokens": null,
+      "top": [
+        "✓ Kumasi Technical University (university, Asem)",
+        "· TTMG Kumasi Branch (professional, Kumasi)",
+        "· GES Kumasi Metro (school, Kumasi)",
+        "· Lancaster Kumasi City (hotel, Kumasi)",
+        "· Kumasi Technical Institute (shs, Kumasi)"
+      ],
+      "intent": {
+        "text": "ktu kumasi",
+        "categories": [],
+        "area": {
+          "kind": "city",
+          "id": 1454,
+          "name": "Kumasi",
+          "lat": 6.69856,
+          "lon": -1.62331,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-ttu",
+      "q": "ttu takoradi",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.3679212572135327,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1266,
+        "parse": 0,
+        "db": 966,
+        "embed": 300
+      },
+      "tokens": null,
+      "top": [
+        "✓ Takoradi Technical University (school, Sekondi-Takoradi)",
+        "· TTMG Takoradi Branch (professional, Sekondi-Takoradi)",
+        "· Takoradi Senior High School (shs, Sekondi-Takoradi)",
+        "· Newbreed Church, TTU Main Campus (church, Takoradi)",
+        "· Takoradi Technical Institute (shs, Sekondi-Takoradi)"
+      ],
+      "intent": {
+        "text": "ttu takoradi",
+        "categories": [],
+        "area": {
+          "kind": "town",
+          "id": 9706,
+          "name": "Takoradi",
+          "lat": 4.8874,
+          "lon": -1.75193,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-htu",
+      "q": "htu",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.16666666666666666,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.07839826897867533,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1055,
+        "parse": 0,
+        "db": 740,
+        "embed": 315
+      },
+      "tokens": null,
+      "top": [
+        "· HTU Private Hostel (hostel, Ho)",
+        "· HTU Clinic (hospital, Ho)",
+        "· HTU Private Hostel (hostel, Ho)",
+        "· Hospitality - HTU (university, Ho)",
+        "· Rosa Htu (church, Ho)"
+      ],
+      "intent": {
+        "text": "htu",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-gij",
+      "q": "gij",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1092,
+        "parse": 0,
+        "db": 748,
+        "embed": 345
+      },
+      "tokens": null,
+      "top": [
+        "· The Church of Christ -GIJ (church, Accra)",
+        "· Radio GIJ - 97.7 FM (professional, Accra)",
+        "· GIJ SRC (university, Accra)",
+        "· Brigade English Assembly (worship, Galiliea)",
+        "· Assemblies of God (church, Galiliea)"
+      ],
+      "intent": {
+        "text": "gij",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-nafti",
+      "q": "nafti",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1105,
+        "parse": 0,
+        "db": 763,
+        "embed": 342
+      },
+      "tokens": null,
+      "top": [
+        "· Nafti Hostel (hostel, Accra)",
+        "· Nafti (university, Cantonments)",
+        "· Nafti Studio 2 (training, Juba Villas)",
+        "· NAFTI Hostel (hotel, Cantonments)",
+        "· Nasona Oil (fuel, Paga)"
+      ],
+      "intent": {
+        "text": "nafti",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-vvu",
+      "q": "vvu",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.25,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.2,
+      "ndcg10": 0.1681522864689108,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1539,
+        "parse": 0,
+        "db": 788,
+        "embed": 750
+      },
+      "tokens": null,
+      "top": [
+        "· VVU institutional church (church, Techiman)",
+        "· vvu guest house (guest-house, Techiman)",
+        "· VVU Teciman Football Field (sports, Techiman)",
+        "✓ Valley View University (university, Malejor)",
+        "· Valley View University Techiman Campus Mens Hostel (hotel, Techiman)"
+      ],
+      "intent": {
+        "text": "vvu",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-cuc",
+      "q": "cuc",
+      "tags": ["known-item", "abbreviation", "acronym", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.3333333333333333,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.11004588314904008,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1178,
+        "parse": 0,
+        "db": 766,
+        "embed": 412
+      },
+      "tokens": null,
+      "top": [
+        "· CUC Business Development Centre (professional, Accra)",
+        "· cuchina (restaurant, Koforidua)",
+        "✓ Central University (university, Ningo/prampram)",
+        "· Life Source Community S.D.A Church GH (church, Anwomaso)",
+        "· school canteen (school, Gyimiso Kakraba)"
+      ],
+      "intent": {
+        "text": "cuc",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-gbc",
+      "q": "gbc accra",
+      "tags": ["known-item", "abbreviation", "acronym", "public"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.3333333333333333,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.11004588314904008,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2069,
+        "parse": 0,
+        "db": 1662,
+        "embed": 406
+      },
+      "tokens": null,
+      "top": [
+        "· WCI ACCRA-Gh (church, Accra)",
+        "· GBC Clinic (clinic, Accra)",
+        "✓ Ghana Broadcasting Corporation (printing, Accra)",
+        "· GBC Unique FM (entertainment, Accra)",
+        "· Doctor Barns Tech - Best Website Designer In Accra Ghana ( Top Best Web Design Accra Ghana, Best Web developer Accra Ghana) (professional, Accra)"
+      ],
+      "intent": {
+        "text": "gbc accra",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-vra",
+      "q": "vra",
+      "tags": ["known-item", "abbreviation", "acronym", "public"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2041,
+        "parse": 0,
+        "db": 1000,
+        "embed": 1041
+      },
+      "tokens": null,
+      "top": [
+        "· VRA (attraction, Sekondi-Takoradi)",
+        "· VRA Hospital (hospital, Akosombo)",
+        "· VRA Hospital & Pharmacy (hospital, Christiansborg)",
+        "· VRA Office (professional, Wechiau)",
+        "· VRA International School, Aboadze (school, Aboadze)"
+      ],
+      "intent": {
+        "text": "vra",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-gpha",
+      "q": "gpha tema",
+      "tags": ["known-item", "abbreviation", "acronym", "public"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1622,
+        "parse": 0,
+        "db": 1277,
+        "embed": 345
+      },
+      "tokens": null,
+      "top": [
+        "· GPHA Tema Hq (government, Tema)",
+        "· Tema General Hospital (hospital, Tema)",
+        "· GPHA Towers (entertainment, Ports & Harbour)",
+        "· Tema Joint Church (church, Tema)",
+        "· Ghana Port & Harbour Authority- gpha (government, Tema)"
+      ],
+      "intent": {
+        "text": "gpha tema",
+        "categories": [],
+        "area": {
+          "kind": "city",
+          "id": 4614,
+          "name": "Tema",
+          "lat": 5.65964,
+          "lon": -0.00968,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-gra",
+      "q": "gra",
+      "tags": ["known-item", "abbreviation", "acronym", "public"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1104,
+        "parse": 0,
+        "db": 1104,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "· Grace Garden (hotel, Sekondi-Takoradi)",
+        "· Kaysens Grande (hotel, Tema)",
+        "· GRA (government, Mampon)",
+        "· GRA Ring Road East Taxpayer Service Centre (government, Accra)",
+        "· Our Lady of Grace Senior High School (school, Mamponteng)"
+      ],
+      "intent": {
+        "text": "gra",
+        "categories": ["government"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-adb",
+      "q": "adb bank",
+      "tags": ["known-item", "abbreviation", "acronym", "money"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 3023,
+        "parse": 0,
+        "db": 2038,
+        "embed": 984
+      },
+      "tokens": null,
+      "top": [
+        "· ADB (bank, Navrongo)",
+        "· ADB (bank, Accra)",
+        "· ADB (bank, Accra)",
+        "· ADB (bank, Accra)",
+        "· ADB (bank, Accra)"
+      ],
+      "intent": {
+        "text": "adb bank",
+        "categories": ["bank"],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-knust-dots",
+      "q": "k.n.u.s.t",
+      "tags": ["known-item", "abbreviation", "dotted", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.3333333333333333,
+      "hit1": 0,
+      "hit10": 1,
+      "p10": 0.1,
+      "ndcg10": 0.11004588314904008,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 3871,
+        "parse": 0,
+        "db": 3158,
+        "embed": 713
+      },
+      "tokens": null,
+      "top": [
+        "· KNUST, Faculty of Engineering (university, Kotei)",
+        "· KNUST Senior High School (shs, Nkyenenkyene)",
+        "✓ Kwame Nkrumah University of Science & Technology (university, Ayeduase)",
+        "· Knust School Of Medical Sciences (university, Kumasi)",
+        "· Nups - G Knust (worship, Adiebeba)"
+      ],
+      "intent": {
+        "text": "k n u s t",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-ucc-dots",
+      "q": "U.C.C",
+      "tags": ["known-item", "abbreviation", "dotted", "education"],
+      "kind": "known",
+      "n": 20,
+      "rr": 0.0625,
+      "hit1": 0,
+      "hit10": 0,
+      "p10": 0,
+      "ndcg10": 0,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 1573,
+        "parse": 0,
+        "db": 977,
+        "embed": 596
+      },
+      "tokens": null,
+      "top": [
+        "· U.C.C (university, Mankessim)",
+        "· T.U.C (professional, Accra)",
+        "· p.u.c, basketball court (sports, Sowutuom)",
+        "· Central University (university, Ningo/prampram)",
+        "· Central Classroom Block (CCB) (university, Koforidua)"
+      ],
+      "intent": {
+        "text": "u c c",
+        "categories": [],
+        "area": null,
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-ecg",
+      "q": "ecg office",
+      "tags": ["known-item", "abbreviation", "named", "public"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.9,
+      "ndcg10": 0.9363792118010483,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 2225,
+        "parse": 0,
+        "db": 1011,
+        "embed": 1213
+      },
+      "tokens": null,
+      "top": [
+        "✓ Electricity Company of Ghana - Achimota District Office (professional, Dome)",
+        "✓ ECG Office (government, Asankrangwa)",
+        "✓ ECG (entertainment, South Industrial Area)",
+        "✓ ECG Accra West Regional Office (government, Avenor)",
+        "✓ ECG Ltd. Pay Office (professional, Denu)"
+      ],
+      "intent": {
+        "text": "ecg office",
+        "categories": ["professional"],
+        "area": {
+          "kind": "landmark",
+          "id": 7673,
+          "name": "ECG",
+          "lat": 5.66768,
+          "lon": -0.23456,
+          "relation": "soft"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-mtn-tamale",
+      "q": "mtn office tamale",
+      "tags": ["known-item", "abbreviation", "named", "phones"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.2,
+      "ndcg10": 0.3589542101716347,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 765,
+        "parse": 0,
+        "db": 765,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ MTN Service Centre (internet, Tamale)",
+        "✓ MTN Service Centre (internet, Tamale)",
+        "· Forsmuel (internet, Tamale)",
+        "· Tamale General Post Office (post-office, Tamale)",
+        "· North Star FM (internet, Tamale)"
+      ],
+      "intent": {
+        "text": "mtn office",
+        "categories": ["internet"],
+        "area": {
+          "kind": "city",
+          "id": 5365,
+          "name": "Tamale",
+          "lat": 9.4052,
+          "lon": -0.8424,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-kfc-legon",
+      "q": "kfc east legon",
+      "tags": ["known-item", "abbreviation", "named", "food"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4440973278132557,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 515,
+        "parse": 0,
+        "db": 514,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ KFC (fast-food, East Legon)",
+        "✓ KFC (fast-food, South Legon)",
+        "· Papa's Pizza (fast-food, East Legon)",
+        "· RocoMamas A & C Mall (fast-food, East Legon)",
+        "✓ KFC (restaurant, Tesa)"
+      ],
+      "intent": {
+        "text": "kfc",
+        "categories": ["fast-food"],
+        "area": {
+          "kind": "suburb",
+          "id": 1699,
+          "name": "East Legon",
+          "lat": 5.63548,
+          "lon": -0.16172,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-gcb-adum",
+      "q": "gcb bank adum",
+      "tags": ["known-item", "abbreviation", "named", "money"],
+      "kind": "known",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.4690000933206748,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 398,
+        "parse": 0,
+        "db": 397,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ GCB Bank (bank, Kumasi)",
+        "✓ GCB Bank (bank, Kumasi)",
+        "✓ GCB Bank (bank, Kumasi)",
+        "· Consolidated Bank Ghana (bank, Kumasi)",
+        "· ADB (bank, Adum)"
+      ],
+      "intent": {
+        "text": "gcb bank",
+        "categories": ["bank"],
+        "area": {
+          "kind": "suburb",
+          "id": 4612,
+          "name": "Adum",
+          "lat": 6.69429,
+          "lon": -1.62333,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-bar-labone",
+      "q": "bar labone",
+      "tags": ["browse", "control", "food"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 1,
+      "ndcg10": 1,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 837,
+        "parse": 0,
+        "db": 837,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Smoke 'n' Barrel (bar, Labone)",
+        "✓ The Alley Bar (bar, Accra)",
+        "✓ Shukorina Bar & Lounge (bar, La)",
+        "✓ Backyard Bar & Grill (bar, Ringway Estates)",
+        "✓ Bloom Bar (bar, Accra)"
+      ],
+      "intent": {
+        "text": "bar",
+        "categories": ["bar"],
+        "area": {
+          "kind": "suburb",
+          "id": 4115,
+          "name": "Labone",
+          "lat": 5.56982,
+          "lon": -0.17208,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-atm-adum",
+      "q": "atm adum",
+      "tags": ["browse", "control", "money"],
+      "kind": "browse",
+      "n": 18,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.5,
+      "ndcg10": 0.642186726668901,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 404,
+        "parse": 0,
+        "db": 404,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Standard Chartered ATM (atm, Kumasi)",
+        "✓ Standard Chartered ATM (atm, Kumasi)",
+        "✓ Absa ATM (atm, Kumasi)",
+        "✓ Absa ATM (atm, Kumasi)",
+        "· Standard Chartered ATM (atm, Kumasi)"
+      ],
+      "intent": {
+        "text": "atm",
+        "categories": ["atm"],
+        "area": {
+          "kind": "suburb",
+          "id": 4612,
+          "name": "Adum",
+          "lat": 6.69429,
+          "lon": -1.62333,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-gym-tema",
+      "q": "gym tema",
+      "tags": ["browse", "control", "leisure"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.3,
+      "ndcg10": 0.37850091886658266,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 713,
+        "parse": 0,
+        "db": 713,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Pyvot Gym (sports, Tema)",
+        "· Bling Body Gym (sports, Community 18)",
+        "· Secure Gym and Fitness Centres (sports, Community 15)",
+        "✓ Chinese Basketball Court (sports, Tema)",
+        "· Benny’s Gym (sports, Addogonno)"
+      ],
+      "intent": {
+        "text": "gym",
+        "categories": ["sports"],
+        "area": {
+          "kind": "city",
+          "id": 4614,
+          "name": "Tema",
+          "lat": 5.65964,
+          "lon": -0.00968,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-mall-kumasi",
+      "q": "mall kumasi",
+      "tags": ["browse", "control", "shopping"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.8,
+      "ndcg10": 0.8701249883466593,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 415,
+        "parse": 0,
+        "db": 414,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Koraf Mall (mall, Kumasi)",
+        "✓ Jubilee Mall (mall, Bomso)",
+        "✓ Adum Mall (mall, Amakom)",
+        "✓ SG Mall (mall, Bomso)",
+        "✓ Central Market (mall, Kumasi)"
+      ],
+      "intent": {
+        "text": "mall",
+        "categories": ["mall"],
+        "area": {
+          "kind": "city",
+          "id": 1454,
+          "name": "Kumasi",
+          "lat": 6.69856,
+          "lon": -1.62331,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-pub-osu",
+      "q": "pub osu",
+      "tags": ["browse", "control", "food"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.7,
+      "ndcg10": 0.7721596254947203,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 803,
+        "parse": 0,
+        "db": 802,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Bloom Bar (bar, Accra)",
+        "✓ Purple Pub (bar, Accra)",
+        "✓ Cross Roads Pub (bar, Accra)",
+        "· Duncan's Pub (restaurant, Osu)",
+        "✓ Glitz N Bolz Pub (bar, Accra)"
+      ],
+      "intent": {
+        "text": "pub",
+        "categories": ["bar"],
+        "area": {
+          "kind": "suburb",
+          "id": 10607,
+          "name": "Osu",
+          "lat": 5.56059,
+          "lon": -0.18244,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    },
+    {
+      "id": "z-spa-osu",
+      "q": "spa osu",
+      "tags": ["browse", "control", "beauty"],
+      "kind": "browse",
+      "n": 20,
+      "rr": 1,
+      "hit1": 1,
+      "hit10": 1,
+      "p10": 0.7,
+      "ndcg10": 0.7655934900767002,
+      "parse": null,
+      "path": "rules",
+      "fallback": "not_configured",
+      "ms": {
+        "total": 564,
+        "parse": 0,
+        "db": 563,
+        "embed": 0
+      },
+      "tokens": null,
+      "top": [
+        "✓ Marie Noelle Spa (salon, Accra)",
+        "✓ Esteem Day Spa (salon, Accra)",
+        "✓ Nova Spa Ghana (salon, Ringway Estates)",
+        "· Spadana (restaurant, Accra)",
+        "✓ Cadeau Sparkle Center (salon, Osu)"
+      ],
+      "intent": {
+        "text": "spa",
+        "categories": ["salon"],
+        "area": {
+          "kind": "suburb",
+          "id": 10607,
+          "name": "Osu",
+          "lat": 5.56059,
+          "lon": -0.18244,
+          "relation": "near"
+        },
+        "anchor": null,
+        "nearMe": false,
+        "openNow": false,
+        "cheap": false
+      }
+    }
+  ]
+}

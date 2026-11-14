@@ -280,6 +280,11 @@ export function findCategories(ctx: SearchContext, toks: string[], skip = new Se
   return found.length > 1 ? found.filter((s) => s !== 'shop') : found;
 }
 
+/** A single word that names a kind of place ("bar", "gym", "pharmacies") or is filler. */
+export function isCategoryWord(ctx: SearchContext, w: string) {
+  return FILLER.has(w) || ctx.phrases.has(w) || ctx.phrases.has(singular(w));
+}
+
 /**
  * True when every content word of the text is part of a category phrase ("pharmacy",
  * "chop bar", "where to buy cement"): a pure "kind of place" query with no name in it.

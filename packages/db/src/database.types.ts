@@ -286,6 +286,39 @@ export type Database = {
           },
         ]
       }
+      place_acronyms: {
+        Row: {
+          acronym: string
+          expansion: string
+          explicit: boolean
+          phrase: string
+          places: number
+          refreshed_at: string
+          refs: number
+          score: number
+        }
+        Insert: {
+          acronym: string
+          expansion: string
+          explicit: boolean
+          phrase: string
+          places: number
+          refreshed_at?: string
+          refs: number
+          score: number
+        }
+        Update: {
+          acronym?: string
+          expansion?: string
+          explicit?: boolean
+          phrase?: string
+          places?: number
+          refreshed_at?: string
+          refs?: number
+          score?: number
+        }
+        Relationships: []
+      }
       place_embeddings: {
         Row: {
           embedded_at: string
@@ -658,6 +691,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      acronym_variants: { Args: { p_words: string[] }; Returns: string[] }
       admin_data_quality: { Args: never; Returns: Json }
       admin_overview: { Args: never; Returns: Json }
       embedding_queue: {
@@ -673,6 +707,7 @@ export type Database = {
       ping: { Args: never; Returns: string }
       place_embedding_input: { Args: { p_id: string }; Returns: string }
       refresh_area_mentions: { Args: never; Returns: number }
+      refresh_place_acronyms: { Args: never; Returns: number }
       search_context: { Args: never; Returns: Json }
       search_places: {
         Args: {

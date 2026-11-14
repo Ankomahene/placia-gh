@@ -1,5 +1,9 @@
-/** pnpm --filter @placia/core search "pharmacy near madina|waakye osu" [lat lon] */
+/**
+ * pnpm --filter @placia/core run search "pharmacy near madina|waakye osu" [lat lon] [--sem off]
+ * The meaning arm is on whenever OPENAI_API_KEY is set.
+ */
 import { createServiceClient } from '@placia/db';
+import { aiConfigFromEnv, createEmbedder } from '../src/ai';
 import { loadSearchContext, search } from '../src/search';
 
 const sb = createServiceClient(
@@ -8,11 +12,15 @@ const sb = createServiceClient(
 );
 const rpc = (fn: string, args?: Record<string, unknown>) => sb.rpc(fn as never, args as never);
 const context = await loadSearchContext(rpc as never);
-const [q, lat, lon] = process.argv.slice(2);
+const argv = process.argv.slice(2);
+const semOff = argv.includes('--sem') && argv[argv.indexOf('--sem') + 1] === 'off';
+const [q, lat, lon] = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--sem');
+const cfg = aiConfigFromEnv();
+const embedder = !semOff && cfg.openaiApiKey ? createEmbedder(cfg) : null;
 for (const query of (q ?? '').split('|')) {
   const res = await search(
     { q: query, lat: lat ? Number(lat) : null, lon: lon ? Number(lon) : null, limit: 8 },
-    { rpc, context },
+    { rpc, context, embedder },
   );
   console.log(`\n» ${query}`);
   console.log(
@@ -29,9 +37,11 @@ for (const query of (q ?? '').split('|')) {
     JSON.stringify({
       centre: res.meta.centre?.from,
       area: res.meta.area,
+      aliases: res.meta.aliases.map((a) => `${a.token}=${a.expansion}`),
       radius: res.meta.radiusM,
       widened: res.meta.widenedTo,
       anchor: res.meta.anchor,
+      semantic: res.meta.semantic,
       t: res.meta.timings,
     }),
   );

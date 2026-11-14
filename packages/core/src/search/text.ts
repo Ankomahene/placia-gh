@@ -12,6 +12,14 @@ export function normalize(s: string) {
     .trim();
 }
 
+/** "K.N.U.S.T" → "KNUST", "u.c.c." → "ucc": initials typed with full stops become one word. */
+export function joinInitials(s: string) {
+  return s.replace(
+    /\b(?:\p{L}\.\s?){2,}(?:\p{L}\b\.?)?/gu,
+    (m) => m.replace(/[.\s]/g, '') + (/\s$/.test(m) ? ' ' : ''),
+  );
+}
+
 export function words(s: string) {
   return s.split(' ').filter(Boolean);
 }

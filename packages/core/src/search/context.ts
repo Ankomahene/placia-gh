@@ -43,6 +43,18 @@ export interface RawContext {
   localities: [number, string, string[], LocalityKind, number | null, number, number, number][];
   /** [id, normalised name, district id, lat, lon, places]. Older payloads lack it. */
   mentions?: [number, string, number | null, number, number, number][];
+  /** [acronym, phrase, expansion, score, runner-up score]. Older payloads lack it. */
+  acronyms?: [string, string, string, number, number][];
+}
+
+/** Initials people use for a place, learned from the data ("kbth" → Korle Bu Teaching Hospital). */
+export interface Acronym {
+  /** Normalised name, searched as a phrase. */
+  phrase: string;
+  expansion: string;
+  score: number;
+  /** Score of the next-best name with the same initials (0 if none). */
+  runnerUp: number;
 }
 
 export interface SearchContext {
@@ -57,6 +69,8 @@ export interface SearchContext {
   areas: Map<string, Area[]>;
   districtNames: Map<number, string>;
   regionNames: Map<number, string>;
+  /** Acronym → the name it most likely stands for. */
+  acronyms: Map<string, Acronym>;
   /** Longest phrase / area name, in words, so scans stay bounded. */
   maxWords: number;
 }
@@ -259,6 +273,12 @@ export function buildContext(raw: RawContext): SearchContext {
     areas,
     districtNames,
     regionNames,
+    acronyms: new Map(
+      (raw.acronyms ?? []).map(([a, phrase, expansion, score, runnerUp]) => [
+        a,
+        { phrase, expansion, score, runnerUp },
+      ]),
+    ),
     maxWords,
   };
 }

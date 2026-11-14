@@ -46,6 +46,20 @@ export const LABEL_FIXES = [
     was: 'palace mall',
     why: '"Palace Shopping Mall" is the same mall',
   },
+  // v6, fixed after its baseline run and before any code change.
+  { id: 'z-adb', was: '^adb\\b with the backslash lost', why: 'typo: the pattern matched nothing' },
+  { id: 'z-vra', was: '^volta river authority', why: '"VRA" and "VRA Office" are the authority' },
+  {
+    id: 'z-gpha',
+    was: 'ghana ports and harbours',
+    why: '"GPHA Tema Hq" and "Ghana Port & Harbour Authority" are the authority',
+  },
+  { id: 'z-gra', was: '^ghana revenue authority', why: 'places named "GRA …" are its offices' },
+  {
+    id: 'z-uds-tamale',
+    was: 'university for development studies',
+    why: '"UDS - Tamale Campus" is the campus',
+  },
 ] as const;
 
 export type LatLon = readonly [number, number];
@@ -2106,4 +2120,107 @@ export const HOLDOUT_V5: GoldenCase[] = [
   b5('y-bank-sunyani', 'bank sunyani', ['bank'], V5.sunyani, 6, ['control', 'money']),
   b5('y-super-adum', 'supermarket adum', ['supermarket'], V5.adum, 2, ['control', 'shopping']),
   b5('y-pharm-ayigya', 'pharmacy ayigya', PHARMACY, [6.692, -1.578], 2.5, ['control', 'health']),
+];
+
+/**
+ * Held-out v6 (2026-11-14): abbreviations. Written before the acronym work and before any of
+ * these queries was run. Targets were checked to exist in the data by name only.
+ *
+ * - `acronym`: an institution typed by its initials, alone or with its town. Some carry the
+ *   acronym as an alternative name in the data (ATU, TTU, HTU, UCC); most do not (KBTH, UEW,
+ *   TTH, CCTH, GIJ, NAFTI, VRA, GRA).
+ * - `dotted`: initials typed with full stops.
+ * - `named`: the acronym is part of the place names themselves (ECG, MTN, KFC, GCB).
+ * - `control`: short ordinary words that must not be read as initials.
+ */
+const z = (
+  id: string,
+  q: string,
+  name: string,
+  tags: string[],
+  opts: { at?: LatLon; km?: number } = {},
+) => known(id, q, name, ['abbreviation', ...tags], opts);
+
+export const HOLDOUT_V6: GoldenCase[] = [
+  z('z-kbth', 'kbth', 'korle.?bu teaching hospital', ['acronym', 'health'], {
+    at: AT.accra,
+    km: 15,
+  }),
+  z('z-kbth-accra', 'KBTH accra', 'korle.?bu teaching hospital', ['acronym', 'health'], {
+    at: AT.accra,
+    km: 15,
+  }),
+  z('z-tth', 'tth', 'tamale teaching hospital', ['acronym', 'health'], { at: AT.tamale, km: 15 }),
+  z('z-ccth', 'ccth', 'cape coast teaching hospital', ['acronym', 'health'], {
+    at: AT.capeCoast,
+    km: 15,
+  }),
+  z('z-ucc', 'ucc', '^university of cape coast$', ['acronym', 'education'], {
+    at: AT.capeCoast,
+    km: 15,
+  }),
+  z('z-uew', 'uew', '^university of education,? winneba$', ['acronym', 'education'], {
+    at: AT.winneba,
+    km: 10,
+  }),
+  z('z-uew-ksi', 'uew kumasi campus', 'university of education.*kumasi', ['acronym', 'education']),
+  z(
+    'z-uds-tamale',
+    'uds tamale',
+    'university for development studies|^uds\\b.*campus',
+    ['acronym', 'education'],
+    { at: AT.tamale, km: 25 },
+  ),
+  z('z-uhas', 'uhas', 'university of health and allied sciences', ['acronym', 'education']),
+  z('z-uenr', 'uenr sunyani', 'university of energy and natural resources', [
+    'acronym',
+    'education',
+  ]),
+  z('z-gctu', 'gctu', 'ghana communication technology university', ['acronym', 'education'], {
+    at: AT.accra,
+    km: 25,
+  }),
+  z('z-atu', 'atu', 'accra technical university', ['acronym', 'education']),
+  z('z-ktu', 'ktu kumasi', 'kumasi technical university', ['acronym', 'education'], {
+    at: AT.kumasi,
+    km: 10,
+  }),
+  z('z-ttu', 'ttu takoradi', 'takoradi technical university', ['acronym', 'education']),
+  z('z-htu', 'htu', 'ho technical university', ['acronym', 'education']),
+  z('z-gij', 'gij', 'ghana institute of journalism', ['acronym', 'education']),
+  z('z-nafti', 'nafti', 'national film and television institute', ['acronym', 'education']),
+  z('z-vvu', 'vvu', '^valley view university$', ['acronym', 'education']),
+  z('z-cuc', 'cuc', '^central university( college)?$', ['acronym', 'education']),
+  z('z-gbc', 'gbc accra', 'ghana broadcasting corporation', ['acronym', 'public'], {
+    at: AT.accra,
+    km: 20,
+  }),
+  z('z-vra', 'vra', '^volta river authority|^vra( office)?$', ['acronym', 'public']),
+  z(
+    'z-gpha',
+    'gpha tema',
+    'ghana ports? (and|&) harbours? authority|^gpha\\b',
+    ['acronym', 'public'],
+    { at: AT.tema, km: 10 },
+  ),
+  z('z-gra', 'gra', '^ghana revenue authority|^gra\\b', ['acronym', 'public']),
+  z('z-adb', 'adb bank', 'agricultural development bank|^adb\\b', ['acronym', 'money']),
+  z('z-knust-dots', 'k.n.u.s.t', 'kwame nkrumah university of science', ['dotted', 'education'], {
+    at: AT.knust,
+    km: 5,
+  }),
+  z('z-ucc-dots', 'U.C.C', '^university of cape coast$', ['dotted', 'education'], {
+    at: AT.capeCoast,
+    km: 15,
+  }),
+  z('z-ecg', 'ecg office', 'ecg|electricity company of ghana', ['named', 'public']),
+  z('z-mtn-tamale', 'mtn office tamale', '^mtn', ['named', 'phones'], { at: AT.tamale, km: 10 }),
+  z('z-kfc-legon', 'kfc east legon', '^kfc', ['named', 'food'], { at: AT.eastLegon, km: 4 }),
+  z('z-gcb-adum', 'gcb bank adum', '^gcb', ['named', 'money'], { at: AT.adum, km: 2 }),
+  browse('z-bar-labone', 'bar labone', ['bar'], AT.labone, 2, ['control', 'food']),
+  browse('z-atm-adum', 'atm adum', ['atm', 'bank'], AT.adum, 2, ['control', 'money']),
+  browse('z-gym-tema', 'gym tema', ['sports'], AT.tema, 5, ['control', 'leisure']),
+  browse('z-mall-kumasi', 'mall kumasi', ['mall'], AT.kumasi, 10, ['control', 'shopping']),
+  browse('z-pub-osu', 'pub osu', ['bar'], AT.osu, 2, ['control', 'food']),
+  browse('z-spa-osu', 'spa osu', ['salon'], AT.osu, 2, ['control', 'beauty']),
 ];

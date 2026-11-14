@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { LLMRouter } from '../ai/router';
 import type { LLMProvider } from '../ai/types';
 import { clearParseCache, parseQuery } from './ai-parse';
+import { expandAliases, findAliases } from './aliases';
 import { buildContext, type RawContext, sameNameAreas } from './context';
 import { type SearchRpc, search } from './engine';
 import { pairInPhrase, parseRules } from './rules';
+import { joinInitials } from './text';
 
 const raw: RawContext = {
   categories: [
@@ -68,8 +70,37 @@ const raw: RawContext = {
     // Credits Asante Mampong.
     [3, 'mampong', 5, 7.0577, -1.4009, 27],
   ],
+  acronyms: [
+    ['kbth', 'korle bu teaching hospital', 'Korle Bu Teaching Hospital', 3.4, 0],
+    // Initials that are also a category word or a town name are never expanded.
+    ['mall', 'mount adoration lighthouse league', 'Mount Adoration Lighthouse League', 2.1, 0],
+    ['kasoa', 'kings anglican school of accra', 'Kings Anglican School of Accra', 2.1, 0],
+  ],
 };
 const ctx = buildContext(raw);
+
+describe('initials', () => {
+  it('joins initials typed with full stops', () => {
+    expect(joinInitials('k.n.u.s.t')).toBe('knust');
+    expect(joinInitials('U.C.C. hostel')).toBe('UCC hostel');
+    expect(joinInitials('S.D.A church osu')).toBe('SDA church osu');
+    expect(joinInitials('St. John school')).toBe('St. John school');
+  });
+
+  it('expands learned initials, never a category word or a town', () => {
+    expect(findAliases(ctx, 'kbth accra')).toEqual([
+      {
+        token: 'kbth',
+        phrase: 'korle bu teaching hospital',
+        expansion: 'Korle Bu Teaching Hospital',
+      },
+    ]);
+    expect(findAliases(ctx, 'mall kasoa')).toEqual([]);
+    expect(expandAliases('kbth emergency', findAliases(ctx, 'kbth'))).toBe(
+      'Korle Bu Teaching Hospital emergency',
+    );
+  });
+});
 
 describe('rule parser', () => {
   it('reads "<kind> in <area>" as a hard area', () => {
@@ -403,5 +434,26 @@ describe('search engine', () => {
     const res = await search({ q: 'hostel near knust' }, { rpc, context: ctx });
     expect(res.meta.anchor).toEqual({ text: 'knust', place: 'KNUST Main Gate' });
     expect(calls[1]).toMatchObject({ p_lat: 6.67, p_radius_m: 2000, p_text: 'hostel' });
+  });
+  it('searches for the name behind initials, and embeds the name', async () => {
+    const seen: string[][] = [];
+    const embedder = {
+      model: 'test',
+      dimensions: 2,
+      embed: async (texts: string[]) => {
+        seen.push(texts);
+        return { vectors: [[0.3, 0.4]], usage: { inputTokens: 1, outputTokens: 0 } };
+      },
+    };
+    let sent: Record<string, unknown> = {};
+    const rpc: SearchRpc = async (_fn, args) => {
+      sent = args;
+      return { data: [row('a'), row('b'), row('c')], error: null };
+    };
+    const res = await search({ q: 'K.B.T.H' }, { rpc, context: ctx, embedder });
+    expect(seen).toEqual([['korle bu teaching hospital']]);
+    expect(sent.p_alias).toEqual(['korle bu teaching hospital']);
+    expect(sent.p_weights).toMatchObject({ title: 0.5, name: 0.5 });
+    expect(res.meta.aliases.map((a) => a.expansion)).toEqual(['Korle Bu Teaching Hospital']);
   });
 });

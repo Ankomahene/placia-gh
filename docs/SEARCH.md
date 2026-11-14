@@ -4,14 +4,14 @@
 
 ```
 query ──► understand ─────────────────► retrieve + rank (Postgres) ──► results + meta
-          rule parse; sure? ── yes ──►  search_places(): 6 arms fused with RRF
+          rule parse; sure? ── yes ──►  search_places(): 7 arms fused with RRF
               │ no                       no LLM in this step
               ▼
           AI parse (Claude → OpenAI)
           ↘ rule parse on timeout, error or open breaker
 ```
 
-Code: `packages/core/src/search` (framework-free), SQL: `supabase/migrations/2026111400020*`–`700`, route: `apps/web/app/api/search/route.ts`. Place embeddings: `pnpm ingest embed`.
+Code: `packages/core/src/search` (framework-free), SQL: `supabase/migrations/2026111400020*`–`1300`, route: `apps/web/app/api/search/route.ts`. Place embeddings: `pnpm ingest embed`.
 
 ## 1. Understanding the query
 
@@ -39,6 +39,11 @@ Both parsers produce the same `Intent`:
     - **Otherwise the user's position**: the nearer town wins unless the far one is much better known. Without a position, the best-known town wins.
     - Bus stops named after a town never win over the town itself.
     - `meta.area` lists the other same-name towns, each with a `query` that picks it ("atonsu kwahu west"), so the app can offer "Did you mean…".
+- **Initials** ("kbth", "ucc", "UMaT tarkwa", "k.n.u.s.t"):
+  - `place_acronyms` holds initials learned from place names, small words optional ("umt", "umat", "uomat" for University of Mines and Technology). A pair is kept only when an alternative name or a bracket states it ("(KNUST)"), or when at least two places carry the name. Other places named with the initials ("GIJ SRC") add to the score but never qualify a pair alone, because ordinary words ("spare", "dam", "sea") are in hundreds of names too.
+  - A query word that is one of those initials, and not a category word or a town, is written out. The alias arm searches for the name as a phrase; the meaning arm embeds the name, not the letters.
+  - Dotted initials are joined first ("K.N.U.S.T" → "knust").
+  - `meta.aliases` says what was expanded, for a "Showing Korle Bu Teaching Hospital" line.
 - **Selective AI** (`rulesUnsure()`): the rule parse answers whenever it can be trusted, which is most queries. The AI is asked only when the rules are unsure:
   - the query is phrased as a request ("where can i…", "i need…", "somewhere to…");
   - it is vague (more than 3 categories, from a broad word like "food");
@@ -63,6 +68,7 @@ Both parsers produce the same `Intent`:
 | category | places in the parsed categories, nearest first            | "pharmacy" finds pharmacies not so named   |
 | semantic | pgvector cosine distance to the query's embedding         | partial names, abbreviations, descriptions |
 | near     | nearest places, when there is nothing else to go on       | "what's near me"                           |
+| alias    | places whose name contains the name behind initials       | "kbth" finds Korle Bu Teaching Hospital    |
 
 - **Proximity** to the search centre is fused as one more ranking.
 - **Confidence** (from source agreement) scales the final score.
@@ -70,7 +76,8 @@ Both parsers produce the same `Intent`:
   - A "kind of place around here" query raises proximity.
   - A query with a town name in its text lowers the trigram arm.
   - A pure category query (every content word is a category word) switches the meaning arm off and halves the title and trigram arms. It is never embedded.
-- **Query embedding** runs alongside the AI parse, on the rule parse's "what" (area words stripped). It is cached, and it is abandoned after 1.2 s, in which case the other arms answer alone.
+  - A query with initials halves the title and trigram arms, so "UCC SRC" and "UCC Hostel" don't crowd out the university.
+- **Query embedding** runs alongside the AI parse, on the rule parse's "what" (area words stripped, initials written out). It is cached, and it is abandoned after 1.2 s, in which case the other arms answer alone.
 - **Result metadata**: each result carries the arm ranks that found it (`arms`), so every ranking can be explained.
 
 The engine also:
@@ -88,6 +95,7 @@ The engine also:
 - the search centre and radius, and any widening;
 - the resolved anchor;
 - where the searched town is, and other towns with the same name;
+- which initials were read as which place name;
 - the fusion weights;
 - per-step timings.
 

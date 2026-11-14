@@ -1,6 +1,7 @@
 import type { LLMRouter } from '../ai/router';
 import type { Embedder } from '../ai/types';
 import { type ParseOptions, parseQuery } from './ai-parse';
+import { type Alias, expandAliases, findAliases } from './aliases';
 import {
   AREA_RADIUS_M,
   type AreaChoice,
@@ -10,7 +11,7 @@ import {
 } from './context';
 import type { Intent, ParseResult } from './intent';
 import { onlyCategoryWords, parseRules } from './rules';
-import { normalize, words } from './text';
+import { joinInitials, normalize, words } from './text';
 
 /** The one database call search needs. Kept structural so core stays framework-free. */
 export type SearchRpc = (
@@ -38,9 +39,11 @@ export interface FusionWeights {
   near: number;
   proximity: number;
   confidence: number;
+  /** Places named by the phrase that initials in the query stand for. */
+  alias: number;
 }
 
-/** The database defaults (see the search_weights migration). */
+/** The database defaults (see the search_weights and search_aliases migrations). */
 export const DEFAULT_WEIGHTS: FusionWeights = {
   title: 1,
   fts: 1,
@@ -50,6 +53,7 @@ export const DEFAULT_WEIGHTS: FusionWeights = {
   near: 1,
   proximity: 0.5,
   confidence: 0.4,
+  alias: 2,
 };
 
 /**
@@ -65,16 +69,24 @@ export const DEFAULT_WEIGHTS: FusionWeights = {
  */
 export const BROWSE_WEIGHTS: Partial<FusionWeights> = { semantic: 0, title: 0.5, name: 0.5 };
 
+/**
+ * Initials in the query ("ucc", "kbth"): the place they stand for is what's wanted, so the arms
+ * that find places merely *named* with the initials ("UCC SRC", "UCC Hostel") step back.
+ */
+export const ALIAS_WEIGHTS: Partial<FusionWeights> = { title: 0.5, name: 0.5 };
+
 export function fusionWeights(
   intent: Intent,
   hasCentre: boolean,
   pureBrowse = false,
   browse: Partial<FusionWeights> = BROWSE_WEIGHTS,
+  aliased = false,
 ): Partial<FusionWeights> {
   const w: Partial<FusionWeights> = {};
   if (intent.categories.length && hasCentre && intent.area?.relation !== 'soft') w.proximity = 1.5;
   if (intent.area?.relation === 'soft') w.name = 0.5;
   if (pureBrowse) Object.assign(w, browse);
+  if (aliased) Object.assign(w, ALIAS_WEIGHTS);
   return w;
 }
 
@@ -114,6 +126,8 @@ export interface SearchResponse {
      * Kumasi). The client can offer them; each choice's `query` re-runs the search there.
      */
     area: { where: string; others: AreaChoice[] } | null;
+    /** Initials read as a place name ("kbth" → Korle Bu Teaching Hospital), for a "showing" line. */
+    aliases: Alias[];
     weights: FusionWeights;
     semantic: boolean;
     /** Only category words in the text: name and meaning arms step back. */
@@ -227,18 +241,22 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
   // The query embedding doesn't wait for the AI parse: it embeds what the rule parse says is being
   // looked for (area words stripped), so the two network calls overlap.
   // A pure category query gets no meaning arm, so it skips the embedding call (time and money).
-  const quick = parseRules(req.q, deps.context, { user });
+  // "K.N.U.S.T" is one word, not five letters.
+  const q = joinInitials(req.q);
+  const quick = parseRules(q, deps.context, { user });
   const browse = deps.browseWeights ?? BROWSE_WEIGHTS;
   const skipEmbed =
     browse.semantic === 0 &&
     quick.categories.length > 0 &&
     onlyCategoryWords(deps.context, quick.text);
+  // Initials are embedded written out: "kbth" means nothing to the model, its name does.
+  const quickText = expandAliases(quick.text, findAliases(deps.context, quick.text));
   const embedding =
     deps.embedder && !skipEmbed
-      ? embedQuery(deps.embedder, quick.text || quick.categories.join(' '))
+      ? embedQuery(deps.embedder, quickText || quick.categories.join(' '))
       : Promise.resolve({ vector: null, ms: 0 });
 
-  const parsed = await parseQuery(req.q, deps.context, {
+  const parsed = await parseQuery(q, deps.context, {
     llm: deps.llm,
     budgetMs: deps.aiBudgetMs,
     user,
@@ -260,14 +278,23 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
   // A landmark the gazetteer can't place ("near accra mall"): find the place, search around it.
   if (intent.anchor) {
     const ta = performance.now();
+    const anchorAliases = findAliases(deps.context, intent.anchor);
     const rows = await callSearch(deps.rpc, {
       p_text: intent.anchor,
       p_lat: intent.area?.lat ?? user?.lat ?? null,
       p_lon: intent.area?.lon ?? user?.lon ?? null,
       p_limit: 3,
+      ...(anchorAliases.length && {
+        p_alias: anchorAliases.map((a) => a.phrase),
+        p_weights: ALIAS_WEIGHTS,
+      }),
     });
     anchorMs = ms(ta);
-    const hit = rows.find((r) => namesAnchor(r.name, intent.anchor as string));
+    const hit = rows.find(
+      (r) =>
+        namesAnchor(r.name, intent.anchor as string) ||
+        anchorAliases.some((a) => namesAnchor(r.name, a.phrase)),
+    );
     anchorMeta = { text: intent.anchor, place: hit?.name ?? null };
     if (hit) {
       centre = { lat: hit.lat, lon: hit.lon, from: 'anchor' };
@@ -306,8 +333,15 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
     .filter((x): x is number => x != null);
 
   const pureBrowse = intent.categories.length > 0 && onlyCategoryWords(deps.context, text);
+  const aliases = findAliases(deps.context, text);
   const weights = {
-    ...fusionWeights({ ...intent, text }, centre != null, pureBrowse, deps.browseWeights),
+    ...fusionWeights(
+      { ...intent, text },
+      centre != null,
+      pureBrowse,
+      deps.browseWeights,
+      aliases.length > 0,
+    ),
     ...req.weights,
   };
 
@@ -323,6 +357,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
     p_limit: limit,
     p_offset: offset,
     p_weights: Object.keys(weights).length ? weights : null,
+    p_alias: aliases.length ? aliases.map((a) => a.phrase) : null,
   });
 
   const td = performance.now();
@@ -352,6 +387,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
       needsLocation,
       anchor: anchorMeta,
       area: intent.area ? sameNameAreas(deps.context, intent.area) : null,
+      aliases,
       weights: { ...DEFAULT_WEIGHTS, ...weights },
       semantic: vector != null,
       pureBrowse,

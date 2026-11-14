@@ -13,6 +13,7 @@ pnpm eval --set holdout2           # held-out set v2 (judged the meaning arm and
 pnpm eval --set holdout3           # held-out set v3 (judged selective AI)
 pnpm eval --set holdout4           # held-out set v4 (judged fuzzy towns and the AI budget)
 pnpm eval --set holdout5           # held-out set v5 (judged same-name towns)
+pnpm eval --set holdout6           # held-out set v6 (judged initials)
 pnpm eval --ai always              # AI parse for every query (default: only when the rules are unsure)
 pnpm eval --semantic off           # leave out the meaning (embedding) arm
 pnpm eval --budget 20000           # give the AI parse unlimited time: its quality ceiling
@@ -400,9 +401,65 @@ Each label is the town people mean, located from the places that name it. Two la
 
 **A finding about the meaning arm:** "UMaT tarkwa" (v3) ranks UMaT first only when the embedding misses its cutoff. With the meaning arm on, "umat" means little to the embedding and the arm promotes other Tarkwa places (known MRR on v3: 1.0 without the meaning arm, 0.929 with it). Short abbreviations should probably skip the meaning arm.
 
+## Round 4: initials (held-out v6)
+
+Round 3 ended with "UMaT tarkwa" and a plan to skip the meaning arm for short abbreviations. A wider probe showed the real problem was bigger:
+
+- "knust" put the university 6th and "upsa" 5th, behind a hostel and a car park merely named after it.
+- "kbth" returned nothing at all, because no place in the data says "KBTH".
+- Selective AI never stepped in: the rules felt sure of every one of these queries, so the fix had to be in search itself.
+
+**Held-out v6** (36 queries, written before any of this code):
+
+- 24 institutions by their initials, alone or with a town ("tth", "uds tamale", "gpha tema");
+- 2 typed with full stops ("k.n.u.s.t");
+- 4 whose initials are in the place names themselves (ECG, MTN, KFC, GCB);
+- 6 controls: short ordinary words that must not be read as initials ("bar labone", "gym tema", "spa osu").
+
+Five labels were fixed after the baseline run and before any code change. Four rejected the same organisation under its short name ("GPHA Tema Hq", "VRA Office", "GRA", "UDS - Tamale Campus"), and one had a typo. All five are listed in LABEL_FIXES.
+
+What changed ([SEARCH.md](SEARCH.md), [DATA_PIPELINE.md](DATA_PIPELINE.md)):
+
+1. **Initials learned from the data.**
+   - `place_acronyms` holds the initials of every name with 3–8 content words, small words optional, so UMaT matches "University of Mines and Technology".
+   - A pair needs evidence: an alternative name or a bracket that states it, or at least two places with that name.
+   - The first version also accepted "other places are named with these letters". On the dev and spent sets that read "spare", "dam", "sea" and "baba" as initials, and "kfc" became Kenzey Fashion Centre. Ordinary words are in hundreds of names, so that evidence now only adds to the score.
+2. **An alias arm.** A query word that is learned initials, and not a category word or a town, is searched as the full name (a phrase, shortest name first). The arms that match names containing the letters ("UCC SRC") are halved.
+3. **The meaning arm embeds the name**, not the letters. This replaces round 3's idea of skipping it.
+4. **Dotted initials are joined** ("K.N.U.S.T" → "knust").
+
+| Held-out v6, rules + meaning arm | Before | After     |
+| -------------------------------- | ------ | --------- |
+| Known-item MRR                   | 0.442  | **0.746** |
+| Hit@1                            | 33%    | 67%       |
+| Hit@10                           | 67%    | **93%**   |
+| · initials (24)                  | 0.369  | 0.751     |
+| · hospitals (4)                  | 0      | 1         |
+| · dotted (2)                     | 0.198  | 0.167     |
+| · initials in names (4)          | 1      | 1         |
+| · controls, P@10 (6)             | 67%    | 67%       |
+
+- **No AI involved.** With selective AI all 36 queries stayed with the rules: same results, no tokens.
+- **Spent sets:**
+  - v3 known MRR went 0.929 → 1.0: "UMaT tarkwa" now ranks UMaT first even when the embedding answers.
+  - v4 known MRR went 0.823 → 0.885 ("UPSA").
+  - On dev and the spent sets, expansion fires on exactly 3 of 361 queries: KATH, UMaT and UPSA.
+- **Dev:** known MRR 0.931 against 0.936, browse P@10 85% against 85%. The one changed case, "korlebu hospital" (rank 3 → 15), has no initials in it. Its embedding took 1.21 s, just past the 1.2 s cutoff, so the meaning arm that usually finds Korle Bu was missing from that run.
+- **Cost:** the alias arm adds 50–80 ms to an unscoped query, and nothing when no initials are found.
+
+What v6 still misses, and why (not tuned on v6, which is now spent):
+
+| Miss                        | Cause                                                                                                                                                                                                                  |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "ucc", "U.C.C", "k.n.u.s.t" | "ucc" and "knust" are taxonomy synonyms of the university category, so they are read as category words and never expanded. This is the known gap "place names as category synonyms".                                   |
+| "ktu kumasi", "cuc"         | Shared initials: Koforidua Technical University is also KTU, and Christ Universal Church outweighs Central University College. The parser knows only the best name per acronym, so the town in the query can't choose. |
+| "gij", "nafti"              | Their only evidence was other places named with the letters, which no longer counts on its own. This is the cost of stopping "spare" and "kfc".                                                                        |
+| "gra", "gbc"                | The right place ranks 3rd, behind prefix matches ("Grace").                                                                                                                                                            |
+
 Next:
 
+- **Move landmark names out of category synonyms** ("knust", "ucc", "legon") into the acronym and landmark data; judge on held-out v7.
+- **Let the town choose between shared initials** ("ktu kumasi"): ship every name per acronym, not just the best.
 - **Claude versus OpenAI** on the same sets once an Anthropic key exists: quality, latency from Ghana, and tokens.
-- **Skip the meaning arm for short abbreviations** ("umat", "upsa"); judge on held-out v6.
-- **Show the "did you mean" towns** (`meta.area.others`) in the app.
+- **Show the "did you mean" towns** (`meta.area.others`) and the expanded initials (`meta.aliases`) in the app.
 - **Fill the data gaps** with the Foursquare dump and community contributions.
