@@ -11,6 +11,7 @@ import {
   normWebsite,
 } from './resolve/normalize';
 import { loadBoundaries } from './sources/boundaries';
+import { stageFoursquare } from './sources/foursquare';
 import { extractOsm } from './sources/osm';
 import { stageOverture } from './sources/overture';
 
@@ -21,11 +22,17 @@ export async function stage(db: Duck) {
   await loadBoundaries(db);
   await extractOsm(db);
   await stageOverture(db);
+  // Optional source: a network failure while checking Hugging Face skips it, not the run.
+  const fsq = await stageFoursquare(db).catch((e: Error) => {
+    log('foursquare', `skipped: ${e.message}`);
+    return false;
+  });
   await db.run(`
     CREATE OR REPLACE TABLE stg_country_buf AS SELECT ST_Buffer(geom, 0.01) AS geom FROM stg_country;
     CREATE OR REPLACE TABLE stg_all AS
       WITH u AS (
         SELECT * FROM stg_osm_places UNION ALL BY NAME SELECT * FROM stg_overture_places
+        ${fsq ? 'UNION ALL BY NAME SELECT * FROM stg_foursquare_places' : ''}
       )
       SELECT u.* FROM u, stg_country_buf c WHERE ST_Intersects(c.geom, ST_Point(u.lon, u.lat));
   `);

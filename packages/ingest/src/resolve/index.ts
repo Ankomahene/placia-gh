@@ -43,6 +43,8 @@ export interface ResolveStats {
   pairsCompared: number;
   matches: Record<string, number>;
   rejectedByOsmGuard: number;
+  /** Merges refused because a Foursquare dump record would bridge two existing places. */
+  rejectedByDumpGuard: number;
   /** Merges refused because the cluster would sprawl (stops "Hostel"–"Hostel"–"Hostel" chains). */
   rejectedBySpread: number;
   places: number;
@@ -53,6 +55,12 @@ export interface ResolveStats {
 /** ~440 m cells: every pair within the largest match radius (400 m) is in a neighbouring cell. */
 const CELL = 0.004;
 
+/**
+ * A record from the Foursquare OS Places dump (not one of the Foursquare records Overture
+ * carries). The dump only ever adds to places: it can join one, never bridge two.
+ */
+export const isDump = (r: SourceRecord) => r.extra.origin === 'fsq-os-places';
+
 /** Stable UUID from the anchor record, so re-running ingest keeps place ids. */
 export function placeId(anchor: Pick<SourceRecord, 'source' | 'sourceId'>) {
   const h = createHash('sha1').update(`placia:${anchor.source}:${anchor.sourceId}`).digest('hex');
@@ -62,11 +70,14 @@ export function placeId(anchor: Pick<SourceRecord, 'source' | 'sourceId'>) {
 class UnionFind {
   readonly parent: Int32Array;
   readonly hasOsm: Uint8Array;
+  /** Cluster holds a record from a source other than the Foursquare dump. */
+  readonly hasBase: Uint8Array;
   /** Bounding box per root: [minLon, minLat, maxLon, maxLat]. */
   readonly box: Float64Array;
   constructor(records: SourceRecord[]) {
     this.parent = Int32Array.from(records, (_, i) => i);
     this.hasOsm = Uint8Array.from(records, (r) => (r.source === 'osm' ? 1 : 0));
+    this.hasBase = Uint8Array.from(records, (r) => (isDump(r) ? 0 : 1));
     this.box = new Float64Array(records.length * 4);
     records.forEach((r, i) => {
       this.box.set([r.lon, r.lat, r.lon, r.lat], i * 4);
@@ -107,6 +118,7 @@ class UnionFind {
       Math.max(x[3]!, y[3]!),
     ]);
     this.hasOsm[ra] = (this.hasOsm[ra] as number) | (this.hasOsm[rb] as number);
+    this.hasBase[ra] = (this.hasBase[ra] as number) | (this.hasBase[rb] as number);
   }
 }
 
@@ -180,6 +192,7 @@ export function resolve(
     pairsCompared: 0,
     matches: {},
     rejectedByOsmGuard: 0,
+    rejectedByDumpGuard: 0,
     rejectedBySpread: 0,
     places: 0,
     multiSource: 0,
@@ -243,7 +256,8 @@ export function resolve(
     }
   }
 
-  // --- clustering: strongest edges first; never fuse two OSM-backed clusters indirectly
+  // --- clustering: strongest edges first; never fuse two OSM-backed clusters indirectly,
+  // and never let a dump record bridge two places the other sources already have.
   edges.sort((x, y) => y.d.score - x.d.score);
   const uf = new UnionFind(records);
   const joinedBy = new Map<number, Decision>();
@@ -255,6 +269,10 @@ export function resolve(
       stats.rejectedByOsmGuard++;
       continue;
     }
+    if ((isDump(records[e.i]!) || isDump(records[e.j]!)) && uf.hasBase[ri] && uf.hasBase[rj]) {
+      stats.rejectedByDumpGuard++;
+      continue;
+    }
     if (uf.spreadIfJoined(ri, rj) > e.limit) {
       stats.rejectedBySpread++;
       continue;
@@ -264,6 +282,33 @@ export function resolve(
     for (const k of [e.i, e.j])
       if ((joinedBy.get(k)?.score ?? -1) < e.d.score) joinedBy.set(k, e.d);
   }
+
+  // --- big sites: a dump record left on its own joins the one existing place with exactly its
+  // name and leaf within 1.5 km (campuses, hospitals, markets: their points sit far apart).
+  const baseByName = new Map<string, number[]>();
+  records.forEach((r, i) => {
+    if (isDump(r) || matchRadius(r.category, r.category) < 400) return;
+    const l = baseByName.get(r.norm);
+    if (l) l.push(i);
+    else baseByName.set(r.norm, [i]);
+  });
+  records.forEach((r, i) => {
+    const ri = uf.find(i);
+    if (!isDump(r) || uf.hasBase[ri]) return;
+    const roots = new Set(
+      (baseByName.get(r.norm) ?? [])
+        .filter((j) => {
+          const b = records[j] as SourceRecord;
+          return b.category === r.category && haversine(r.lon, r.lat, b.lon, b.lat) <= 1500;
+        })
+        .map((j) => uf.find(j)),
+    );
+    if (roots.size !== 1) return;
+    const d: Decision = { match: true, score: 0.6, rule: 'big-site' };
+    uf.union([...roots][0]!, ri);
+    stats.matches[d.rule] = (stats.matches[d.rule] ?? 0) + 1;
+    joinedBy.set(i, d);
+  });
 
   const clusters = new Map<number, number[]>();
   for (let i = 0; i < n; i++) {
@@ -293,6 +338,12 @@ export function resolve(
 const sourceWeight = (r: SourceRecord) =>
   r.source === 'osm' ? 0.75 : (r.sourceConfidence ?? 0.5) * 0.9;
 
+/**
+ * Which record anchors a place: OSM, then Overture (including the Foursquare records Overture
+ * carries), then the Foursquare dump. Adding a source never moves an existing place's id.
+ */
+const anchorRank = (r: SourceRecord) => (r.source === 'osm' ? 0 : isDump(r) ? 2 : 1);
+
 const CHURCH =
   /\b(church|chapel|cathedral|parish|tabernacle|pentecost(al)?|assembl(y|ies) of god|ministr(y|ies)|adventist|methodist|presby(terian)?|anglican|catholic|baptist)\b/i;
 const MOSQUE = /\b(mosque|masjid|jamia?|islamic cent(er|re))\b/i;
@@ -314,9 +365,7 @@ export function canonical(
   const order = recs
     .map((rec, k) => ({ rec, d: joined[k] }))
     .sort(
-      (x, y) =>
-        (x.rec.source === 'osm' ? 0 : 1) - (y.rec.source === 'osm' ? 0 : 1) ||
-        sourceWeight(y.rec) - sourceWeight(x.rec),
+      (x, y) => anchorRank(x.rec) - anchorRank(y.rec) || sourceWeight(y.rec) - sourceWeight(x.rec),
     );
   const anchor = order[0]!.rec;
 

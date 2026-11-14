@@ -186,6 +186,71 @@ describe('resolve', () => {
     expect(canonical([rec({ source: 'osm', name: 'X Spot' })])).not.toBeNull();
   });
 
+  it('lets a Foursquare dump record join a place but never bridge two', () => {
+    // 266 m apart: too far to match each other, but the dump record is 133 m from both.
+    const a = rec({
+      source: 'overture',
+      name: 'Akwaaba Royale Lodge',
+      category: 'guest-house',
+      lon: -0.2,
+      lat: 5.6,
+    });
+    const b = rec({
+      source: 'overture',
+      name: 'Akwaaba Royale Lodge',
+      category: 'guest-house',
+      lon: -0.1976,
+      lat: 5.6,
+    });
+    const dump = rec({
+      source: 'foursquare',
+      name: 'Akwaaba Royale Lodge',
+      category: 'guest-house',
+      lon: -0.1988,
+      lat: 5.6,
+      extra: { origin: 'fsq-os-places' },
+    });
+    const near = (recs: SourceRecord[]) =>
+      resolve([...recs, ...background]).places.filter((p) => p.name === 'Akwaaba Royale Lodge');
+    expect(near([a, b, { ...dump, extra: {} }]).map((p) => p.members.length)).toEqual([3]);
+    const { places, stats } = resolve([a, b, dump, ...background]);
+    const lodges = places.filter((p) => p.name === 'Akwaaba Royale Lodge');
+    expect(lodges.map((p) => p.members.length).sort()).toEqual([1, 2]);
+    expect(lodges.map((p) => p.id).sort()).toEqual([placeId(a), placeId(b)].sort());
+    expect(stats.rejectedByDumpGuard).toBe(1);
+  });
+
+  it('joins a lone dump record to the same big site up to 1.5 km away', () => {
+    const ug = rec({ source: 'osm', name: 'University of Ghana', category: 'university' });
+    const fsq = (o: Partial<SourceRecord>) =>
+      rec({
+        source: 'foursquare',
+        name: 'University of Ghana',
+        category: 'university',
+        lon: -0.2 + 0.009, // ~1 km east
+        extra: { origin: 'fsq-os-places' },
+        ...o,
+      });
+    const count = (recs: SourceRecord[]) =>
+      resolve([...recs, ...background]).places.filter((p) => p.name === 'University of Ghana')
+        .length;
+    expect(count([ug, fsq({})])).toBe(1);
+    expect(count([ug, fsq({ category: 'library' })])).toBe(2);
+    expect(count([ug, fsq({ lon: -0.2 + 0.02 })])).toBe(2);
+  });
+
+  it('anchors on Overture before the Foursquare dump, so adding the dump keeps place ids', () => {
+    const ov = rec({ source: 'foursquare', name: 'Y Spot', sourceConfidence: 0.5 });
+    const dump = rec({
+      source: 'foursquare',
+      name: 'Y Spot',
+      sourceConfidence: 0.75,
+      extra: { origin: 'fsq-os-places' },
+    });
+    expect(canonical([dump, ov])?.id).toBe(placeId(ov));
+    expect(canonical([dump])?.id).toBe(placeId(dump));
+  });
+
   it('refines generic worship records by name', () => {
     expect(refineCategory('Masjid Nur', 'worship')).toBe('mosque');
     expect(refineCategory('Grace Assemblies of God', 'worship')).toBe('church');

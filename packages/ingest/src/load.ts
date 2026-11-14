@@ -1,8 +1,10 @@
 import fs from 'node:fs';
+import path from 'node:path';
 import { createServiceClient } from '@placia/db';
-import { type Duck, log } from './duck';
+import { CACHE_DIR, type Duck, log } from './duck';
 import type { ResolveStats } from './resolve';
 import { slugify } from './sources/boundaries';
+import { FSQ_RELEASE } from './sources/foursquare';
 import { OSM_FILE } from './sources/osm';
 import { OVERTURE_RELEASE } from './sources/overture';
 import { TAXONOMY } from './taxonomy';
@@ -303,6 +305,11 @@ export async function load(db: Duck, stats: ResolveStats | null) {
             ? fs.statSync(OSM_FILE).mtime.toISOString().slice(0, 10)
             : null,
           overture: OVERTURE_RELEASE,
+          foursquare: fs.existsSync(
+            path.join(CACHE_DIR, 'foursquare', `places_gh_${FSQ_RELEASE}.parquet`),
+          )
+            ? FSQ_RELEASE
+            : null,
           geoboundaries: '9469f09',
         },
         stats: (stats ?? {}) as never,

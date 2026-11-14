@@ -6,14 +6,16 @@ import { load } from './load';
 import { acronyms, mentions } from './mentions';
 import { merge, stage } from './pipeline';
 import type { ResolveStats } from './resolve';
+import { fetchFoursquare } from './sources/foursquare';
 
 /**
- * pnpm ingest [stage|merge|load|mentions|acronyms|embed|all]
+ * pnpm ingest [stage|merge|load|mentions|acronyms|embed|foursquare|all]
  *   stage  download (cached) + normalise OSM, Overture, boundaries into DuckDB
  *   merge  entity resolution + region/district/locality assignment
  *   load   upsert into Supabase, prune stale machine rows, record the run
  *   mentions  cluster town names written in addresses (same-name towns, missing suburbs)
  *   acronyms  learn the initials people use for places ("kbth" → Korle Bu Teaching Hospital)
+ *   foursquare  check / extract the Foursquare files (lists any to download by hand)
  *   embed  embed new or edited places for the semantic arm (needs OPENAI_API_KEY)
  */
 const step = process.argv[2] ?? 'all';
@@ -32,6 +34,11 @@ if (step === 'acronyms') {
 const statsFile = path.join(CACHE_DIR, 'last-merge.json');
 
 const db = await openDuck();
+if (step === 'foursquare') {
+  await fetchFoursquare(db);
+  db.close();
+  process.exit(0);
+}
 const t = Date.now();
 try {
   if (step === 'stage' || step === 'all') await stage(db);
