@@ -16,7 +16,8 @@
     "format": "biome check --write .",
     "db:types": "pnpm --filter @placia/db gen:types",
     "db:push": "supabase db push",
-    "ai:smoke": "pnpm --filter @placia/core ai:smoke"
+    "ai:smoke": "pnpm --filter @placia/core ai:smoke",
+    "ingest": "pnpm --filter @placia/ingest ingest"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.7",

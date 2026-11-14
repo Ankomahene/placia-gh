@@ -167,6 +167,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ingest_runs: {
+        Row: {
+          finished_at: string | null
+          id: number
+          source_versions: Json
+          started_at: string
+          stats: Json
+          status: string
+        }
+        Insert: {
+          finished_at?: string | null
+          id?: never
+          source_versions?: Json
+          started_at: string
+          stats?: Json
+          status?: string
+        }
+        Update: {
+          finished_at?: string | null
+          id?: never
+          source_versions?: Json
+          started_at?: string
+          stats?: Json
+          status?: string
+        }
+        Relationships: []
+      }
       localities: {
         Row: {
           alt_names: string[]
@@ -570,7 +597,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_data_quality: { Args: never; Returns: Json }
       admin_overview: { Args: never; Returns: Json }
+      ingest_prune: { Args: { p_since: string }; Returns: Json }
+      ingest_slugs: { Args: never; Returns: Json }
       ping: { Args: never; Returns: string }
     }
     Enums: {

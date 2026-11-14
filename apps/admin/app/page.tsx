@@ -1,7 +1,6 @@
 import { aiStatus } from '@placia/core/ai';
-import { cn } from '@placia/ui/cn';
 import { Bot, Database, Inbox, MapPin, Search } from 'lucide-react';
-import type { ComponentType, ReactNode } from 'react';
+import { Card, Stat, StatusDot } from './_components/ui';
 import { getOverviewCounts } from './_lib/overview';
 
 export const dynamic = 'force-dynamic';
@@ -63,56 +62,5 @@ export default async function OverviewPage() {
         </Card>
       </section>
     </div>
-  );
-}
-
-function Stat({
-  icon: Icon,
-  label,
-  value,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  value: number | null;
-}) {
-  return (
-    <div className="rounded-lg border bg-surface p-4 shadow-card">
-      <div className="flex items-center gap-2 text-muted-foreground text-xs">
-        <Icon className="size-4" />
-        {label}
-      </div>
-      <div className="mt-2 font-semibold text-2xl tabular-nums tracking-tight">
-        {value == null ? '—' : value.toLocaleString()}
-      </div>
-    </div>
-  );
-}
-
-function Card({
-  title,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  icon: ComponentType<{ className?: string }>;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-lg border bg-surface px-4 pt-4 pb-1 shadow-card">
-      <h2 className="flex items-center gap-2 font-semibold text-sm">
-        <Icon className="size-4 text-primary" />
-        {title}
-      </h2>
-      {children}
-    </div>
-  );
-}
-
-function StatusDot({ ok }: { ok: boolean }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 text-xs">
-      <span className={cn('size-2 rounded-full', ok ? 'bg-success' : 'bg-border')} />
-      {ok ? 'Connected' : 'Not set'}
-    </span>
   );
 }
