@@ -2,7 +2,7 @@
 
 Status: approved 2026-11-13, with these changes from review:
 
-- **Supabase free plan.** A scheduled GitHub Actions job pings the database every 3 days so the project doesn't pause.
+- **Supabase free plan.** A Railway cron service (`ops/keep-alive`, project "Placia") pings the database every 2 days so the project doesn't pause. The GitHub Actions copy on `main` is a backup once Actions is unlocked.
 - **Cloudinary** stores photos instead of Supabase Storage. Its free tier is larger, and its URL transforms (`f_auto,q_auto`, resizing) suit low bandwidth.
 - **Two apps**, so they can be hosted separately: `apps/web` (public, mobile-first) and `apps/admin` (moderation, data, `/lab`). Both share `packages/ui` and `packages/core`.
 - **AI providers.** Claude is primary and OpenAI is the fallback, behind one `LLM` interface. Claude is used whenever `ANTHROPIC_API_KEY` is set. Otherwise, or on Claude errors or timeouts, calls go to OpenAI. OpenAI also handles embeddings and speech-to-text, since there are credits there.
