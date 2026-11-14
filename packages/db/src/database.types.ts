@@ -602,6 +602,38 @@ export type Database = {
       ingest_prune: { Args: { p_since: string }; Returns: Json }
       ingest_slugs: { Args: never; Returns: Json }
       ping: { Args: never; Returns: string }
+      search_context: { Args: never; Returns: Json }
+      search_places: {
+        Args: {
+          p_categories?: number[]
+          p_district_id?: number
+          p_embedding?: unknown
+          p_lat?: number
+          p_limit?: number
+          p_lon?: number
+          p_offset?: number
+          p_radius_m?: number
+          p_region_id?: number
+          p_text?: string
+          p_weights?: Json
+        }
+        Returns: {
+          address: string
+          arms: Json
+          category: string
+          confidence: number
+          distance_m: number
+          district: string
+          id: string
+          lat: number
+          locality: string
+          lon: number
+          name: string
+          opening_hours: Json
+          score: number
+          slug: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

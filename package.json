@@ -17,7 +17,8 @@
     "db:types": "pnpm --filter @placia/db gen:types",
     "db:push": "supabase db push",
     "ai:smoke": "pnpm --filter @placia/core ai:smoke",
-    "ingest": "pnpm --filter @placia/ingest ingest"
+    "ingest": "pnpm --filter @placia/ingest ingest",
+    "eval": "pnpm --filter @placia/evals eval"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.7",

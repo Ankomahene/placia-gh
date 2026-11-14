@@ -5,12 +5,14 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./ai": "./src/ai/index.ts"
+    "./ai": "./src/ai/index.ts",
+    "./search": "./src/search/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "ai:smoke": "tsx --env-file-if-exists=../../.env.local scripts/ai-smoke.ts"
+    "ai:smoke": "tsx --env-file-if-exists=../../.env.local scripts/ai-smoke.ts",
+    "search": "tsx --env-file-if-exists=../../.env.local scripts/try-search.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.8.0",
@@ -21,6 +23,7 @@
     "@types/node": "26.6.6",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "@placia/db": "workspace:*"
   }
 }

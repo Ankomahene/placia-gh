@@ -51,6 +51,14 @@ export class LLMRouter {
     return this.providers[0] as LLMProvider;
   }
 
+  /**
+   * False while every provider's breaker is open. Callers that have their own non-AI fallback
+   * (search's rule parser) should skip the call then, instead of paying a timeout per request.
+   */
+  available() {
+    return this.providers.some((p) => !this.isOpen(p));
+  }
+
   generateText(req: TextRequest): Promise<AIResult<string>> {
     return this.run('text', req, (p, signal) => p.generateText(req, signal));
   }
