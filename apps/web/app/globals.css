@@ -10,6 +10,57 @@
   }
 }
 
+/* Map pins (DOM markers, styled here so they follow the theme tokens). */
+/*
+ * The marker element itself carries no rotate/scale: CSS applies those before MapLibre's
+ * positioning transform, which would swing every pin away from its place. The shape is inside.
+ */
+.placia-pin {
+  position: relative;
+  width: 28px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.placia-pin-body {
+  position: absolute;
+  inset: 0 0 auto;
+  display: grid;
+  place-items: center;
+  height: 28px;
+  border-radius: 999px 999px 999px 4px;
+  rotate: -45deg;
+  background: var(--color-primary);
+  color: var(--color-primary-foreground);
+  border: 2px solid var(--color-surface);
+  box-shadow: var(--shadow-card);
+  font: 600 12px / 1 var(--font-sans);
+  transform-origin: 50% 50%;
+  transition: scale 120ms ease;
+}
+.placia-pin-body > span {
+  /* Keep the number upright inside the rotated pin. */
+  rotate: 45deg;
+}
+.placia-pin[data-selected] .placia-pin-body {
+  background: var(--color-accent);
+  color: var(--color-accent-foreground);
+  scale: 1.2;
+}
+.placia-me {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: oklch(0.6 0.17 250);
+  border: 3px solid white;
+  box-shadow: 0 0 0 6px oklch(0.6 0.17 250 / 0.2);
+}
+.maplibregl-ctrl-attrib {
+  font-size: 10px;
+}
+
 @utility pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
 }

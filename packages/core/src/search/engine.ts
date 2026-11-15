@@ -95,6 +95,8 @@ export interface SearchResult {
   slug: string;
   name: string;
   category: string | null;
+  /** The category's display name ("Chop bar"). */
+  categoryName: string | null;
   locality: string | null;
   district: string | null;
   address: string | null;
@@ -200,12 +202,13 @@ interface Row {
   arms: Record<string, number>;
 }
 
-function toResult(r: Row): SearchResult {
+function toResult(r: Row, ctx: SearchContext): SearchResult {
   return {
     id: r.id,
     slug: r.slug,
     name: r.name,
     category: r.category,
+    categoryName: (r.category && ctx.bySlug.get(r.category)?.name) ?? null,
     locality: r.locality,
     district: r.district,
     address: r.address,
@@ -471,7 +474,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
     intent: typedPlace
       ? { ...intent, text, area: null, anchor: intent.anchor ?? intent.area?.typed ?? null }
       : { ...intent, text },
-    results: rows.map(toResult),
+    results: rows.map((r) => toResult(r, deps.context)),
     meta: {
       parse: parseMeta,
       centre,
