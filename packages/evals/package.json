@@ -6,11 +6,14 @@
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "eval": "tsx --env-file-if-exists=../../.env.local src/run.ts"
+    "eval": "tsx --env-file-if-exists=../../.env.local src/run.ts",
+    "ask": "tsx --env-file-if-exists=../../.env.local src/ask.ts",
+    "voice": "tsx --env-file-if-exists=../../.env.local src/voice.ts"
   },
   "dependencies": {
     "@placia/core": "workspace:*",
-    "@placia/db": "workspace:*"
+    "@placia/db": "workspace:*",
+    "openai": "7.57.0"
   },
   "devDependencies": {
     "@types/node": "26.6.6",

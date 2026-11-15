@@ -291,6 +291,8 @@ export type Database = {
           acronym: string
           expansion: string
           explicit: boolean
+          lat: number | null
+          lon: number | null
           phrase: string
           places: number
           refreshed_at: string
@@ -301,6 +303,8 @@ export type Database = {
           acronym: string
           expansion: string
           explicit: boolean
+          lat?: number | null
+          lon?: number | null
           phrase: string
           places: number
           refreshed_at?: string
@@ -311,6 +315,8 @@ export type Database = {
           acronym?: string
           expansion?: string
           explicit?: boolean
+          lat?: number | null
+          lon?: number | null
           phrase?: string
           places?: number
           refreshed_at?: string
@@ -347,36 +353,49 @@ export type Database = {
       }
       place_photos: {
         Row: {
-          cloudinary_public_id: string
+          cloudinary_public_id: string | null
+          contribution_id: string | null
           created_at: string
           height: number | null
           id: string
           place_id: string
           status: string
+          storage_path: string | null
           user_id: string | null
           width: number | null
         }
         Insert: {
-          cloudinary_public_id: string
+          cloudinary_public_id?: string | null
+          contribution_id?: string | null
           created_at?: string
           height?: number | null
           id?: string
           place_id: string
           status?: string
+          storage_path?: string | null
           user_id?: string | null
           width?: number | null
         }
         Update: {
-          cloudinary_public_id?: string
+          cloudinary_public_id?: string | null
+          contribution_id?: string | null
           created_at?: string
           height?: number | null
           id?: string
           place_id?: string
           status?: string
+          storage_path?: string | null
           user_id?: string | null
           width?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "place_photos_contribution_id_fkey"
+            columns: ["contribution_id"]
+            isOneToOne: false
+            referencedRelation: "contributions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "place_photos_place_id_fkey"
             columns: ["place_id"]
@@ -694,12 +713,34 @@ export type Database = {
       acronym_variants: { Args: { p_words: string[] }; Returns: string[] }
       admin_data_quality: { Args: never; Returns: Json }
       admin_overview: { Args: never; Returns: Json }
+      apply_contribution: {
+        Args: {
+          p_approve: boolean
+          p_id: string
+          p_note?: string
+          p_reviewer: string
+        }
+        Returns: Json
+      }
+      area_for_point: {
+        Args: { p_lat: number; p_lon: number }
+        Returns: {
+          district_id: number
+          locality_id: number
+          locality_name: string
+          region_id: number
+        }[]
+      }
       embedding_queue: {
         Args: { p_limit?: number }
         Returns: {
           id: string
           input: string
         }[]
+      }
+      free_place_slug: {
+        Args: { p_area: string; p_name: string }
+        Returns: string
       }
       ingest_prune: { Args: { p_since: string }; Returns: Json }
       ingest_slugs: { Args: never; Returns: Json }
@@ -711,6 +752,7 @@ export type Database = {
       search_context: { Args: never; Returns: Json }
       search_places: {
         Args: {
+          p_alias?: string[]
           p_categories?: number[]
           p_district_id?: number
           p_embedding?: unknown
@@ -744,6 +786,7 @@ export type Database = {
         Args: { p_ids: string[]; p_vectors: string[] }
         Returns: number
       }
+      slugify: { Args: { t: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

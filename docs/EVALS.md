@@ -535,3 +535,38 @@ Next:
 - **Same-name towns**: prefer the town people mean (Ada Foah over Ada village) using address evidence, as round 3 did for Atonsu.
 - **Claude versus OpenAI** on the same sets once an Anthropic key exists.
 - **Show the anchor** (`meta.anchor`) in the app: "Near Kotoka International Airport".
+
+# Part 3: Voice and Ask (2026-11-15, Phase 4)
+
+## Voice: speech to text
+
+Phones with built-in speech recognition (Chrome/Android) use it: free and fast, but it needs Google's servers. Everything else records up to 8 s and sends it to `/api/transcribe`. A recognition error that isn't "mic blocked" falls back to recording, and the keyboard always works.
+
+We measured word error rate (WER) on 20 spoken place searches (`pnpm --filter @placia/evals voice`). The clips are **synthetic**: a TTS model asked for a Ghanaian English accent, four voices. That makes a repeatable baseline but not a substitute for real speakers; real recordings go in `packages/evals/voice/real/` with the same `manifest.json` and are reported as their own set.
+
+| Model                  | Place-name hints | WER   | Exact | p50 latency |
+| ---------------------- | ---------------- | ----- | ----- | ----------- |
+| gpt-4o-mini-transcribe | yes              | 2.9%  | 18/20 | 910 ms      |
+| gpt-4o-mini-transcribe | no               | 18.9% | 10/20 | 919 ms      |
+| gpt-transcribe         | yes              | 2.5%  | 18/20 | 930 ms      |
+| gpt-transcribe         | no               | 18.5% | 11/20 | 771 ms      |
+| whisper-1              | yes              | 3.8%  | 17/20 | 1369 ms     |
+| whisper-1              | no               | 23.0% | 9/20  | 1405 ms     |
+
+**The hint list matters more than the model.** Sending a short prompt of Ghanaian place and food words (`GHANA_VOCABULARY` in `@placia/core/voice`) cuts WER by about 85% for every model: "Ayeduase", "Achimota" and "waakye" come back spelled the way search knows them. Without it every model mangles local names. The app uses `gpt-transcribe` with hints. Remaining misses: "kenkey" → "Kenkay", "mosque" → "Mask".
+
+## Ask: grounded answers
+
+Ask is a small agent with two tools, `search_places` (our own hybrid search) and `get_place` (details). Places come back with short refs (P1, P2…), and the model must cite every place it names with one. After the answer we check every citation against the refs our tools issued: a ref we never issued is a made-up place and is removed before the user sees the final answer. If the model errors or runs out of time before writing anything, the user gets the plain search results instead (path `fallback`).
+
+Eval: 14 questions (12 that our data can answer, 2 it can't, like "ski resort in Accra"). A question passes when the answer is grounded and a cited place matches what was asked, or, for the impossible ones, when nothing is cited (`pnpm --filter @placia/evals ask --models …`).
+
+| Model        | Pass  | Grounded | Made-up refs | Tool calls | First words p50 / p95 | Full answer p50 / p95 | Tokens in/out |
+| ------------ | ----- | -------- | ------------ | ---------- | --------------------- | --------------------- | ------------- |
+| gpt-6-luna   | 13/14 | 14/14    | 0            | 1.0        | 2.7 / 3.9 s           | 3.4 / 4.3 s           | 935 / 72      |
+| gpt-5.4-mini | 13/14 | 14/14    | 0            | 1.0        | 3.8 / 10.5 s          | 4.1 / 10.6 s          | 955 / 101     |
+| gpt-5.4-nano | 12/14 | 14/14    | 0            | 2.6        | 3.9 / 9.1 s           | 4.5 / 9.7 s           | 1471 / 207    |
+
+Our search is about 0.8 s of each answer. No model invented a place in this run, so the citation check is a safety net, not a crutch; it is still the reason a hallucination can't reach the screen. The failures are the "impossible" questions: models offered near matches (a beach resort for "ski resort", a travel agent for "ticket to the moon") and cited them. That is arguably helpful, but the eval counts it as a miss. The smallest model calls tools 2.6 times per question and is slower overall, so cheaper is not faster here. `gpt-6-luna` stays the default (`AI_ASK_MODEL` overrides it).
+
+Reports: `packages/evals/reports/voice-2026-11-15.md`, `packages/evals/reports/ask-2026-11-15.md`.

@@ -22,3 +22,8 @@ export function MapSkeleton({ className }: { className?: string }) {
 export function LazyMap(props: PlaceMapProps) {
   return <PlaceMap {...props} />;
 }
+
+export const LocationPicker = dynamic(() => import('./location-picker'), {
+  ssr: false,
+  loading: () => <MapSkeleton />,
+});

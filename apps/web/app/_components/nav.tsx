@@ -1,10 +1,11 @@
-import { Button } from '@placia/ui/button';
+import { buttonVariants } from '@placia/ui/button';
 import { cn } from '@placia/ui/cn';
 import { Logo } from '@placia/ui/logo';
-import { Bookmark, Compass, PlusCircle, UserRound } from 'lucide-react';
+import { Bookmark, Compass, PlusCircle, Sparkles, UserRound } from 'lucide-react';
 
 const ITEMS = [
   { href: '/', label: 'Explore', icon: Compass },
+  { href: '/ask', label: 'Ask', icon: Sparkles },
   { href: '/saved', label: 'Saved', icon: Bookmark },
   { href: '/contribute', label: 'Add place', icon: PlusCircle },
 ];
@@ -38,9 +39,14 @@ export function SiteHeader({ active = '/' }: { active?: string }) {
             ))}
           </ul>
         </nav>
-        <Button variant="ghost" size="icon" aria-label="Account">
+        <a
+          href="/account"
+          aria-label="Account"
+          aria-current={active === '/account' ? 'page' : undefined}
+          className={buttonVariants({ variant: 'ghost', size: 'icon' })}
+        >
           <UserRound />
-        </Button>
+        </a>
       </div>
     </header>
   );
@@ -54,7 +60,7 @@ export function BottomNav({ active = '/' }: { active?: string }) {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-40 border-t bg-surface/90 pb-safe backdrop-blur-md md:hidden"
     >
-      <ul className="mx-auto grid max-w-xl grid-cols-4">
+      <ul className="mx-auto grid max-w-xl grid-cols-5">
         {items.map(({ href, label, icon: Icon }) => {
           const isActive = active === href;
           return (

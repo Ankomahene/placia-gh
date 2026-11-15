@@ -1,7 +1,7 @@
 # Placia web, for Railway. Build from the repo root:
 #   docker build -f apps/web/Dockerfile .
 # Runtime variables (set on the Railway service, never baked in):
-#   NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY (optional), ANTHROPIC_API_KEY (optional)
+#   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, OPENAI_API_KEY (optional), ANTHROPIC_API_KEY (optional)
 
 FROM node:22-alpine AS build
 RUN corepack enable
@@ -11,6 +11,7 @@ RUN pnpm install --frozen-lockfile --filter "@placia/web..."
 ENV NEXT_TELEMETRY_DISABLED=1
 # Next inlines NEXT_PUBLIC_* at build time; Railway passes service variables to declared ARGs.
 ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 RUN pnpm --filter @placia/web build
 
 # Only the standalone server Next traced, plus static assets: no dev dependencies, no source.

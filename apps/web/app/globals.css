@@ -93,3 +93,7 @@
 @utility pb-safe {
   padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
 }
+/* OpenStreetMap tiles in dark mode: inverted and hue-turned back, so water stays blue-ish. */
+.dark .placia-tile {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9) saturate(0.6);
+}

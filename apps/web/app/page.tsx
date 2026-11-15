@@ -7,6 +7,7 @@ import {
   GraduationCap,
   Pill,
   ShoppingBasket,
+  Sparkles,
   UtensilsCrossed,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -42,6 +43,15 @@ export default function HomePage() {
 
             <section aria-label="Categories" className="-mx-4 md:mx-0">
               <ul className="no-scrollbar flex gap-2 overflow-x-auto px-4 md:flex-wrap md:overflow-visible md:px-0">
+                <li>
+                  <Link
+                    href="/ask"
+                    className="flex h-10 items-center gap-2 whitespace-nowrap rounded-full bg-primary-soft px-4 font-medium text-primary-soft-foreground text-sm transition-colors hover:bg-primary hover:text-primary-foreground"
+                  >
+                    <Sparkles className="size-4" />
+                    Ask
+                  </Link>
+                </li>
                 {CATEGORIES.map(({ label, q, icon: Icon }) => (
                   <li key={label}>
                     <Link

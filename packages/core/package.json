@@ -6,13 +6,18 @@
   "exports": {
     ".": "./src/index.ts",
     "./ai": "./src/ai/index.ts",
-    "./search": "./src/search/index.ts"
+    "./search": "./src/search/index.ts",
+    "./ask": "./src/ask/index.ts",
+    "./ask/citations": "./src/ask/citations.ts",
+    "./voice": "./src/voice.ts",
+    "./contrib": "./src/contrib/index.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "ai:smoke": "tsx --env-file-if-exists=../../.env.local scripts/ai-smoke.ts",
-    "search": "tsx --env-file-if-exists=../../.env.local scripts/try-search.ts"
+    "search": "tsx --env-file-if-exists=../../.env.local scripts/try-search.ts",
+    "ask": "tsx --env-file-if-exists=../../.env.local scripts/try-ask.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.8.0",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { hitAt, ndcgAt, percentile, precisionAt, reciprocalRank } from './metrics';
+import { hitAt, ndcgAt, percentile, precisionAt, reciprocalRank, wordErrorRate } from './metrics';
 
 describe('retrieval metrics', () => {
   it('reciprocal rank uses the first relevant result', () => {
@@ -32,5 +32,15 @@ describe('retrieval metrics', () => {
     expect(percentile(xs, 50)).toBe(50);
     expect(percentile(xs, 95)).toBe(100);
     expect(percentile([7], 95)).toBe(7);
+  });
+});
+
+describe('wordErrorRate', () => {
+  it('is 0 for a match ignoring case and punctuation', () => {
+    expect(wordErrorRate('Pharmacy near Osu', 'pharmacy near osu.')).toBe(0);
+  });
+  it('counts a substitution, a deletion and an insertion', () => {
+    expect(wordErrorRate('hostel near knust', 'hotel near')).toBeCloseTo(2 / 3);
+    expect(wordErrorRate('chop bar', 'chop the bar')).toBeCloseTo(1 / 2);
   });
 });

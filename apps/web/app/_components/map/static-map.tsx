@@ -3,16 +3,13 @@ import type { MapDot } from './types';
 
 /*
  * A map made of plain tile images: no map library, no script, so it costs a cheap phone almost
- * nothing to show. CARTO's free basemaps (OpenStreetMap data), the same look as the interactive
- * map's style. Free for non-commercial use with attribution.
+ * nothing to show. OpenStreetMap's own tiles (no key; light use with attribution is allowed by
+ * its tile policy). Dark mode inverts them with a CSS filter rather than loading a second set.
+ * (CARTO's basemaps needed no key when this was written; they now return "API key required".)
  */
 const TILE = 256;
-const TILES = {
-  light: (z: number, x: number, y: number, r = '') =>
-    `https://basemaps.cartocdn.com/light_all/${z}/${x}/${y}${r}.png`,
-  dark: (z: number, x: number, y: number, r = '') =>
-    `https://basemaps.cartocdn.com/dark_all/${z}/${x}/${y}${r}.png`,
-};
+const tileUrl = (z: number, x: number, y: number) =>
+  `https://tile.openstreetmap.org/${z}/${x}/${y}.png`;
 
 /** Web Mercator: a point's position in pixels on the whole world map at zoom z. */
 function worldPx(lat: number, lon: number, z: number) {
@@ -65,25 +62,17 @@ export function StaticMap({
           className="absolute"
           style={{ left: `calc(50% + ${t.left}px)`, top: `calc(50% + ${t.top}px)` }}
         >
-          {/* Only the theme's set is shown, and lazy images that aren't shown never download. */}
-          {(['light', 'dark'] as const).map((theme) => (
-            // biome-ignore lint/performance/noImgElement: plain tiles; next/image would proxy them.
-            <img
-              key={theme}
-              src={TILES[theme](zoom, t.x, t.y)}
-              srcSet={`${TILES[theme](zoom, t.x, t.y, '@2x')} 2x`}
-              alt=""
-              width={TILE}
-              height={TILE}
-              loading="lazy"
-              decoding="async"
-              draggable={false}
-              className={cn(
-                'max-w-none select-none',
-                theme === 'light' ? 'dark:hidden' : 'hidden dark:block',
-              )}
-            />
-          ))}
+          {/* biome-ignore lint/performance/noImgElement: plain tiles; next/image would proxy them. */}
+          <img
+            src={tileUrl(zoom, t.x, t.y)}
+            alt=""
+            width={TILE}
+            height={TILE}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            className="placia-tile max-w-none select-none"
+          />
         </span>
       ))}
       {/* Decoration here: the nearby list carries the links, the live map makes dots tappable. */}
@@ -106,7 +95,7 @@ export function StaticMap({
         </span>
       </span>
       <span className="absolute right-1 bottom-1 rounded bg-surface/80 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-        © OpenStreetMap © CARTO
+        © OpenStreetMap contributors
       </span>
     </div>
   );

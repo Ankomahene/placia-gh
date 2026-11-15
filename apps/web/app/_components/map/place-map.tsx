@@ -58,6 +58,12 @@ export default function PlaceMap({
       m.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     }
     m.touchZoomRotate.disableRotation();
+    // The compact credit opens expanded on load and covers a small map; start it folded.
+    m.once('load', () =>
+      box.current
+        ?.querySelector('.maplibregl-ctrl-attrib')
+        ?.classList.remove('maplibregl-compact-show'),
+    );
     map.current = m;
     // The box can get its real size after the map is made (a panel opening, CSS arriving late):
     // resize and frame again, or the pins end up off to one side.

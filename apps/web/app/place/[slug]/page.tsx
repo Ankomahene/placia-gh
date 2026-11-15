@@ -1,6 +1,6 @@
 import { buttonVariants } from '@placia/ui/button';
 import { cn } from '@placia/ui/cn';
-import { Clock, Globe, MapPin, Navigation, Phone } from 'lucide-react';
+import { Camera, Clock, Flag, Globe, MapPin, Navigation, Pencil, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -10,6 +10,8 @@ import { MiniMap } from '../../_components/map/mini-map';
 import { BottomNav, SiteHeader } from '../../_components/nav';
 import { db } from '../../_lib/db';
 import { formatDistance, formatHours, parsePoint, placeWhere } from '../../_lib/format';
+import { photoUrl } from '../../_lib/photos';
+import { SaveButton } from './save-button';
 import { ShareButton } from './share-button';
 
 const SOURCE_NAMES: Record<string, string> = {
@@ -29,7 +31,7 @@ const getPlace = cache(async (slug: string) => {
   const { data, error } = await db()
     .from('places')
     .select(
-      'id, slug, name, alt_names, address, phone, website, email, opening_hours, description, location, status, categories(id, name, slug), localities(name), districts(name), regions(name), place_sources(source)',
+      'id, slug, name, alt_names, address, phone, website, email, opening_hours, description, location, status, categories(id, name, slug), localities(name), districts(name), regions(name), place_sources(source), place_photos(storage_path, width, height, status, created_at)',
     )
     .eq('slug', slug)
     .in('status', ['active', 'closed'])
@@ -46,6 +48,17 @@ const getPlace = cache(async (slug: string) => {
     locality: one(data.localities as unknown as Named)?.name ?? null,
     district: one(data.districts as unknown as Named)?.name ?? null,
     region: one(data.regions as unknown as Named)?.name ?? null,
+    photos: (
+      (data.place_photos as unknown as {
+        storage_path: string | null;
+        width: number | null;
+        height: number | null;
+        status: string;
+        created_at: string;
+      }[]) ?? []
+    )
+      .filter((f) => f.status === 'approved' && f.storage_path)
+      .sort((a, b) => b.created_at.localeCompare(a.created_at)),
     sources: [
       ...new Set(
         ((data.place_sources as unknown as { source: string }[]) ?? []).map((s) => s.source),
@@ -173,8 +186,28 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
                   Website
                 </a>
               ) : null}
+              <SaveButton placeId={p.id} slug={p.slug} />
               <ShareButton title={p.name} />
             </div>
+
+            {p.photos.length ? (
+              <ul className="no-scrollbar -mx-4 mt-6 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
+                {p.photos.map((f) => (
+                  <li key={f.storage_path} className="shrink-0">
+                    {/* biome-ignore lint/performance/noImgElement: already resized on upload. */}
+                    <img
+                      src={photoUrl(f.storage_path as string)}
+                      alt={p.name}
+                      width={f.width ?? 400}
+                      height={f.height ?? 300}
+                      loading="lazy"
+                      decoding="async"
+                      className="h-40 w-auto rounded-xl border object-cover"
+                    />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
 
             {p.description ? <p className="mt-6 leading-relaxed">{p.description}</p> : null}
 
@@ -222,6 +255,23 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
             <Suspense>
               <NearbyList p={p} />
             </Suspense>
+
+            <div className="mt-8 flex flex-wrap gap-2">
+              {[
+                { kind: 'edit', label: 'Suggest an edit', icon: <Pencil /> },
+                { kind: 'photo', label: 'Add photo', icon: <Camera /> },
+                { kind: 'report', label: 'Report', icon: <Flag /> },
+              ].map((a) => (
+                <Link
+                  key={a.kind}
+                  href={`/contribute?place=${encodeURIComponent(p.slug)}&kind=${a.kind}` as never}
+                  className={buttonVariants({ variant: 'outline', size: 'sm' })}
+                >
+                  {a.icon}
+                  {a.label}
+                </Link>
+              ))}
+            </div>
 
             {p.sources.length ? (
               <p className="mt-8 text-muted-foreground text-xs">

@@ -35,7 +35,10 @@ const DAYS: Record<string, string> = {
 
 /** OSM opening hours, one rule per line: "Mo-Fr 08:00-17:00" → "Mon–Fri 08:00–17:00". */
 export function formatHours(hours: unknown): string[] {
-  const osm = (hours as { osm?: unknown } | null)?.osm;
+  const h = hours as { osm?: unknown; text?: unknown } | null;
+  // Community-added hours are free text, shown as written.
+  if (typeof h?.text === 'string' && h.text.trim()) return [h.text.trim()];
+  const osm = h?.osm;
   if (typeof osm !== 'string' || !osm.trim()) return [];
   if (osm.trim() === '24/7') return ['Open 24 hours'];
   return osm
