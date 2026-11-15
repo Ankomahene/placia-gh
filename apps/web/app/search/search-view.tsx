@@ -14,6 +14,10 @@ import { formatDistance, placeWhere } from '../_lib/format';
 import { useUserLocation } from '../_lib/location';
 
 const PAGE = 20;
+/** "Nearest" orders up to this many of the best matches by distance. */
+const NEAREST_POOL = 50;
+
+type Sort = 'best' | 'near';
 const TIMEOUT_MS = 20_000;
 
 type State = 'loading' | 'ready' | 'error';
@@ -30,12 +34,13 @@ export function SearchView() {
   const [selected, setSelected] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [sort, setSort] = useState<Sort>(params.get('sort') === 'near' ? 'near' : 'best');
   const listRef = useRef<HTMLOListElement>(null);
   const desktop = useIsDesktop();
 
   const fetchPage = useCallback(
-    async (offset: number, signal: AbortSignal) => {
-      const sp = new URLSearchParams({ q, limit: String(PAGE), offset: String(offset) });
+    async (offset: number, signal: AbortSignal, limit = PAGE) => {
+      const sp = new URLSearchParams({ q, limit: String(limit), offset: String(offset) });
       if (location) {
         sp.set('lat', String(location.lat));
         sp.set('lon', String(location.lon));
@@ -54,7 +59,7 @@ export function SearchView() {
     const ctl = new AbortController();
     setState('loading');
     setSelected(null);
-    fetchPage(0, ctl.signal)
+    fetchPage(0, ctl.signal, sort === 'near' ? NEAREST_POOL : PAGE)
       .then((r) => {
         setData(r);
         setResults(r.results);
@@ -70,6 +75,52 @@ export function SearchView() {
     return () => ctl.abort();
   }, [fetchPage, q, checked, attempt]);
 
+  const chooseSort = async (next: Sort) => {
+    if (next === sort) return;
+    // Keep the choice in the address, so back and share keep it too.
+    const url = new URL(window.location.href);
+    if (next === 'near') url.searchParams.set('sort', 'near');
+    else url.searchParams.delete('sort');
+    window.history.replaceState(null, '', url);
+    setSort(next);
+    if (next !== 'near') return;
+    // No distances without a place to measure from: ask where the user is. Getting it re-runs
+    // the search with distances.
+    if (!results.some((r) => r.distanceM != null) && !location) {
+      await ask();
+      return;
+    }
+    if (results.length < NEAREST_POOL && data && data.results.length >= PAGE) {
+      setLoadingMore(true);
+      try {
+        const r = await fetchPage(
+          results.length,
+          new AbortController().signal,
+          NEAREST_POOL - results.length,
+        );
+        setResults((prev) => [
+          ...prev,
+          ...r.results.filter((x) => !prev.some((p) => p.id === x.id)),
+        ]);
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        setLoadingMore(false);
+      }
+    }
+  };
+
+  const shown = useMemo(
+    () =>
+      sort === 'near'
+        ? [...results].sort(
+            (a, b) =>
+              (a.distanceM ?? Number.POSITIVE_INFINITY) - (b.distanceM ?? Number.POSITIVE_INFINITY),
+          )
+        : results,
+    [results, sort],
+  );
+
   const loadMore = async () => {
     setLoadingMore(true);
     try {
@@ -84,11 +135,12 @@ export function SearchView() {
   };
 
   const points = useMemo(
-    () => results.map((r) => ({ id: r.id, name: r.name, lat: r.lat, lon: r.lon })),
-    [results],
+    () => shown.map((r) => ({ id: r.id, name: r.name, lat: r.lat, lon: r.lon })),
+    [shown],
   );
   const selectedResult = results.find((r) => r.id === selected) ?? null;
-  const hasMore = data != null && data.results.length >= PAGE && results.length < 100;
+  const hasMore =
+    sort === 'best' && data != null && data.results.length >= PAGE && results.length < 100;
 
   const selectFromMap = (id: string) => {
     setSelected(id);
@@ -115,8 +167,26 @@ export function SearchView() {
             <BackLink className="hover:bg-surface-2 md:hidden" />
             <SearchBox defaultValue={q} size="md" className="flex-1" />
           </div>
+          {state === 'loading' ? (
+            // Holds the space the chips and sort bar take, so the list doesn't jump when they land.
+            <div aria-hidden className="space-y-3">
+              <div className="flex gap-1.5">
+                <div className="h-7 w-28 animate-pulse rounded-full bg-surface-2" />
+                <div className="h-7 w-20 animate-pulse rounded-full bg-surface-2" />
+              </div>
+              <div className="h-8 w-48 animate-pulse rounded-full bg-surface-2" />
+            </div>
+          ) : null}
           {state === 'ready' && data ? (
             <Understood data={data} locStatus={locStatus} onLocate={ask} />
+          ) : null}
+          {state === 'ready' && results.length ? (
+            <SortBar
+              sort={sort}
+              onSort={chooseSort}
+              busy={loadingMore || locStatus === 'asking'}
+              blocked={sort === 'near' && !shown.some((r) => r.distanceM != null)}
+            />
           ) : null}
         </div>
 
@@ -139,7 +209,7 @@ export function SearchView() {
           {state === 'ready' && results.length ? (
             <>
               <ol ref={listRef} className="divide-y pb-36 md:pb-6">
-                {results.map((r, i) => (
+                {shown.map((r, i) => (
                   <ResultRow
                     key={r.id}
                     r={r}
@@ -185,7 +255,7 @@ export function SearchView() {
             <ul className="overflow-hidden rounded-xl border bg-surface shadow-float">
               <ResultRow
                 r={selectedResult}
-                n={results.indexOf(selectedResult) + 1}
+                n={shown.indexOf(selectedResult) + 1}
                 selected={false}
               />
             </ul>
@@ -339,5 +409,52 @@ function ResultsSkeleton() {
         </li>
       ))}
     </ul>
+  );
+}
+
+function SortBar({
+  sort,
+  onSort,
+  busy,
+  blocked,
+}: {
+  sort: Sort;
+  onSort: (s: Sort) => void;
+  busy: boolean;
+  blocked: boolean;
+}) {
+  const options: { value: Sort; label: string }[] = [
+    { value: 'best', label: 'Best match' },
+    { value: 'near', label: 'Nearest' },
+  ];
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-muted-foreground text-xs">Sort</span>
+      <div
+        role="radiogroup"
+        aria-label="Sort"
+        className="inline-flex rounded-full border bg-surface p-0.5"
+      >
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={sort === o.value}
+            disabled={busy}
+            onClick={() => onSort(o.value)}
+            className={cn(
+              'h-7 rounded-full px-3 font-medium text-xs transition-colors',
+              sort === o.value
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {blocked ? <span className="text-muted-foreground text-xs">Location needed</span> : null}
+    </div>
   );
 }

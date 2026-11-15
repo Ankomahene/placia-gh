@@ -1,0 +1,12 @@
+# What `railway up` never uploads (same as .dockerignore).
+.env
+.env*.local
+**/node_modules
+**/.next
+**/.turbo
+**/*.tsbuildinfo
+.git
+packages/ingest/.cache
+packages/evals/reports
+supabase/.temp
+docs

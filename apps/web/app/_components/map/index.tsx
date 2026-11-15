@@ -4,7 +4,7 @@ import { cn } from '@placia/ui/cn';
 import dynamic from 'next/dynamic';
 import type { PlaceMapProps } from './types';
 
-export type { MapPoint, PlaceMapProps } from './types';
+export type { MapDot, MapPoint, PlaceMapProps } from './types';
 
 /**
  * The map library is large (~250 KB gzipped), so it loads only when a map is on screen and never

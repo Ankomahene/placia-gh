@@ -21,6 +21,7 @@ const GHANA: [[number, number], [number, number]] = [
 
 export default function PlaceMap({
   points,
+  dots,
   user,
   selectedId,
   onSelect,
@@ -32,6 +33,7 @@ export default function PlaceMap({
   const map = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLElement }>());
   const userMarker = useRef<maplibregl.Marker | null>(null);
+  const dotMarkers = useRef<maplibregl.Marker[]>([]);
   const onSelectRef = useRef(onSelect);
   onSelectRef.current = onSelect;
   const { resolvedTheme } = useTheme();
@@ -96,7 +98,7 @@ export default function PlaceMap({
       if (have) {
         have.marker.setLngLat([p.lon, p.lat]);
         const label = have.el.querySelector('.placia-pin-body > span');
-        if (label) label.textContent = String(i + 1);
+        if (label) label.textContent = points.length > 1 ? String(i + 1) : '';
         return;
       }
       const el = document.createElement('button');
@@ -105,7 +107,8 @@ export default function PlaceMap({
       const body = document.createElement('span');
       body.className = 'placia-pin-body';
       const n = document.createElement('span');
-      n.textContent = String(i + 1);
+      // One place on its own needs no number.
+      n.textContent = points.length > 1 ? String(i + 1) : '';
       body.append(n);
       el.append(body);
       el.setAttribute('aria-label', p.name);
@@ -119,6 +122,21 @@ export default function PlaceMap({
       markers.current.set(p.id, { marker, el });
     });
   }, [points]);
+
+  // Places around: small dots under the pins, each a link to its page.
+  useEffect(() => {
+    const m = map.current;
+    if (!m) return;
+    for (const d of dotMarkers.current) d.remove();
+    dotMarkers.current = (dots ?? []).map((d) => {
+      const el = document.createElement('a');
+      el.className = 'placia-dot';
+      el.href = d.href;
+      el.title = d.name;
+      el.setAttribute('aria-label', d.name);
+      return new maplibregl.Marker({ element: el }).setLngLat([d.lon, d.lat]).addTo(m);
+    });
+  }, [dots]);
 
   // The user's own position.
   useEffect(() => {

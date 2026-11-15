@@ -4,9 +4,9 @@ import { Clock, Globe, MapPin, Navigation, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
 import { BackLink } from '../../_components/back-link';
-import { PlaceMap } from '../../_components/map';
+import { MiniMap } from '../../_components/map/mini-map';
 import { BottomNav, SiteHeader } from '../../_components/nav';
 import { db } from '../../_lib/db';
 import { formatDistance, formatHours, parsePoint, placeWhere } from '../../_lib/format';
@@ -60,10 +60,13 @@ interface NearbyRow {
   id: string;
   slug: string;
   name: string;
+  lat: number;
+  lon: number;
   distance_m: number | null;
 }
 
-async function getNearby(p: Place) {
+/** Same kind of place within 3 km, nearest first. Cached: the map and the list both ask. */
+const getNearby = cache(async (p: Place) => {
   if (!p.category) return [];
   const { data } = await db().rpc(
     'search_places' as never,
@@ -72,11 +75,13 @@ async function getNearby(p: Place) {
       p_lat: p.lat,
       p_lon: p.lon,
       p_radius_m: 3000,
-      p_limit: 7,
+      p_limit: 21,
     } as never,
   );
-  return ((data as NearbyRow[] | null) ?? []).filter((r) => r.id !== p.id).slice(0, 6);
-}
+  return ((data as NearbyRow[] | null) ?? [])
+    .filter((r) => r.id !== p.id)
+    .sort((a, b) => (a.distance_m ?? 0) - (b.distance_m ?? 0));
+});
 
 export async function generateMetadata({
   params,
@@ -95,7 +100,6 @@ export async function generateMetadata({
 export default async function PlacePage({ params }: { params: Promise<{ slug: string }> }) {
   const p = await getPlace((await params).slug);
   if (!p) notFound();
-  const nearby = await getNearby(p);
 
   const where = placeWhere(p.locality, p.district, p.region);
   const hours = formatHours(p.opening_hours);
@@ -117,11 +121,12 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
           {/* Map: full-bleed header on phones, a card on the right on wide screens */}
           <div className="relative md:order-2">
             <div className="h-56 overflow-hidden md:sticky md:top-24 md:h-[28rem] md:rounded-xl md:border md:shadow-card">
-              <PlaceMap
-                points={[{ id: p.id, name: p.name, lat: p.lat, lon: p.lon }]}
-                focus={{ lat: p.lat, lon: p.lon, zoom: 16 }}
-                className="size-full"
-              />
+              {/* Tiles are in the first HTML; the nearby dots stream in once their query lands. */}
+              <Suspense
+                fallback={<MiniMap id={p.id} name={p.name} lat={p.lat} lon={p.lon} dots={[]} />}
+              >
+                <PlaceAreaMap p={p} />
+              </Suspense>
             </div>
             <BackButton className="absolute top-3 left-3 md:hidden" />
           </div>
@@ -214,28 +219,9 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               </Detail>
             </dl>
 
-            {nearby.length ? (
-              <section className="mt-8" aria-labelledby="nearby">
-                <h2 id="nearby" className="font-semibold text-lg tracking-tight">
-                  More {p.category?.name.toLowerCase()} nearby
-                </h2>
-                <ul className="mt-3 divide-y rounded-xl border bg-surface">
-                  {nearby.map((n) => (
-                    <li key={n.id}>
-                      <Link
-                        href={`/place/${n.slug}`}
-                        className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2"
-                      >
-                        <span className="truncate font-medium">{n.name}</span>
-                        <span className="shrink-0 text-muted-foreground text-sm tabular-nums">
-                          {formatDistance(n.distance_m)}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : null}
+            <Suspense>
+              <NearbyList p={p} />
+            </Suspense>
 
             {p.sources.length ? (
               <p className="mt-8 text-muted-foreground text-xs">
@@ -251,6 +237,52 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
   );
 }
 
+async function PlaceAreaMap({ p }: { p: Place }) {
+  const nearby = await getNearby(p);
+  return (
+    <MiniMap
+      id={p.id}
+      name={p.name}
+      lat={p.lat}
+      lon={p.lon}
+      dots={nearby.map((n) => ({
+        id: n.id,
+        name: n.name,
+        lat: n.lat,
+        lon: n.lon,
+        href: `/place/${n.slug}`,
+      }))}
+    />
+  );
+}
+
+async function NearbyList({ p }: { p: Place }) {
+  const nearby = await getNearby(p);
+  if (!nearby.length) return null;
+  return (
+    <section className="mt-8" aria-labelledby="nearby">
+      <h2 id="nearby" className="font-semibold text-lg tracking-tight">
+        More {p.category?.name.toLowerCase()} nearby
+      </h2>
+      <ul className="mt-3 divide-y rounded-xl border bg-surface">
+        {nearby.slice(0, 6).map((n) => (
+          <li key={n.id}>
+            <Link
+              href={`/place/${n.slug}`}
+              className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-surface-2"
+            >
+              <span className="truncate font-medium">{n.name}</span>
+              <span className="shrink-0 text-muted-foreground text-sm tabular-nums">
+                {formatDistance(n.distance_m)}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 function Detail({
   icon,
   label,
@@ -261,12 +293,12 @@ function Detail({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex gap-3 px-4 py-3.5 [&>svg]:mt-0.5 [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-muted-foreground">
-      {icon}
-      <div className="min-w-0">
-        <dt className="sr-only">{label}</dt>
-        <dd>{children}</dd>
-      </div>
+    <div className="px-4 py-3.5">
+      <dt className="sr-only">{label}</dt>
+      <dd className="flex gap-3 [&>svg]:mt-0.5 [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-muted-foreground">
+        {icon}
+        <div className="min-w-0">{children}</div>
+      </dd>
     </div>
   );
 }

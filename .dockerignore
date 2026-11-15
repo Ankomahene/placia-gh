@@ -1,0 +1,12 @@
+# Never ship secrets or local data into an image.
+.env
+.env*.local
+**/node_modules
+**/.next
+**/.turbo
+**/*.tsbuildinfo
+.git
+packages/ingest/.cache
+packages/evals/reports
+supabase/.temp
+docs
