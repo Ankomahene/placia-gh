@@ -43,8 +43,11 @@ export interface RawContext {
   localities: [number, string, string[], LocalityKind, number | null, number, number, number][];
   /** [id, normalised name, district id, lat, lon, places]. Older payloads lack it. */
   mentions?: [number, string, number | null, number, number, number][];
-  /** [acronym, phrase, expansion, score, runner-up score]. Older payloads lack it. */
-  acronyms?: [string, string, string, number, number][];
+  /**
+   * [acronym, phrase, expansion, score, runner-up score, lat, lon], up to three names per
+   * acronym, best first. Older payloads lack the location and send only the best name.
+   */
+  acronyms?: [string, string, string, number, number, (number | null)?, (number | null)?][];
 }
 
 /** Initials people use for a place, learned from the data ("kbth" → Korle Bu Teaching Hospital). */
@@ -55,6 +58,11 @@ export interface Acronym {
   score: number;
   /** Score of the next-best name with the same initials (0 if none). */
   runnerUp: number;
+  /** Where the places with this name are (their centroid), when known. */
+  lat: number | null;
+  lon: number | null;
+  /** Other names with the same initials, best first ("ktu": Koforidua as well as Kumasi). */
+  others: Omit<Acronym, 'others' | 'runnerUp'>[];
 }
 
 export interface SearchContext {
@@ -273,14 +281,20 @@ export function buildContext(raw: RawContext): SearchContext {
     areas,
     districtNames,
     regionNames,
-    acronyms: new Map(
-      (raw.acronyms ?? []).map(([a, phrase, expansion, score, runnerUp]) => [
-        a,
-        { phrase, expansion, score, runnerUp },
-      ]),
-    ),
+    acronyms: acronymMap(raw.acronyms ?? []),
     maxWords,
   };
+}
+
+/** Rows arrive best first per acronym: the first is the name, the rest its alternatives. */
+function acronymMap(rows: NonNullable<RawContext['acronyms']>) {
+  const out = new Map<string, Acronym>();
+  for (const [a, phrase, expansion, score, runnerUp, lat = null, lon = null] of rows) {
+    const known = out.get(a);
+    if (known) known.others.push({ phrase, expansion, score, lat, lon });
+    else out.set(a, { phrase, expansion, score, runnerUp, lat, lon, others: [] });
+  }
+  return out;
 }
 
 /** Another town with the same name as the one searched, for a "did you mean" row. */

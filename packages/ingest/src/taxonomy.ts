@@ -1,9 +1,11 @@
 /**
  * Placia's category taxonomy: 12 groups, ~70 leaves.
  *
- * Every source vocabulary (OSM tags, Overture `basic_category`, later Foursquare) maps
- * onto these leaves. `synonyms` hold the words Ghanaians actually search with; they feed
- * full-text search and the rule-based query parser in Phase 2.
+ * Every source vocabulary (OSM tags, Overture `basic_category`, Foursquare) maps onto these
+ * leaves. `synonyms` hold the words Ghanaians actually search with; they feed full-text search
+ * and the rule-based query parser. They name kinds of place, never places: a synonym is written
+ * into the search text of every place in the category, so "knust" as a university synonym made
+ * every college match "knust".
  *
  * Rule order matters: the first leaf whose rule matches wins, so specific rules come first.
  * OSM rules are `key=value` or `key=*`. Overture rules are exact `basic_category` values.
@@ -220,7 +222,7 @@ export const TAXONOMY: CategoryGroup[] = [
         'market',
         'Markets',
         'store',
-        ['market', 'market square', 'open market', 'makola', 'kejetia', 'foodstuff', 'fresh food'],
+        ['market', 'market square', 'open market', 'foodstuff', 'fresh food'],
         ['amenity=marketplace', 'shop=greengrocer', 'shop=butcher', 'shop=seafood', 'shop=farm'],
         [
           'market',
@@ -652,7 +654,7 @@ export const TAXONOMY: CategoryGroup[] = [
         'airport',
         'Airports',
         'plane',
-        ['airport', 'airstrip', 'kotoka', 'kia', 'flight', 'domestic flight'],
+        ['airport', 'airstrip', 'flight', 'domestic flight'],
         ['aeroway=aerodrome', 'aeroway=terminal'],
         ['airport', 'airport_terminal', 'domestic_airports', 'airlines'],
       ),
@@ -789,9 +791,6 @@ export const TAXONOMY: CategoryGroup[] = [
           'technical university',
           'nursing training',
           'training college',
-          'legon',
-          'knust',
-          'ucc',
         ],
         [
           'amenity=university',
@@ -1040,7 +1039,7 @@ export const TAXONOMY: CategoryGroup[] = [
         'beach',
         'Beaches & resorts',
         'waves',
-        ['beach', 'beach resort', 'labadi', 'kokrobite', 'ada', 'seaside'],
+        ['beach', 'beach resort', 'seaside'],
         ['natural=beach', 'leisure=beach_resort'],
         ['beach', 'beach_resort'],
       ),

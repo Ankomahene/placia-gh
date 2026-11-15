@@ -42,6 +42,7 @@ import {
   HOLDOUT_V4,
   HOLDOUT_V5,
   HOLDOUT_V6,
+  HOLDOUT_V7,
 } from './golden';
 import { hitAt, mean, ndcgAt, percentile, precisionAt, reciprocalRank, round } from './metrics';
 
@@ -64,6 +65,7 @@ const set = (flag('set') ?? 'dev') as
   | 'holdout4'
   | 'holdout5'
   | 'holdout6'
+  | 'holdout7'
   | 'all';
 const suite = set === 'dev' ? 'search-golden-v1' : `search-golden-v1-${set}`;
 const weightsArg = flag('weights')
@@ -393,9 +395,11 @@ async function main() {
               ? HOLDOUT_V5
               : set === 'holdout6'
                 ? HOLDOUT_V6
-                : set === 'all'
-                  ? [...GOLDEN, ...HOLDOUT]
-                  : GOLDEN;
+                : set === 'holdout7'
+                  ? HOLDOUT_V7
+                  : set === 'all'
+                    ? [...GOLDEN, ...HOLDOUT]
+                    : GOLDEN;
   const cases = pool.filter((c) => !tag || c.tags.includes(tag));
   // One warm-up so connection setup doesn't land on the first case's latency.
   await search({ q: 'warm up', limit: 1 }, { rpc, context: ctx, llm: null });

@@ -14,6 +14,11 @@ export interface AreaRef {
    *   place whose own name contains a town ("Kumasi City Mall") is never filtered out.
    */
   relation: 'in' | 'near' | 'soft';
+  /**
+   * Set when the name was matched fuzzily: the words the user actually typed ("kotoka" read as
+   * Kotoko). The engine checks whether a place carries those exact words before trusting it.
+   */
+  typed?: string;
 }
 
 /** What the user is looking for, independent of which parser produced it. */

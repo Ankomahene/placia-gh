@@ -54,6 +54,7 @@ Raw source payloads stay in `packages/ingest/.cache`. The database only gets nor
 
 1. **Stage** (`src/sources/*`, DuckDB). Every source is mapped into one shape: name, alt names, category, point, phone, website, email, hours, address, brand.
    - Categories come from one taxonomy (`src/taxonomy.ts`): 12 groups and 71 leaves with Ghanaian synonyms ("chop bar", "chemical shop").
+   - Synonyms name kinds of place, never places. "knust", "legon", "makola" or "kotoka" as a synonym is written into every university's, market's or airport's search text, so "ucc" matched every university. Landmarks are found as places instead (initials, anchors).
    - OSM rules are compiled into a single SQL `CASE` (first match wins).
    - Overture uses its most specific category: taxonomy primary, then the hierarchy deepest-first, then `basic_category`. 94% of Ghana records map.
    - Records are clipped to Ghana's border, buffered about 1 km for the coast.

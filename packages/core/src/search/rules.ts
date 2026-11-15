@@ -92,8 +92,10 @@ const FILLER = new Set([
 /** Areas a bare name (no preposition) may refer to. Villages and landmarks clash with words. */
 const SOFT_KINDS = new Set(['region', 'district', 'city', 'town', 'suburb', 'neighbourhood']);
 
-function toRef(a: Area, relation: AreaRef['relation']): AreaRef {
-  return { kind: a.kind, id: a.id, name: a.name, lat: a.lat, lon: a.lon, relation };
+function toRef(a: Area, relation: AreaRef['relation'], typed?: string): AreaRef {
+  const ref: AreaRef = { kind: a.kind, id: a.id, name: a.name, lat: a.lat, lon: a.lon, relation };
+  if (typed) ref.typed = typed;
+  return ref;
 }
 
 type LatLon = { lat: number; lon: number };
@@ -240,7 +242,7 @@ function areaAt(ctx: SearchContext, toks: string[], start: number, maxEnd = toks
 }
 
 /** "universities" → "university", "hostels" → "hostel": enough for category words. */
-function singular(phrase: string) {
+export function singular(phrase: string) {
   if (phrase.endsWith('ies')) return `${phrase.slice(0, -3)}y`;
   if (/(ches|shes|sses|xes)$/.test(phrase)) return phrase.slice(0, -2);
   if (phrase.endsWith('s') && !phrase.endsWith('ss')) return phrase.slice(0, -1);
@@ -283,6 +285,13 @@ export function findCategories(ctx: SearchContext, toks: string[], skip = new Se
 /** A single word that names a kind of place ("bar", "gym", "pharmacies") or is filler. */
 export function isCategoryWord(ctx: SearchContext, w: string) {
   return FILLER.has(w) || ctx.phrases.has(w) || ctx.phrases.has(singular(w));
+}
+
+/** Is this word learned initials ("knust"), and not a category word, a town or filler? */
+export function isInitials(ctx: SearchContext, w: string) {
+  if (w.length < 3 || w.length > 8 || /\d/.test(w)) return false;
+  if (isCategoryWord(ctx, w) || ctx.areas.has(w)) return false;
+  return ctx.acronyms.has(w);
 }
 
 /**
@@ -376,12 +385,14 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
     if (start >= toks.length) continue;
     const tail = toks.slice(start);
     let hit = areaAt(ctx, toks, start);
+    let typed: string | undefined;
     if (!hit) {
       // Misspelt area: try the first two words of the tail, then the first one.
       for (const len of [2, 1]) {
         const fuzzy = len <= tail.length ? fuzzyArea(ctx, tail.slice(0, len).join(' ')) : null;
         if (fuzzy) {
           hit = { key: fuzzy, end: start + len };
+          typed = tail.slice(0, len).join(' ');
           break;
         }
       }
@@ -404,7 +415,7 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
         ? pickPair(ctx.areas.get(before.key), ctx.areas.get(hit.key), opts.user)
         : null;
       if (pairedBefore) picked = pairedBefore;
-      if (picked) area = toRef(picked, p.relation);
+      if (picked) area = toRef(picked, p.relation, pairedAfter || pairedBefore ? undefined : typed);
       // "near osu oxford street": the extra words may name a specific spot within the area.
       if (toks.slice(end).some((w) => !FILLER.has(w))) anchor = tail.join(' ');
       cut = before && pairedBefore ? before.start : p.i;
@@ -421,8 +432,14 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
   }
 
   // 2. A bare area name at either end ("pharmacy kumasi", "osu waakye").
-  let span: { start: number; end: number; area: Area; trailing: boolean; key: string } | null =
-    null;
+  let span: {
+    start: number;
+    end: number;
+    area: Area;
+    trailing: boolean;
+    key: string;
+    typed?: string;
+  } | null = null;
   if (!area && !anchor) {
     let first = 0;
     let last = cut - 1;
@@ -450,7 +467,14 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
       const fuzzy = fuzzyArea(ctx, tail.join(' '));
       const picked = fuzzy ? pickArea(ctx.areas.get(fuzzy), opts.user) : null;
       if (fuzzy && picked) {
-        span = { start: last + 1 - len, end: last + 1, area: picked, trailing: true, key: fuzzy };
+        span = {
+          start: last + 1 - len,
+          end: last + 1,
+          area: picked,
+          trailing: true,
+          key: fuzzy,
+          typed: tail.join(' '),
+        };
       }
     }
     // "pharmacy atonsu kumasi", "hotel anloga volta": the last name says which town is meant.
@@ -459,7 +483,7 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
       const paired = before
         ? pickPair(ctx.areas.get(before.key), ctx.areas.get(span.key), opts.user)
         : null;
-      if (before && paired) span = { ...span, start: before.start, area: paired };
+      if (before && paired) span = { ...span, start: before.start, area: paired, typed: undefined };
     }
     if (!span && last > first) {
       const hit = areaAt(ctx, toks, first, last);
@@ -475,12 +499,32 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
   if (span) for (let i = span.start; i < span.end; i++) skip.add(i);
   const categories = findCategories(ctx, toks, skip);
 
+  // "hostel knust", "knust hostels": a kind of place beside a landmark's initials. Search around
+  // the landmark, as "near knust" does, instead of matching the letters in names.
+  let initialsAt = -1;
+  if (!area && !anchor && !span && categories.length) {
+    const content = toks.map((_, i) => i).filter((i) => i < cut && !FILLER.has(toks[i] as string));
+    for (const i of [content[content.length - 1], content[0]]) {
+      // Not when a town is named too: "uew kumasi campus" is a campus in Kumasi, not near Winneba.
+      const rest = content.filter((j) => j !== i);
+      if (
+        i != null &&
+        isInitials(ctx, toks[i] as string) &&
+        !rest.some((j) => ctx.areas.has(toks[j] as string))
+      ) {
+        initialsAt = i;
+        anchor = toks[i] as string;
+        break;
+      }
+    }
+  }
+
   let stripSpan = false;
   if (span) {
     const a = span.area;
     if (span.trailing && categories.length) {
       // "tailor tamale": a kind of place, then where. Limit results to that area.
-      area = toRef(a, 'near');
+      area = toRef(a, 'near', span.typed);
       stripSpan = true;
     } else if (SOFT_KINDS.has(a.kind) || a.places >= 20 || categories.length) {
       // "ridge hospital", "accra mall": a leading area is usually part of a name, so it only
@@ -490,7 +534,11 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
   }
 
   const keep = toks.filter(
-    (w, i) => i < cut && !(stripSpan && span && i >= span.start && i < span.end) && !FILLER.has(w),
+    (w, i) =>
+      i < cut &&
+      i !== initialsAt &&
+      !(stripSpan && span && i >= span.start && i < span.end) &&
+      !FILLER.has(w),
   );
   let text = keep.join(' ');
   // Never drop everything: "near me" alone is fine, but a query should not vanish into fillers.

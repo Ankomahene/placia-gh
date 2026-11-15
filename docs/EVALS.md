@@ -463,3 +463,75 @@ Next:
 - **Claude versus OpenAI** on the same sets once an Anthropic key exists: quality, latency from Ghana, and tokens.
 - **Show the "did you mean" towns** (`meta.area.others`) and the expanded initials (`meta.aliases`) in the app.
 - **Fill the data gaps** with the Foursquare dump and community contributions.
+
+## Round 5: landmarks (held-out v7)
+
+Round 4 left "ucc", "knust" and "legon" as taxonomy synonyms of the university category. A probe showed what that costs:
+
+- "ucc" matched every university, because each synonym is written into the search text of every place in its category.
+- "pharmacy legon" read Legon as the university, not the town.
+- "hostel knust" had no anchor: without "near", initials beside a category were only letters in names.
+- "hotel near kotoka" fuzzy-matched Kotoko, a neighbourhood in Kumasi, and searched there.
+
+**Held-out v7** (34 queries, written before any of this code):
+
+- 16 kinds of place beside a landmark ("pharmacy ucc", "bank kejetia", "forex makola", "restaurant near kotoka");
+- 13 landmarks by name or initials, alone or with a town ("kia airport", "kotoka terminal 3", "ktu koforidua");
+- 5 controls ("pharmacy madina", "beach accra", "airport in tamale").
+
+Three queries that repeated earlier sets were replaced before the baseline. One label was fixed: Tamale's airport is 17 km out, so its radius is 25 km, not 15 (LABEL_FIXES).
+
+What changed ([SEARCH.md](SEARCH.md), [DATA_PIPELINE.md](DATA_PIPELINE.md)):
+
+1. **Synonyms name kinds of place, never places.** Landmark words left the market, airport, university and beach synonyms, and the search text was rebuilt.
+2. **Initials beside a kind of place are an anchor** ("hostel knust"), unless a town is named too ("uew kumasi campus").
+3. **Other words beside a kind of place can be a landmark** ("forex makola"): an airport, market, campus, beach, mall, hospital, park, attraction, stadium or station whose name has exactly those words. The shortest such name wins. Not when the landmark is the kind asked for, or when some place's name holds the whole query ("marina mall", "mole motel", "kotoka terminal 3").
+4. **A fuzzily matched town keeps what was typed.** If a landmark carries those exact words, it wins over the town: "near kotoka" is the airport, not Kotoko.
+5. **Anchors pick the place itself**: for initials, the place the alias arm finds ("kia" is the airport, not a Kia showroom); otherwise, the shortest matching name, not a hotel named after it.
+6. **The town chooses between shared initials** within 40 km ("ktu koforidua"). Each name carries one point, its most trusted place; an average of two places 150 km apart was nowhere.
+
+| Held-out v7, rules + meaning arm | Before | After     |
+| -------------------------------- | ------ | --------- |
+| Known-item MRR                   | 0.686  | **0.865** |
+| Hit@1                            | 62%    | 77%       |
+| Hit@10                           | 77%    | **100%**  |
+| Browse P@10                      | 42%    | **73%**   |
+| Browse nDCG@10                   | 0.443  | 0.758     |
+| Success@10                       | 67%    | 91%       |
+| · landmark browse, P@10 (16)     | 38%    | 78%       |
+| · named, MRR (8)                 | 0.646  | 0.938     |
+| · controls, P@10 (5)             | 57%    | 57%       |
+
+Dev and the spent sets (measurements, not tuning targets):
+
+| Set | Known MRR     | Browse P@10 |
+| --- | ------------- | ----------- |
+| dev | 0.945 → 0.966 | 86% → 86%   |
+| v1  | 0.875 → 0.865 | 78% → 89%   |
+| v2  | 0.857 → 0.821 | 63% → 64%   |
+| v3  | 1 → 1         | 50% → 49%   |
+| v4  | 0.808 → 0.846 | 60% → 60%   |
+| v5  | —             | 73% → 73%   |
+| v6  | 0.726 → 0.826 | 70% → 70%   |
+
+- "knust", "ucc", "k.n.u.s.t", "U.C.C" and "ktu kumasi" now find their universities; "kotoka airport" goes from rank 3 to 1.
+- The v1, v2 and v5 "before" runs predate the Foursquare load, so their small losses ("paga crocodile pond" 1 → 2, "kumasi airport" 2 → 3) are new near-name places, not this round.
+- Single browse cases that move by one result ("chop bar near adum" 100% → 90%) are within run-to-run variance of the meaning arm.
+- **Cost:** a query with a category and one or two other words now makes one extra lookup (50–100 ms in the database; more on a slow link). Pure category queries and queries with a known town make none.
+- Evals on this network often hit "fetch failed" or a cold statement timeout. Such a case scores 0; every zero above was rerun.
+
+What v7 still misses (not tuned on v7, which is now spent):
+
+| Miss                 | Cause                                                                                                             |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| "hotel in ada"       | The gazetteer's "Ada" is a village inland. Ada Foah is the town people mean.                                      |
+| "airport in tamale"  | Tamale's 15 km city radius ends before its airport (17 km).                                                       |
+| "ttu tamale"         | The right place ranks 4th, behind campus buildings named with the initials.                                       |
+| Browse near campuses | "printing shop legon", "hospital ucc": shops on campus are often tagged as the university, not as what they sell. |
+
+Next:
+
+- **Landmark kinds reach further**: an airport or campus anchor should get a wider radius than a shop.
+- **Same-name towns**: prefer the town people mean (Ada Foah over Ada village) using address evidence, as round 3 did for Atonsu.
+- **Claude versus OpenAI** on the same sets once an Anthropic key exists.
+- **Show the anchor** (`meta.anchor`) in the app: "Near Kotoka International Airport".

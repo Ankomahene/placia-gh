@@ -10,7 +10,7 @@ import {
   sameNameAreas,
 } from './context';
 import type { Intent, ParseResult } from './intent';
-import { onlyCategoryWords, parseRules } from './rules';
+import { isCategoryWord, onlyCategoryWords, parseRules, singular } from './rules';
 import { joinInitials, normalize, words } from './text';
 
 /** The one database call search needs. Kept structural so core stays framework-free. */
@@ -231,6 +231,54 @@ function namesAnchor(name: string, anchor: string) {
   return words(anchor).every((w) => have.has(w) || [...have].some((h) => h.startsWith(w)));
 }
 
+/** Kinds of place big and well-known enough that people name them to say where they are. */
+const LANDMARK_KINDS = new Set([
+  'airport',
+  'market',
+  'university',
+  'beach',
+  'mall',
+  'hospital',
+  'park',
+  'attraction',
+  'sports',
+  'bus-station',
+]);
+
+/**
+ * The landmark these exact words name (Makola Market, Kotoka International Airport), if any.
+ * The place itself has the shortest name, not a hotel named after it.
+ */
+async function findLandmark(
+  rpc: SearchRpc,
+  typed: string,
+  user: { lat: number; lon: number } | null,
+  wanted: string[],
+  query: string,
+) {
+  const rows = await callSearch(rpc, {
+    p_text: typed,
+    p_lat: user?.lat ?? null,
+    p_lon: user?.lon ?? null,
+    p_limit: 8,
+  });
+  const want = words(normalize(typed));
+  const best = rows
+    .filter((r) => r.category && LANDMARK_KINDS.has(r.category) && !wanted.includes(r.category))
+    .map((r) => ({ r, have: words(normalize(r.name)) }))
+    .filter(({ have }) => want.every((w) => have.includes(w)))
+    .sort((a, b) => a.have.length - b.have.length)[0];
+  // A place the whole query names ("kotoka terminal 3", "marina mall", "mole motel") is what is
+  // being looked for, not where to look.
+  const all = words(normalize(query));
+  const named = rows.some((r) => {
+    const have = words(normalize(r.name));
+    return all.every((w) => have.includes(w) || have.includes(singular(w)));
+  });
+  if (!best || named) return undefined;
+  return best.r;
+}
+
 export async function search(req: SearchRequest, deps: SearchDeps): Promise<SearchResponse> {
   const t0 = performance.now();
   const ms = (since: number) => Math.round(performance.now() - since);
@@ -250,7 +298,10 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
     quick.categories.length > 0 &&
     onlyCategoryWords(deps.context, quick.text);
   // Initials are embedded written out: "kbth" means nothing to the model, its name does.
-  const quickText = expandAliases(quick.text, findAliases(deps.context, quick.text));
+  const quickText = expandAliases(
+    quick.text,
+    findAliases(deps.context, quick.text, quick.area ?? user),
+  );
   const embedding =
     deps.embedder && !skipEmbed
       ? embedQuery(deps.embedder, quickText || quick.categories.join(' '))
@@ -275,14 +326,18 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
   let anchorMeta: SearchResponse['meta']['anchor'] = null;
   let anchorMs = 0;
 
+  // Set when a fuzzily matched town turns out not to be meant: the response drops it.
+  let typedPlace = false;
+
   // A landmark the gazetteer can't place ("near accra mall"): find the place, search around it.
   if (intent.anchor) {
     const ta = performance.now();
-    const anchorAliases = findAliases(deps.context, intent.anchor);
+    const anchorAliases = findAliases(deps.context, intent.anchor, intent.area ?? user);
     const rows = await callSearch(deps.rpc, {
       p_text: intent.anchor,
-      p_lat: intent.area?.lat ?? user?.lat ?? null,
-      p_lon: intent.area?.lon ?? user?.lon ?? null,
+      // A town matched only fuzzily ("kotoka" read as Kotoko, in Kumasi) is no guide.
+      p_lat: (intent.area?.typed ? null : intent.area?.lat) ?? user?.lat ?? null,
+      p_lon: (intent.area?.typed ? null : intent.area?.lon) ?? user?.lon ?? null,
       p_limit: 3,
       ...(anchorAliases.length && {
         p_alias: anchorAliases.map((a) => a.phrase),
@@ -290,18 +345,53 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
       }),
     });
     anchorMs = ms(ta);
-    const hit = rows.find(
-      (r) =>
-        namesAnchor(r.name, intent.anchor as string) ||
-        anchorAliases.some((a) => namesAnchor(r.name, a.phrase)),
-    );
+    // Initials mean the place they stand for: "kia" is the airport (whatever its record is
+    // called), not a shop called Kia. The alias arm only matches that place's name.
+    const byAlias = rows
+      .filter((r) => r.arms.alias != null)
+      .sort((a, b) => (a.arms.alias as number) - (b.arms.alias as number))[0];
+    // Of the places named so, the shortest name is the place itself (Kotoka International
+    // Airport, not a hotel named after it).
+    const named = rows
+      .filter((r) => namesAnchor(r.name, intent.anchor as string))
+      .sort((a, b) => words(normalize(a.name)).length - words(normalize(b.name)).length)[0];
+    const hit = byAlias ?? named;
     anchorMeta = { text: intent.anchor, place: hit?.name ?? null };
     if (hit) {
       centre = { lat: hit.lat, lon: hit.lon, from: 'anchor' };
       radius = ANCHOR_RADIUS;
+      typedPlace = intent.area?.typed != null;
     } else if (!intent.area) {
       // Couldn't place it anywhere: let the words count as search terms instead.
       text = [text, intent.anchor].filter(Boolean).join(' ');
+    }
+  }
+
+  // A landmark named by its own words, which the gazetteer doesn't know as a town:
+  // - a town matched only fuzzily ("kotoka" read as Kotoko, in Kumasi);
+  // - words left beside a kind of place ("forex makola": Makola Market).
+  // If a landmark carries exactly those words, the user meant it: search around it instead.
+  let landmarkWords: string | null = null;
+  if (!intent.anchor && intent.area?.typed) landmarkWords = intent.area.typed;
+  else if (!intent.anchor && !intent.area && intent.categories.length) {
+    const rest = words(text).filter((w) => !isCategoryWord(deps.context, w));
+    if (rest.length && rest.length <= 2) landmarkWords = rest.join(' ');
+  }
+  if (landmarkWords) {
+    const ta = performance.now();
+    const hit = await findLandmark(deps.rpc, landmarkWords, user, intent.categories, text);
+    anchorMs = ms(ta);
+    if (hit) {
+      anchorMeta = { text: landmarkWords, place: hit.name };
+      centre = { lat: hit.lat, lon: hit.lon, from: 'anchor' };
+      radius = ANCHOR_RADIUS;
+      typedPlace = true;
+      if (!intent.area) {
+        const drop = new Set(words(landmarkWords));
+        text = words(text)
+          .filter((w) => !drop.has(w))
+          .join(' ');
+      }
     }
   }
 
@@ -333,7 +423,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
     .filter((x): x is number => x != null);
 
   const pureBrowse = intent.categories.length > 0 && onlyCategoryWords(deps.context, text);
-  const aliases = findAliases(deps.context, text);
+  const aliases = findAliases(deps.context, text, intent.area ?? user);
   const weights = {
     ...fusionWeights(
       { ...intent, text },
@@ -377,7 +467,10 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
 
   return {
     query: req.q,
-    intent: { ...intent, text },
+    // The fuzzy town was not meant: report the place found instead.
+    intent: typedPlace
+      ? { ...intent, text, area: null, anchor: intent.anchor ?? intent.area?.typed ?? null }
+      : { ...intent, text },
     results: rows.map(toResult),
     meta: {
       parse: parseMeta,
@@ -386,7 +479,7 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
       widenedTo,
       needsLocation,
       anchor: anchorMeta,
-      area: intent.area ? sameNameAreas(deps.context, intent.area) : null,
+      area: intent.area && !typedPlace ? sameNameAreas(deps.context, intent.area) : null,
       aliases,
       weights: { ...DEFAULT_WEIGHTS, ...weights },
       semantic: vector != null,

@@ -60,6 +60,11 @@ export const LABEL_FIXES = [
     was: 'university for development studies',
     why: '"UDS - Tamale Campus" is the campus',
   },
+  {
+    id: 'u-airport-tamale',
+    was: 'within 15 km',
+    why: "Tamale's airport is 17 km out, at Sagnerigu: 25 km",
+  },
 ] as const;
 
 export type LatLon = readonly [number, number];
@@ -2223,4 +2228,110 @@ export const HOLDOUT_V6: GoldenCase[] = [
   browse('z-mall-kumasi', 'mall kumasi', ['mall'], AT.kumasi, 10, ['control', 'shopping']),
   browse('z-pub-osu', 'pub osu', ['bar'], AT.osu, 2, ['control', 'food']),
   browse('z-spa-osu', 'spa osu', ['salon'], AT.osu, 2, ['control', 'beauty']),
+];
+
+/**
+ * Held-out v7 (2026-11-14): landmarks. Written before round 5's code. A probe of four other
+ * queries ("pharmacy legon", "hostel knust", "hotel near kotoka", "ucc") showed the failure
+ * modes; none of those four is in this set. Targets were checked to exist by name only.
+ *
+ * - `landmark`: a kind of place near a landmark that the taxonomy used as a category word
+ *   (KNUST, UCC, Legon, Kotoka, Makola, Kejetia, Labadi, Kokrobite, Ada, KATH).
+ * - `named`: the landmark itself by name.
+ * - `shared`: initials that several places share; the town says which.
+ * - `control`: plain category queries that the change must leave alone.
+ */
+const L = {
+  ucc: [5.115, -1.29],
+  airport: [5.605, -0.172],
+  makola: [5.548, -0.207],
+  kejetia: [6.698, -1.623],
+  labadi: [5.559, -0.146],
+  kokrobite: [5.497, -0.365],
+  adaFoah: [5.785, 0.632],
+  kath: [6.697, -1.632],
+} as const satisfies Record<string, LatLon>;
+const FOOD = ['local-food', 'fast-food', 'restaurant'];
+const STAY7 = ['hotel', 'guest-house', 'hostel'];
+const u = (id: string, q: string, categories: string[], at: LatLon, km: number, tags: string[]) =>
+  browse(id, q, categories, at, km, ['landmark', ...tags]);
+const un = (
+  id: string,
+  q: string,
+  name: string,
+  tags: string[],
+  opts: { at?: LatLon; km?: number } = {},
+) => known(id, q, name, tags, opts);
+
+export const HOLDOUT_V7: GoldenCase[] = [
+  u('u-hostel-knust', 'student hostel knust', ['hostel', 'guest-house'], AT.knust, 3, ['stay']),
+  u('u-food-knust', 'food joint knust', FOOD, AT.knust, 3, ['food']),
+  u('u-pharm-ucc', 'pharmacy ucc', ['pharmacy'], L.ucc, 4, ['health']),
+  u('u-hostel-ucc', 'hostels at ucc', ['hostel', 'guest-house'], L.ucc, 4, ['stay']),
+  u('u-print-legon', 'printing shop legon', ['printing'], AT.legon, 3, ['services']),
+  u('u-bank-legon', 'bank legon', ['bank', 'atm'], AT.legon, 3, ['money']),
+  u('u-hotel-kotoka', 'hotels close to kotoka airport', STAY7, L.airport, 3, ['stay']),
+  u('u-food-kotoka', 'restaurant near kotoka', FOOD, L.airport, 3, ['food']),
+  u('u-forex-makola', 'forex makola', ['forex', 'finance', 'bank'], L.makola, 2, ['money']),
+  u('u-pharm-makola', 'pharmacy near makola market', ['pharmacy'], L.makola, 2, ['health']),
+  u('u-bank-kejetia', 'bank kejetia', ['bank', 'atm'], L.kejetia, 2, ['money']),
+  u('u-hotel-labadi', 'hotel near labadi beach', STAY7, L.labadi, 3, ['stay']),
+  u('u-bar-labadi', 'bar labadi', ['bar', 'nightclub'], L.labadi, 3, ['food']),
+  u('u-gh-kokrobite', 'guest house kokrobite', STAY7, L.kokrobite, 4, ['stay']),
+  u('u-hotel-ada', 'hotel in ada', STAY7, L.adaFoah, 8, ['stay']),
+  u('u-chopbar-kath', 'chop bar near kath', ['local-food', 'fast-food'], L.kath, 2, ['food']),
+  un('u-kokrobite-beach', 'kokrobite beach', '^kokrobite beach', ['named', 'leisure'], {
+    at: L.kokrobite,
+    km: 3,
+  }),
+  un(
+    'u-kotoka-intl',
+    'kotoka international',
+    'kotoka international airport|^accra international airport|^terminal 3$',
+    ['named', 'transport'],
+    { at: L.airport, km: 3 },
+  ),
+  un('u-kia', 'kia airport', 'kotoka international airport|^terminal 3$', ['named', 'transport'], {
+    at: L.airport,
+    km: 3,
+  }),
+  un('u-kotoka-t3', 'kotoka terminal 3', 'terminal 3', ['named', 'transport'], {
+    at: L.airport,
+    km: 3,
+  }),
+  un('u-knust-ksi', 'knust kumasi', 'kwame nkrumah university of science', ['named', 'education'], {
+    at: AT.knust,
+    km: 5,
+  }),
+  un('u-ucc-cc', 'ucc cape coast', '^university of cape coast( \\(ucc\\))?$', [
+    'named',
+    'education',
+  ]),
+  un('u-legon-campus', 'legon campus', '^university of ghana|^legon campus$', [
+    'named',
+    'education',
+  ]),
+  un('u-la-beach', 'la pleasure beach', 'pleasure beach|^labadi beach', ['named', 'leisure'], {
+    at: L.labadi,
+    km: 3,
+  }),
+  un('u-ktu-kof', 'ktu koforidua', 'koforidua technical university', ['shared', 'education']),
+  un('u-ttu-tamale', 'ttu tamale', 'tamale technical university', ['shared', 'education']),
+  un('u-htu-ho', 'htu ho', 'ho technical university', ['shared', 'education']),
+  un('u-uew-winneba', 'uew winneba', 'university of education,? winneba', ['shared', 'education']),
+  un('u-ucc-hosp', 'ucc hospital', '^ucc hospital|university of cape coast hospital', [
+    'shared',
+    'health',
+  ]),
+  browse('u-pharm-madina', 'pharmacy madina', ['pharmacy'], AT.madina, 2, ['control', 'health']),
+  browse('u-uni-accra', 'university in accra', ['university'], AT.accra, 15, [
+    'control',
+    'education',
+  ]),
+  browse('u-market-ho', 'market in ho', ['market'], AT.ho, 8, ['control', 'shopping']),
+  browse('u-beach-accra', 'beach near accra', ['beach'], AT.accra, 30, ['control', 'leisure']),
+  browse('u-airport-tamale', 'airport in tamale', ['airport'], AT.tamale, 25, [
+    'control',
+    'transport',
+  ]),
 ];

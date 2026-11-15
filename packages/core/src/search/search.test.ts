@@ -19,7 +19,8 @@ const raw: RawContext = {
     [10, 'local-food', 'Local food', 1, ['chop bar', 'waakye']],
     [11, 'pharmacy', 'Pharmacy', 3, ['chemical shop', 'chemist']],
     [12, 'hospital', 'Hospital', 3, ['teaching hospital']],
-    [13, 'university', 'University', 4, ['legon', 'knust']],
+    // Synonyms name kinds of place, never places: no 'legon' or 'knust' here.
+    [13, 'university', 'University', 4, ['campus']],
     [14, 'hostel', 'Hostel', 5, []],
     [15, 'hotel', 'Hotel', 5, []],
     [16, 'hardware', 'Hardware', 2, ['cement']],
@@ -61,6 +62,9 @@ const raw: RawContext = {
     // Bus stop names that are also category words, and a town one letter off "Ghana".
     [16, 'Station', [], 'landmark', null, 5.531, -0.421, 0],
     [17, 'Ghanata', [], 'village', null, 6.1, -0.5, 1],
+    [18, 'Koforidua', [], 'city', null, 6.09, -0.26, 800],
+    // One letter off a landmark that is not in the gazetteer (Kotoka airport).
+    [19, 'Kotoko', [], 'suburb', null, 6.7, -1.6, 20],
   ],
   mentions: [
     // The Kumasi Atonsu, which the gazetteer lacks.
@@ -75,6 +79,26 @@ const raw: RawContext = {
     // Initials that are also a category word or a town name are never expanded.
     ['mall', 'mount adoration lighthouse league', 'Mount Adoration Lighthouse League', 2.1, 0],
     ['kasoa', 'kings anglican school of accra', 'Kings Anglican School of Accra', 2.1, 0],
+    [
+      'knust',
+      'kwame nkrumah university of science and technology',
+      'Kwame Nkrumah University of Science and Technology',
+      4.2,
+      0,
+      6.67,
+      -1.57,
+    ],
+    // Shared initials: best-known first, then the others with where they are.
+    ['ktu', 'kumasi technical university', 'Kumasi Technical University', 3.1, 2.4, 6.7, -1.62],
+    [
+      'ktu',
+      'koforidua technical university',
+      'Koforidua Technical University',
+      2.4,
+      0,
+      6.08,
+      -0.27,
+    ],
   ],
 };
 const ctx = buildContext(raw);
@@ -99,6 +123,35 @@ describe('initials', () => {
     expect(expandAliases('kbth emergency', findAliases(ctx, 'kbth'))).toBe(
       'Korle Bu Teaching Hospital emergency',
     );
+  });
+
+  it('lets the town choose between places that share initials', () => {
+    expect(findAliases(ctx, 'ktu')[0]?.phrase).toBe('kumasi technical university');
+    const kof = parseRules('ktu koforidua', ctx).area;
+    expect(findAliases(ctx, 'ktu', kof)[0]?.phrase).toBe('koforidua technical university');
+    // Nothing close: the best-known one.
+    expect(findAliases(ctx, 'ktu', { lat: 9.4, lon: -0.85 })[0]?.phrase).toBe(
+      'kumasi technical university',
+    );
+  });
+
+  it('reads initials beside a kind of place as a landmark to search around', () => {
+    for (const q of ['hostel knust', 'knust hostels', 'hostels at knust']) {
+      const i = parseRules(q, ctx);
+      expect(i.categories, q).toEqual(['hostel']);
+      expect(i.anchor, q).toBe('knust');
+      expect(i.text, q).not.toContain('knust');
+    }
+    // No kind of place: the initials are the name being looked for.
+    expect(parseRules('knust', ctx).anchor).toBeNull();
+  });
+
+  it('remembers what was typed when a town was matched fuzzily', () => {
+    expect(parseRules('hotel near kotoka', ctx).area).toMatchObject({
+      name: 'Kotoko',
+      typed: 'kotoka',
+    });
+    expect(parseRules('hotel near kotoko', ctx).area?.typed).toBeUndefined();
   });
 });
 
@@ -434,6 +487,76 @@ describe('search engine', () => {
     const res = await search({ q: 'hostel near knust' }, { rpc, context: ctx });
     expect(res.meta.anchor).toEqual({ text: 'knust', place: 'KNUST Main Gate' });
     expect(calls[1]).toMatchObject({ p_lat: 6.67, p_radius_m: 2000, p_text: 'hostel' });
+  });
+
+  it('takes initials to mean the place they stand for, not a shop of that name', async () => {
+    const rpc: SearchRpc = async (_fn, args) => {
+      if (args.p_limit === 3)
+        return {
+          data: [
+            { ...row('Knust'), category: 'shop', lat: 5.6 },
+            { ...row('KNUST Campus'), arms: { alias: 1 }, lat: 6.67 },
+          ],
+          error: null,
+        };
+      return { data: [row('x'), row('y'), row('z')], error: null };
+    };
+    const res = await search({ q: 'hostel knust' }, { rpc, context: ctx });
+    expect(res.meta.anchor).toEqual({ text: 'knust', place: 'KNUST Campus' });
+    expect(res.meta.centre).toMatchObject({ lat: 6.67 });
+  });
+
+  it('searches around a landmark named beside a kind of place', async () => {
+    const calls: Record<string, unknown>[] = [];
+    const landmark = (name: string, category: string) => ({ ...row(name), category, lat: 5.55 });
+    const rpcWith =
+      (found: ReturnType<typeof landmark>[]): SearchRpc =>
+      async (_fn, args) => {
+        calls.push(args);
+        if (args.p_limit === 8) return { data: found, error: null };
+        return { data: [row('x'), row('y'), row('z')], error: null };
+      };
+    // The market itself, not a hotel named after it.
+    const res = await search(
+      { q: 'pharmacy makola' },
+      {
+        rpc: rpcWith([
+          landmark('Makola Market Hotel', 'hotel'),
+          landmark('Makola Market Mall', 'mall'),
+          landmark('Makola Market', 'market'),
+        ]),
+        context: ctx,
+      },
+    );
+    expect(res.meta.anchor).toEqual({ text: 'makola', place: 'Makola Market' });
+    expect(calls.at(-1)).toMatchObject({ p_lat: 5.55, p_radius_m: 2000, p_text: 'pharmacy' });
+
+    // Not a landmark kind: the words stay part of the name being looked for.
+    calls.length = 0;
+    const named = await search(
+      { q: 'pharmacy makola' },
+      { rpc: rpcWith([landmark('Makola Pharmacy', 'pharmacy')]), context: ctx },
+    );
+    expect(named.meta.anchor).toBeNull();
+    expect(calls.at(-1)).toMatchObject({ p_text: 'pharmacy makola' });
+
+    // The whole query names the landmark: that is the place being looked for.
+    const whole = await search(
+      { q: 'hospital makola' },
+      { rpc: rpcWith([landmark('Makola Hospital Market', 'market')]), context: ctx },
+    );
+    expect(whole.meta.anchor).toBeNull();
+
+    // Another place carries the whole query: "marina mall" is Marina Mall, not a mall near a
+    // park called Lakeside Marina.
+    const mall = await search(
+      { q: 'marina mall' },
+      {
+        rpc: rpcWith([landmark('Lakeside Marina Park', 'park'), landmark('Marina Mall', 'mall')]),
+        context: ctx,
+      },
+    );
+    expect(mall.meta.anchor).toBeNull();
   });
   it('searches for the name behind initials, and embeds the name', async () => {
     const seen: string[][] = [];

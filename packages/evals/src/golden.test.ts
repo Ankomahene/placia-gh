@@ -7,6 +7,7 @@ import {
   HOLDOUT_V4,
   HOLDOUT_V5,
   HOLDOUT_V6,
+  HOLDOUT_V7,
   LABEL_FIXES,
 } from './golden';
 
@@ -19,6 +20,7 @@ describe('golden sets', () => {
     ...HOLDOUT_V4,
     ...HOLDOUT_V5,
     ...HOLDOUT_V6,
+    ...HOLDOUT_V7,
   ];
 
   it('has unique ids', () => {
@@ -69,6 +71,22 @@ describe('golden sets', () => {
     );
     expect(HOLDOUT_V6.filter((c) => seen.has(c.q.toLowerCase()))).toEqual([]);
     expect(HOLDOUT_V6.every((c) => c.id.startsWith('z-'))).toBe(true);
+  });
+
+  it('keeps held-out v7 apart from every earlier set', () => {
+    const seen = new Set(
+      [
+        ...GOLDEN,
+        ...HOLDOUT,
+        ...HOLDOUT_V2,
+        ...HOLDOUT_V3,
+        ...HOLDOUT_V4,
+        ...HOLDOUT_V5,
+        ...HOLDOUT_V6,
+      ].map((c) => c.q.toLowerCase()),
+    );
+    expect(HOLDOUT_V7.filter((c) => seen.has(c.q.toLowerCase()))).toEqual([]);
+    expect(HOLDOUT_V7.every((c) => c.id.startsWith('u-'))).toBe(true);
   });
 
   it('only uses valid patterns and sensible areas', () => {

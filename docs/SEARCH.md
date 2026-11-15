@@ -32,7 +32,12 @@ Both parsers produce the same `Intent`:
   - **Area position matters:**
     - A trailing area name filters ("tailor tamale").
     - A leading one only steers ranking ("ridge hospital", "accra mall"), because it is usually part of a name.
-  - **Unknown landmarks**: after a preposition, an unknown place ("near knust") becomes an _anchor_. The engine looks it up as a place and searches around it.
+  - **Unknown landmarks**: after a preposition, an unknown place ("near knust") becomes an _anchor_. The engine looks it up as a place and searches around it (2 km).
+  - **Landmarks without a preposition**:
+    - Initials beside a kind of place are an anchor too: "hostel knust", "pharmacy ucc".
+    - Other words beside a kind of place ("forex makola", "bank kejetia") are looked up as a landmark: an airport, market, university, beach, mall, hospital, park, attraction, stadium or station whose name has exactly those words. The shortest such name wins (Makola Market, not a hotel named after it).
+    - Not when the landmark is the kind being asked for, or when its name holds the whole query ("kotoka terminal 3" is the place itself).
+    - A town matched only fuzzily keeps the words typed. If a landmark carries them exactly, it wins: "hotel near kotoka" means the airport, not Kotoko in Kumasi. The response then reports the anchor, not the town.
   - **Same-name towns** (Atonsu, Anloga, Mampong, Akropong all exist several times):
     - **Address evidence**: `area_mentions` clusters places whose name or address names a town ("Atonsu, Lake Road"). A cluster credits the same-name town it sits in. When it outweighs every town of that name the gazetteer has, it stands in for the one it lacks: Kumasi's Atonsu (43 places) is not in the gazetteer, only two villages are.
     - **A second name decides**: "atonsu kumasi", "anloga volta", "konongo odumasi", "mampong akwapem". The candidate that lies inside the other name (its region, its district, or within reach of its town) wins.
@@ -41,7 +46,8 @@ Both parsers produce the same `Intent`:
     - `meta.area` lists the other same-name towns, each with a `query` that picks it ("atonsu kwahu west"), so the app can offer "Did you mean…".
 - **Initials** ("kbth", "ucc", "UMaT tarkwa", "k.n.u.s.t"):
   - `place_acronyms` holds initials learned from place names, small words optional ("umt", "umat", "uomat" for University of Mines and Technology). A pair is kept only when an alternative name or a bracket states it ("(KNUST)"), or when at least two places carry the name. Other places named with the initials ("GIJ SRC") add to the score but never qualify a pair alone, because ordinary words ("spare", "dam", "sea") are in hundreds of names too.
-  - A query word that is one of those initials, and not a category word or a town, is written out. The alias arm searches for the name as a phrase; the meaning arm embeds the name, not the letters.
+  - A query word that is one of those initials, and not a category word or a town, is written out. When several names share the initials, a town in the query (else the user) picks the best-known one within 40 km: "ktu koforidua" is Koforidua Technical University. Each name's point is its most trusted place.
+  - As an anchor, initials mean the place the alias arm finds, not a place literally named with the letters ("kia airport" is Kotoka, not a Kia showroom). The alias arm searches for the name as a phrase; the meaning arm embeds the name, not the letters.
   - Dotted initials are joined first ("K.N.U.S.T" → "knust").
   - `meta.aliases` says what was expanded, for a "Showing Korle Bu Teaching Hospital" line.
 - **Selective AI** (`rulesUnsure()`): the rule parse answers whenever it can be trusted, which is most queries. The AI is asked only when the rules are unsure:
