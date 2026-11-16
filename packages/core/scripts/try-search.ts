@@ -1,5 +1,5 @@
 /**
- * pnpm --filter @placia/core run search "pharmacy near madina|waakye osu" [lat lon] [--sem off]
+ * pnpm --filter @placia/core run search "pharmacy near madina|waakye osu" [lat lon] [--sem off] [--weights {"prefix_min":4}]
  * The meaning arm is on whenever OPENAI_API_KEY is set.
  */
 import { createServiceClient } from '@placia/db';
@@ -14,12 +14,23 @@ const rpc = (fn: string, args?: Record<string, unknown>) => sb.rpc(fn as never, 
 const context = await loadSearchContext(rpc as never);
 const argv = process.argv.slice(2);
 const semOff = argv.includes('--sem') && argv[argv.indexOf('--sem') + 1] === 'off';
-const [q, lat, lon] = argv.filter((a, i) => !a.startsWith('--') && argv[i - 1] !== '--sem');
+const weightsArg = argv.includes('--weights')
+  ? JSON.parse(argv[argv.indexOf('--weights') + 1] ?? '{}')
+  : undefined;
+const [q, lat, lon] = argv.filter(
+  (a, i) => !a.startsWith('--') && argv[i - 1] !== '--sem' && argv[i - 1] !== '--weights',
+);
 const cfg = aiConfigFromEnv();
 const embedder = !semOff && cfg.openaiApiKey ? createEmbedder(cfg) : null;
 for (const query of (q ?? '').split('|')) {
   const res = await search(
-    { q: query, lat: lat ? Number(lat) : null, lon: lon ? Number(lon) : null, limit: 8 },
+    {
+      q: query,
+      lat: lat ? Number(lat) : null,
+      lon: lon ? Number(lon) : null,
+      limit: 8,
+      weights: weightsArg,
+    },
     { rpc, context, embedder },
   );
   console.log(`\n» ${query}`);

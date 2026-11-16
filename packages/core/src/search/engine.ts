@@ -41,6 +41,12 @@ export interface FusionWeights {
   confidence: number;
   /** Places named by the phrase that initials in the query stand for. */
   alias: number;
+  /** Shortest last word matched as a prefix ("mal" → mall). */
+  prefix_min: number;
+  /** Shortest text for the fuzzy name arm. */
+  name_min: number;
+  /** Score multiplier for places outside the asked-for categories (1 = none). */
+  off_category: number;
 }
 
 /** The database defaults (see the search_weights and search_aliases migrations). */
@@ -54,6 +60,9 @@ export const DEFAULT_WEIGHTS: FusionWeights = {
   proximity: 0.5,
   confidence: 0.4,
   alias: 2,
+  prefix_min: 3,
+  name_min: 3,
+  off_category: 1,
 };
 
 /**
@@ -82,7 +91,12 @@ export function fusionWeights(
   browse: Partial<FusionWeights> = BROWSE_WEIGHTS,
   aliased = false,
 ): Partial<FusionWeights> {
-  const w: Partial<FusionWeights> = {};
+  // Three letters are too few to match fuzzily: "cat" is "Catholic", "pet" is "Petroleum".
+  // Prefixes stay for typing ("achimota mal"), unless a kind of place was asked for: then the
+  // short word is a whole word ("cat" in shops), not a half-typed one. From real searches,
+  // judged on all eval sets (docs/EVALS.md, "Short words").
+  const w: Partial<FusionWeights> = { name_min: 4 };
+  if (intent.categories.length) w.prefix_min = 4;
   if (intent.categories.length && hasCentre && intent.area?.relation !== 'soft') w.proximity = 1.5;
   if (intent.area?.relation === 'soft') w.name = 0.5;
   if (pureBrowse) Object.assign(w, browse);
@@ -501,7 +515,11 @@ export function toSearchEvent(res: SearchResponse, req: SearchRequest, sessionId
   return {
     session_id: sessionId ?? null,
     query: req.q.slice(0, 300),
-    parsed: res.intent as unknown as Record<string, unknown>,
+    // anchorPlace: what the anchor resolved to, so insights can flag places we could not find.
+    parsed: {
+      ...res.intent,
+      ...(res.intent.anchor ? { anchorPlace: res.meta.anchor?.place ?? null } : {}),
+    } as unknown as Record<string, unknown>,
     parse_path: res.meta.parse.path,
     provider: res.meta.parse.provider ?? null,
     model: res.meta.parse.model ?? null,

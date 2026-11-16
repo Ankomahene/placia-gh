@@ -570,3 +570,40 @@ Eval: 14 questions (12 that our data can answer, 2 it can't, like "ski resort in
 Our search is about 0.8 s of each answer. No model invented a place in this run, so the citation check is a safety net, not a crutch; it is still the reason a hallucination can't reach the screen. The failures are the "impossible" questions: models offered near matches (a beach resort for "ski resort", a travel agent for "ticket to the moon") and cited them. That is arguably helpful, but the eval counts it as a miss. The smallest model calls tools 2.6 times per question and is slower overall, so cheaper is not faster here. `gpt-6-luna` stays the default (`AI_ASK_MODEL` overrides it).
 
 Reports: `packages/evals/reports/voice-2026-11-15.md`, `packages/evals/reports/ask-2026-11-15.md`.
+
+# Part 4: Learning from real searches (2026-11-16)
+
+## Search insights
+
+Every search is logged to `search_events`. The admin page **Search insights** reads that log in two layers. The first is rule flags, free and computed on every search (`@placia/core/search/insights`):
+
+- **Wrong kind of place**: a category was asked for, but most of the top five results are something else ("asked for shop; top results: church ×5").
+- **Searched again**: the same person rephrased within three minutes ("… around dummy" → "… around dome Accra" 7 s later). Same session, or the same ~1 km location cell. A new topic doesn't count.
+- **AI step failed**, **No results**, **Place not found** (an anchor that resolved to nothing).
+- Notes: **Repeated words** (a voice stutter), **Too vague**, **Slow** (over 5 s).
+
+The second is an AI review, run on demand and stored in `search_events.review`. The model reads the query, how it was understood, the top results and the next search, then writes a verdict (good/partial/bad), a problem type (wrong kind, misheard, not covered, too vague, missing place, ranking) and a one-line fix. For example: _"They wanted a place in Accra to buy a cat; results were churches such as Holy Spirit Cathedral and Wesley Cathedral, apparently matching 'cat' to 'cathedral'."_ A "good" review clears a search the rules flagged.
+
+The first real user session (about 20 searches near Ablekuma, mostly spoken) turned up:
+
+- **Short words**, fixed below.
+- **Voice mishearings**: "dummy" for Dome, "bus" for bars.
+- **Out of scope**: "best areas in Accra" matched places named "Area".
+- **Empty "near me"**.
+
+## Short words
+
+"Is there place in Accra where I can buy a cat" was parsed well (category shop, text "cat"), but ranked Holy Spirit Cathedral and Catholic churches first. "pet" ranked the Ministry of Energy and Petroleum first. Two arms matched the three-letter word inside longer ones. The title and full-text arms matched the last word as a prefix (`cat:*`), and the fuzzy name arm scored "cat" as close to "Catholic". Three name arms against one category arm outvoted the category.
+
+Three settings were added to `search_places`, through `p_weights` (migration `20261116000000`). Each was judged on all 198 eval cases with the keyword parser:
+
+| Setting                                             | Named place: MRR / Hit@1 | Effect                                     |
+| --------------------------------------------------- | ------------------------ | ------------------------------------------ |
+| Before                                              | 0.900 / 86%              | (browse P@10 86%, nDCG 0.880)              |
+| Penalise places outside the asked-for category ×0.5 | 0.889 / 85%              | Worse: drops a "Pet Shop" filed under mall |
+| No prefix match under 4 letters                     | 0.934 / 89%              | Loses "achimota mal" (a half-typed word)   |
+| No fuzzy name match under 4 letters                 | 0.943 / 90%              | Better                                     |
+
+Adopted: fuzzy matching needs 4+ letters always. Prefix matching needs 4+ letters only when a kind of place was asked for, because then "cat" is a whole word rather than a half-typed one. The category penalty is left off.
+
+Result on all sets: named place MRR **0.900 → 0.943**, Hit@1 86% → 90%, Hit@10 96% → 99%. Browse is unchanged (P@10 86%, nDCG 0.880). "pet" in shops near Accra now returns Village Pets and Garden, Precious Pet Shop, Pet Mart, Pet Land and Sweet Pet Grooming. "cat" returns ordinary shops, because there are no cat sellers in the data. Report: `packages/evals/reports/2026-11-16-02-01-all-rules-sem.json`.
