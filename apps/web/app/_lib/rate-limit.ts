@@ -11,7 +11,11 @@ export function rateLimited(req: Request, name: string, max: number, windowMs: n
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
     req.headers.get('x-real-ip') ||
     'local';
-  const key = `${name}:${ip}`;
+  return limitHit(`${name}:${ip}`, max, windowMs);
+}
+
+/** Same limit on any key (an email address, a user id). */
+export function limitHit(key: string, max: number, windowMs: number) {
   const now = Date.now();
   const hits = (buckets.get(key) ?? []).filter((t) => now - t < windowMs);
   if (hits.length >= max) {

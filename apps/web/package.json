@@ -13,6 +13,8 @@
     "@placia/core": "workspace:*",
     "@placia/db": "workspace:*",
     "@placia/ui": "workspace:*",
+    "@react-email/components": "1.0.12",
+    "@react-email/render": "2.2.0",
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.119.0",
     "lucide-react": "1.72.0",
@@ -22,6 +24,7 @@
     "openai": "7.57.0",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "resend": "6.37.0",
     "server-only": "0.0.1",
     "zod": "4.6.7"
   },

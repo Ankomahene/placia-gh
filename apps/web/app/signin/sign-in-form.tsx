@@ -20,17 +20,27 @@ export function SignInForm({ next, linkFailed }: { next: string; linkFailed: boo
   const send = async () => {
     setBusy(true);
     setError(null);
-    const { error } = await supabaseBrowser().auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
-      },
-    });
-    setBusy(false);
-    if (error)
-      setError(error.status === 429 ? 'Too many tries, wait a minute' : "Couldn't send code");
-    else setSent(true);
+    // Our own email (Resend), with a code from Supabase's generateLink: see /api/auth/send-code.
+    try {
+      const res = await fetch('/api/auth/send-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), next }),
+      });
+      if (res.ok) setSent(true);
+      else
+        setError(
+          res.status === 429
+            ? 'Too many tries, wait a few minutes'
+            : res.status === 400
+              ? 'Check the email address'
+              : "Couldn't send code",
+        );
+    } catch {
+      setError("Couldn't send code");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const verify = async () => {
