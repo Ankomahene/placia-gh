@@ -1,3 +1,4 @@
+import { photoKey, photoUrl as url } from '@placia/core/photos';
 import { cn } from '@placia/ui/cn';
 import { Check, ClipboardCheck, ExternalLink, MapPin, Sparkles, X } from 'lucide-react';
 import type { Metadata } from 'next';
@@ -56,8 +57,8 @@ interface Place {
   [k: string]: unknown;
 }
 
-const photoUrl = (path: string) =>
-  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/place-photos/${path}`;
+type PhotoLike = { storage_path?: string; cloudinary_public_id?: string };
+const photoUrl = (key: string, width?: number) => url(key, { width });
 
 function ago(iso: string) {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -165,8 +166,8 @@ export default async function ContributionsPage({
                 : null;
             const d = ai?.duplicate_of ? dup.get(ai.duplicate_of) : null;
             const photo =
-              c.kind === 'photo' && typeof pay.storage_path === 'string'
-                ? photoUrl(pay.storage_path)
+              c.kind === 'photo' && photoKey(pay as PhotoLike)
+                ? photoUrl(photoKey(pay as PhotoLike), 1200)
                 : null;
             return (
               <li key={c.id} className="overflow-hidden rounded-lg border bg-surface shadow-card">
@@ -176,17 +177,17 @@ export default async function ContributionsPage({
                 ) : null}
                 {Array.isArray(pay.photos) && pay.photos.length ? (
                   <div className="grid grid-cols-4 gap-1 p-1">
-                    {(pay.photos as { storage_path: string }[]).map((ph) => (
+                    {(pay.photos as PhotoLike[]).map((ph) => (
                       <a
-                        key={ph.storage_path}
-                        href={photoUrl(ph.storage_path)}
+                        key={photoKey(ph)}
+                        href={photoUrl(photoKey(ph), 1600)}
                         target="_blank"
                         rel="noreferrer"
                         className="aspect-square overflow-hidden rounded-md bg-surface-2"
                       >
                         {/* biome-ignore lint/performance/noImgElement: a pending photo, shown as uploaded. */}
                         <img
-                          src={photoUrl(ph.storage_path)}
+                          src={photoUrl(photoKey(ph), 300)}
                           alt=""
                           className="size-full object-cover"
                         />

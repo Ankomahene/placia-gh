@@ -11,7 +11,8 @@
     "./ask": "./src/ask/index.ts",
     "./ask/citations": "./src/ask/citations.ts",
     "./voice": "./src/voice.ts",
-    "./contrib": "./src/contrib/index.ts"
+    "./contrib": "./src/contrib/index.ts",
+    "./photos": "./src/photos.ts"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json",

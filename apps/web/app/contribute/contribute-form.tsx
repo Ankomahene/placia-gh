@@ -2,12 +2,32 @@
 
 import { Button } from '@placia/ui/button';
 import { cn } from '@placia/ui/cn';
-import { Camera, Check, Crosshair, ImagePlus, Sparkles, X } from 'lucide-react';
+import {
+  PhotoPicker,
+  type SignedUpload,
+  type UploadedPhoto,
+  uploadPhoto,
+} from '@placia/ui/photo-picker';
+import { Camera, Check, Crosshair, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { LocationPicker } from '../_components/map';
 import { readLocation, requestLocation } from '../_lib/location';
 import { supabaseBrowser } from '../_lib/supabase/browser';
+
+/** Shrinks and uploads one photo into the user's own folder: Cloudinary, else Supabase. */
+const upload = (file: File, userId: string) =>
+  uploadPhoto(
+    {
+      userId,
+      sign: async () => {
+        const res = await fetch('/api/photos/sign', { method: 'POST' });
+        return res.ok ? ((await res.json()) as { signed: SignedUpload | null }).signed : null;
+      },
+      bucket: supabaseBrowser().storage.from('place-photos'),
+    },
+    file,
+  );
 
 export type Kind = 'new_place' | 'edit' | 'report' | 'photo';
 
@@ -228,20 +248,24 @@ function PlaceForm({
       website: website.trim(),
       hours: hours.trim(),
     };
-    if (kind === 'new_place' || !place) {
+    // Photos upload first (into the user's own folder); the suggestion then carries their paths.
+    const uploadAll = async (): Promise<UploadedPhoto[] | null> => {
       setUploadError(null);
-      let uploaded: Awaited<ReturnType<typeof uploadPhoto>>[] = [];
-      if (photos.length) {
-        setUploading(true);
-        try {
-          uploaded = await Promise.all(photos.map((f) => uploadPhoto(f, userId)));
-        } catch {
-          setUploadError("Couldn't upload the photos");
-          return;
-        } finally {
-          setUploading(false);
-        }
+      if (!photos.length) return [];
+      setUploading(true);
+      try {
+        return await Promise.all(photos.map((f) => upload(f, userId)));
+      } catch {
+        setUploadError("Couldn't upload the photos");
+        return null;
+      } finally {
+        setUploading(false);
       }
+    };
+
+    if (kind === 'new_place' || !place) {
+      const uploaded = await uploadAll();
+      if (!uploaded) return;
       void submit({
         kind: 'new_place',
         payload: {
@@ -267,10 +291,20 @@ function PlaceForm({
     );
     const moved = Math.abs(point.lat - place.lat) > 1e-5 || Math.abs(point.lon - place.lon) > 1e-5;
     if (moved) Object.assign(changes, point);
+    if (!Object.keys(changes).length && !photos.length) {
+      setUploadError('Nothing changed');
+      return;
+    }
+    const uploaded = await uploadAll();
+    if (!uploaded) return;
     void submit({
       kind: 'edit',
       place_id: place.id,
-      payload: { changes, note: note.trim() || undefined },
+      payload: {
+        changes,
+        note: note.trim() || undefined,
+        photos: uploaded.length ? uploaded : undefined,
+      },
     });
   };
 
@@ -393,7 +427,11 @@ function PlaceForm({
           className={field}
         />
       </Label>
-      {kind === 'new_place' ? <PhotoPicker files={photos} onChange={setPhotos} /> : null}
+      <PhotoPicker
+        files={photos}
+        onChange={setPhotos}
+        label={kind === 'edit' ? 'Add photos' : 'Photos'}
+      />
       <Label text="Note for the reviewer">
         <textarea
           maxLength={500}
@@ -470,98 +508,6 @@ function ReportForm({
   );
 }
 
-/** Shrinks a photo on the phone before upload: a 12 MP picture becomes ~200 KB. */
-async function shrink(file: File, max = 1600) {
-  const img = await createImageBitmap(file);
-  const scale = Math.min(1, max / Math.max(img.width, img.height));
-  const w = Math.round(img.width * scale);
-  const h = Math.round(img.height * scale);
-  const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
-  canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
-  img.close();
-  const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/webp', 0.8));
-  // Older Safari can't encode WebP and silently returns PNG: fall back to JPEG.
-  if (blob && blob.type === 'image/webp') return { blob, w, h, ext: 'webp' as const };
-  const jpeg = await new Promise<Blob | null>((r) => canvas.toBlob(r, 'image/jpeg', 0.82));
-  if (!jpeg) throw new Error('encode failed');
-  return { blob: jpeg, w, h, ext: 'jpg' as const };
-}
-
-/** Shrinks and uploads one photo into the user's own folder; returns what the API expects. */
-async function uploadPhoto(file: File, userId: string) {
-  const { blob, w, h, ext } = await shrink(file);
-  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-  const { error } = await supabaseBrowser()
-    .storage.from('place-photos')
-    .upload(path, blob, { contentType: blob.type, upsert: false });
-  if (error) throw error;
-  return { storage_path: path, width: w, height: h };
-}
-
-const MAX_PHOTOS = 4;
-
-/** Up to four photos for a new place: thumbnails with remove, plus an add tile. */
-function PhotoPicker({ files, onChange }: { files: File[]; onChange: (f: File[]) => void }) {
-  const [urls, setUrls] = useState<string[]>([]);
-  useEffect(() => {
-    const u = files.map((f) => URL.createObjectURL(f));
-    setUrls(u);
-    return () => {
-      for (const x of u) URL.revokeObjectURL(x);
-    };
-  }, [files]);
-  return (
-    <div className="space-y-1.5">
-      <span className="font-medium text-sm">
-        Photos{' '}
-        <span className="text-muted-foreground tabular-nums">
-          {files.length}/{MAX_PHOTOS}
-        </span>
-      </span>
-      <div className="grid grid-cols-4 gap-2">
-        {urls.map((u, i) => (
-          <div
-            key={u}
-            className="relative aspect-square overflow-hidden rounded-xl border bg-surface-2"
-          >
-            {/* biome-ignore lint/performance/noImgElement: a local preview, not a served image. */}
-            <img src={u} alt="" className="size-full object-cover" />
-            <button
-              type="button"
-              aria-label="Remove photo"
-              onClick={() => onChange(files.filter((_, j) => j !== i))}
-              className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-black/60 text-white"
-            >
-              <X className="size-3.5" />
-            </button>
-          </div>
-        ))}
-        {files.length < MAX_PHOTOS ? (
-          <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border border-dashed bg-surface text-muted-foreground hover:border-primary hover:text-primary">
-            <ImagePlus className="size-6" />
-            <span className="sr-only">Add photos</span>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="sr-only"
-              onChange={(e) => {
-                const picked = [...(e.target.files ?? [])].filter((f) =>
-                  f.type.startsWith('image/'),
-                );
-                onChange([...files, ...picked].slice(0, MAX_PHOTOS));
-                e.target.value = '';
-              }}
-            />
-          </label>
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 function PhotoForm({
   place,
   userId,
@@ -592,7 +538,7 @@ function PhotoForm({
     setUploading(true);
     setUploadError(null);
     try {
-      await submit({ kind: 'photo', place_id: place.id, payload: await uploadPhoto(file, userId) });
+      await submit({ kind: 'photo', place_id: place.id, payload: await upload(file, userId) });
     } catch {
       setUploadError("Couldn't upload");
     } finally {

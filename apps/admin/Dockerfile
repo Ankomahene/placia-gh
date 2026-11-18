@@ -2,7 +2,8 @@
 #   docker build -f apps/admin/Dockerfile .
 # Runtime variables (set on the Railway service, never baked in):
 #   NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY,
-#   RESEND_API_KEY, EMAIL_FROM (sign-in codes), OPENAI_API_KEY, ANTHROPIC_API_KEY (AI reviews)
+#   RESEND_API_KEY, EMAIL_FROM (sign-in codes), OPENAI_API_KEY, ANTHROPIC_API_KEY (AI reviews),
+#   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET (photos; Supabase if unset)
 # Only profiles with role "admin" can sign in: see app/_lib/auth.ts and proxy.ts.
 
 FROM node:22-alpine AS build

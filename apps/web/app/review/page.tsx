@@ -7,7 +7,10 @@ import { BottomNav, SiteHeader } from '../_components/nav';
 import { SignInPrompt } from '../_components/sign-in-prompt';
 import { categoryOptions } from '../_lib/categories';
 import { db } from '../_lib/db';
-import { photoUrl } from '../_lib/photos';
+import { photoKey, photoUrl } from '../_lib/photos';
+
+type PhotoLike = { storage_path?: string; cloudinary_public_id?: string };
+
 import { getViewer, isModerator } from '../_lib/supabase/server';
 import { Decide } from './decide';
 
@@ -136,10 +139,10 @@ export default async function ReviewPage() {
               const d = ai?.duplicate_of ? dup.get(ai.duplicate_of) : null;
               return (
                 <li key={c.id} className="overflow-hidden rounded-2xl border bg-surface">
-                  {c.kind === 'photo' && typeof pay.storage_path === 'string' ? (
+                  {c.kind === 'photo' && photoKey(pay as PhotoLike) ? (
                     // biome-ignore lint/performance/noImgElement: a pending photo, shown as uploaded.
                     <img
-                      src={photoUrl(pay.storage_path)}
+                      src={photoUrl(photoKey(pay as PhotoLike), 1200)}
                       alt=""
                       className="aspect-[4/3] w-full object-cover"
                     />
@@ -148,17 +151,17 @@ export default async function ReviewPage() {
                   ) : null}
                   {Array.isArray(pay.photos) && pay.photos.length ? (
                     <div className="grid grid-cols-4 gap-1 p-1">
-                      {(pay.photos as { storage_path: string }[]).map((ph) => (
+                      {(pay.photos as PhotoLike[]).map((ph) => (
                         <a
-                          key={ph.storage_path}
-                          href={photoUrl(ph.storage_path)}
+                          key={photoKey(ph)}
+                          href={photoUrl(photoKey(ph), 1600)}
                           target="_blank"
                           rel="noreferrer"
                           className="aspect-square overflow-hidden rounded-md bg-surface-2"
                         >
                           {/* biome-ignore lint/performance/noImgElement: a pending photo, shown as uploaded. */}
                           <img
-                            src={photoUrl(ph.storage_path)}
+                            src={photoUrl(photoKey(ph), 300)}
                             alt=""
                             className="size-full object-cover"
                           />

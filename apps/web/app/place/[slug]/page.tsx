@@ -10,7 +10,7 @@ import { MiniMap } from '../../_components/map/mini-map';
 import { BottomNav, SiteHeader } from '../../_components/nav';
 import { db } from '../../_lib/db';
 import { formatDistance, formatHours, parsePoint, placeWhere } from '../../_lib/format';
-import { photoUrl } from '../../_lib/photos';
+import { photoKey, photoUrl } from '../../_lib/photos';
 import { SaveButton } from './save-button';
 import { ShareButton } from './share-button';
 
@@ -31,7 +31,7 @@ const getPlace = cache(async (slug: string) => {
   const { data, error } = await db()
     .from('places')
     .select(
-      'id, slug, name, alt_names, address, phone, website, email, opening_hours, description, location, status, categories(id, name, slug), localities(name), districts(name), regions(name), place_sources(source), place_photos(storage_path, width, height, status, created_at)',
+      'id, slug, name, alt_names, address, phone, website, email, opening_hours, description, location, status, categories(id, name, slug), localities(name), districts(name), regions(name), place_sources(source), place_photos(storage_path, cloudinary_public_id, width, height, status, created_at)',
     )
     .eq('slug', slug)
     .in('status', ['active', 'closed'])
@@ -51,13 +51,14 @@ const getPlace = cache(async (slug: string) => {
     photos: (
       (data.place_photos as unknown as {
         storage_path: string | null;
+        cloudinary_public_id: string | null;
         width: number | null;
         height: number | null;
         status: string;
         created_at: string;
       }[]) ?? []
     )
-      .filter((f) => f.status === 'approved' && f.storage_path)
+      .filter((f) => f.status === 'approved' && photoKey(f))
       .sort((a, b) => b.created_at.localeCompare(a.created_at)),
     sources: [
       ...new Set(
@@ -193,10 +194,10 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
             {p.photos.length ? (
               <ul className="no-scrollbar -mx-4 mt-6 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
                 {p.photos.map((f) => (
-                  <li key={f.storage_path} className="shrink-0">
+                  <li key={photoKey(f)} className="shrink-0">
                     {/* biome-ignore lint/performance/noImgElement: already resized on upload. */}
                     <img
-                      src={photoUrl(f.storage_path as string)}
+                      src={photoUrl(photoKey(f), 800)}
                       alt={p.name}
                       width={f.width ?? 400}
                       height={f.height ?? 300}

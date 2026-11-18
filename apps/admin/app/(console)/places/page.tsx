@@ -11,9 +11,10 @@ import {
 import type { Metadata } from 'next';
 import { PendingButton } from '../../_components/pending-button';
 import { Stat } from '../../_components/ui';
-import { serviceDb } from '../../_lib/auth';
+import { requireAdmin, serviceDb } from '../../_lib/auth';
 import { WEB_URL } from '../../_lib/web';
 import { setPlaceStatus } from './actions';
+import { AddPhotos } from './add-photos';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Places' };
@@ -98,7 +99,7 @@ export default async function PlacesPage({
   const q = (sp.q ?? '').trim().slice(0, 100);
   const status: Status = STATUSES.includes(sp.status as Status) ? (sp.status as Status) : 'all';
   const page = Math.max(1, Number(sp.page) || 1);
-  const db = serviceDb();
+  const [db, admin] = [serviceDb(), await requireAdmin()];
   if (!db) {
     return (
       <div className="mx-auto max-w-6xl px-4 py-6 md:px-8 md:py-8">
@@ -207,7 +208,10 @@ export default async function PlacesPage({
                   <span className="text-muted-foreground text-xs tabular-nums">
                     {sources(r)} src · {r.photo_count} photos · {r.confidence.toFixed(2)}
                   </span>
-                  <StatusActions id={r.id} status={r.status} />
+                  <div className="flex items-center">
+                    <AddPhotos placeId={r.id} userId={admin.id} />
+                    <StatusActions id={r.id} status={r.status} />
+                  </div>
                 </div>
               </li>
             ))}
@@ -252,7 +256,10 @@ export default async function PlacesPage({
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="px-2 py-2">
-                      <StatusActions id={r.id} status={r.status} />
+                      <div className="flex items-center">
+                        <AddPhotos placeId={r.id} userId={admin.id} />
+                        <StatusActions id={r.id} status={r.status} />
+                      </div>
                     </td>
                   </tr>
                 ))}

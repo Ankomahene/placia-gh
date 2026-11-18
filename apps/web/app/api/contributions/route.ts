@@ -1,4 +1,5 @@
 import { type PrecheckInput, precheck } from '@placia/core/contrib';
+import { ownsPhoto, PhotoRef } from '@placia/core/photos';
 import { after } from 'next/server';
 import { z } from 'zod';
 import { ai } from '../../_lib/ai';
@@ -17,11 +18,8 @@ const text = (max: number) => z.string().trim().max(max);
 const lat = z.number().min(4.5).max(11.3); // Ghana, with a margin
 const lon = z.number().min(-3.4).max(1.3);
 
-const Photo = z.object({
-  storage_path: z.string().regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(webp|jpg)$/),
-  width: z.number().int().positive().max(4000),
-  height: z.number().int().positive().max(4000),
-});
+/** Photos sent along with a suggestion; approved together with it (see apply_contribution). */
+const Photos = z.array(PhotoRef).max(4).optional();
 
 const Fields = z.object({
   name: text(120).min(2),
@@ -39,8 +37,7 @@ const Body = z.discriminatedUnion('kind', [
       lat,
       lon,
       note: text(500).optional(),
-      // Photos sent with the place; approved together with it (see apply_contribution).
-      photos: z.array(Photo).max(4).optional(),
+      photos: Photos,
     }),
   }),
   z.object({
@@ -49,6 +46,7 @@ const Body = z.discriminatedUnion('kind', [
     payload: z.object({
       changes: Fields.partial().extend({ lat: lat.optional(), lon: lon.optional() }),
       note: text(500).optional(),
+      photos: Photos,
     }),
   }),
   z.object({
@@ -62,7 +60,7 @@ const Body = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('photo'),
     place_id: z.uuid(),
-    payload: Photo,
+    payload: PhotoRef,
   }),
 ]);
 
@@ -80,15 +78,17 @@ export async function POST(req: Request) {
     );
   }
   const b = parsed.data;
-  if (b.kind === 'edit' && Object.keys(b.payload.changes).length === 0) {
+  if (
+    b.kind === 'edit' &&
+    Object.keys(b.payload.changes).length === 0 &&
+    !b.payload.photos?.length
+  ) {
     return Response.json({ error: 'no_changes' }, { status: 400 });
   }
   // Photos must be files this user uploaded into their own folder.
-  const own = (p: { storage_path: string }) => p.storage_path.startsWith(`${viewer.id}/`);
-  if (
-    (b.kind === 'photo' && !own(b.payload)) ||
-    (b.kind === 'new_place' && !(b.payload.photos ?? []).every(own))
-  ) {
+  const sent =
+    b.kind === 'photo' ? [b.payload] : b.kind === 'report' ? [] : (b.payload.photos ?? []);
+  if (!sent.every((p) => ownsPhoto(p, viewer.id))) {
     return Response.json({ error: 'invalid_request' }, { status: 400 });
   }
 
@@ -124,7 +124,8 @@ export async function POST(req: Request) {
     const { error: photoErr } = await sb.from('place_photos').insert({
       place_id: b.place_id,
       user_id: viewer.id,
-      storage_path: b.payload.storage_path,
+      storage_path: b.payload.storage_path ?? null,
+      cloudinary_public_id: b.payload.cloudinary_public_id ?? null,
       width: b.payload.width,
       height: b.payload.height,
       contribution_id: row.id,
@@ -137,7 +138,7 @@ export async function POST(req: Request) {
     if (!llm) return;
     // File paths mean nothing to the text pre-check; it only hears how many photos came along.
     const submitted =
-      b.kind === 'new_place' && b.payload.photos
+      (b.kind === 'new_place' || b.kind === 'edit') && b.payload.photos
         ? { ...b.payload, photos: b.payload.photos.length }
         : b.payload;
     const input: PrecheckInput = { kind: b.kind, submitted, current };
