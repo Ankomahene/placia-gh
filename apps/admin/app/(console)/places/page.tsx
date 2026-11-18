@@ -4,13 +4,16 @@ import { PhotoThumbs, type ViewerPhoto } from '@placia/ui/photo-viewer';
 import {
   ChevronLeft,
   ChevronRight,
+  Copy,
   ExternalLink,
   EyeOff,
   MapPinned,
+  Plus,
   Search,
   Store,
 } from 'lucide-react';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { PendingButton } from '../../_components/pending-button';
 import { Stat } from '../../_components/ui';
 import { requireAdmin, serviceDb } from '../../_lib/auth';
@@ -123,12 +126,13 @@ export default async function PlacesPage({
 
   const counts = (s: string) =>
     db.from('places').select('id', { count: 'exact', head: true }).eq('status', s);
-  const [{ data, count, error }, active, hidden, closed, pending] = await Promise.all([
+  const [{ data, count, error }, active, hidden, closed, pending, dupes] = await Promise.all([
     query.range((page - 1) * PAGE, page * PAGE - 1),
     counts('active'),
     counts('hidden'),
     counts('closed'),
     counts('pending'),
+    db.from('place_duplicate_pairs').select('a', { count: 'exact', head: true }),
   ]);
   const rows = (data ?? []) as unknown as Row[];
   const total = count ?? 0;
@@ -163,7 +167,28 @@ export default async function PlacesPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8">
-      <h1 className="font-semibold text-2xl tracking-tight">Places</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="font-semibold text-2xl tracking-tight">Places</h1>
+        <div className="flex gap-2">
+          <Link
+            href="/duplicates"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md border bg-surface px-3 font-medium text-sm hover:bg-surface-2"
+          >
+            <Copy className="size-4" /> Duplicates
+            {dupes.count ? (
+              <span className="rounded-full bg-warning/15 px-1.5 text-warning text-xs tabular-nums">
+                {dupes.count.toLocaleString()}
+              </span>
+            ) : null}
+          </Link>
+          <Link
+            href="/places/new"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3 font-medium text-primary-foreground text-sm hover:opacity-90"
+          >
+            <Plus className="size-4" /> Add place
+          </Link>
+        </div>
+      </div>
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat icon={MapPinned} label="Active" value={active.count ?? null} />
@@ -217,14 +242,12 @@ export default async function PlacesPage({
             {rows.map((r) => (
               <li key={r.id} className="rounded-lg border bg-surface p-3 shadow-card">
                 <div className="flex items-start justify-between gap-2">
-                  <a
-                    href={`${WEB_URL}/place/${r.slug}`}
-                    target="_blank"
-                    rel="noreferrer"
+                  <Link
+                    href={`/places/${r.id}`}
                     className="min-w-0 font-medium text-sm hover:underline"
                   >
                     {r.name}
-                  </a>
+                  </Link>
                   <StatusBadge status={r.status} />
                 </div>
                 <p className="mt-1 truncate text-muted-foreground text-xs">
@@ -268,15 +291,23 @@ export default async function PlacesPage({
                 {rows.map((r) => (
                   <tr key={r.id} className="hover:bg-surface-2/40">
                     <td className="max-w-64 px-4 py-2">
-                      <a
-                        href={`${WEB_URL}/place/${r.slug}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group inline-flex max-w-full items-center gap-1.5 font-medium hover:underline"
-                      >
-                        <span className="truncate">{r.name}</span>
-                        <ExternalLink className="size-3 shrink-0 text-muted-foreground opacity-0 group-hover:opacity-100" />
-                      </a>
+                      <div className="group flex max-w-full items-center gap-1.5">
+                        <Link
+                          href={`/places/${r.id}`}
+                          className="truncate font-medium hover:underline"
+                        >
+                          {r.name}
+                        </Link>
+                        <a
+                          href={`${WEB_URL}/place/${r.slug}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label="View on site"
+                          className="shrink-0 text-muted-foreground opacity-0 hover:text-foreground group-hover:opacity-100"
+                        >
+                          <ExternalLink className="size-3" />
+                        </a>
+                      </div>
                     </td>
                     <td className="max-w-40 truncate px-4 py-2 text-muted-foreground">
                       {r.categories?.name ?? '—'}

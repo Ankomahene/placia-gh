@@ -1,10 +1,9 @@
 'use server';
 
-import { aiConfigFromEnv, createEmbedder } from '@placia/core/ai';
 import { revalidatePath } from 'next/cache';
-import { after } from 'next/server';
 import { z } from 'zod';
 import { requireAdmin, serviceDb } from '../../_lib/auth';
+import { reembedLater } from '../../_lib/embed';
 
 const Input = z.object({
   id: z.uuid(),
@@ -37,22 +36,6 @@ export async function decideContribution(form: FormData): Promise<void> {
 
   // New or renamed places get their meaning vector, so they show up for meaning searches.
   const placeId = (data as { place_id?: string } | null)?.place_id;
-  const cfg = aiConfigFromEnv();
-  if (approve && placeId && cfg.openaiApiKey) {
-    after(async () => {
-      const { data: input } = await db.rpc(
-        'place_embedding_input' as never,
-        { p_id: placeId } as never,
-      );
-      if (typeof input !== 'string' || !input) return;
-      const { vectors } = await createEmbedder(cfg).embed([input]);
-      const v = vectors[0];
-      if (!v) return;
-      await db.rpc('set_embeddings', {
-        p_ids: [placeId],
-        p_vectors: [`[${v.map((x) => x.toFixed(5)).join(',')}]`],
-      });
-    });
-  }
+  if (approve && placeId) reembedLater(db, [placeId]);
   revalidatePath('/contributions');
 }

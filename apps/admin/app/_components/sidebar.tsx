@@ -4,6 +4,7 @@ import { cn } from '@placia/ui/cn';
 import { Logo } from '@placia/ui/logo';
 import {
   ChartNoAxesCombined,
+  Copy,
   Database,
   FlaskConical,
   Inbox,
@@ -18,6 +19,7 @@ import { signOut } from '../signin/actions';
 const NAV = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
   { href: '/places', label: 'Places', icon: MapPin },
+  { href: '/duplicates', label: 'Duplicates', icon: Copy },
   { href: '/contributions', label: 'Contributions', icon: Inbox },
   { href: '/sources', label: 'Data sources', icon: Database },
   { href: '/search-insights', label: 'Search insights', icon: ChartNoAxesCombined },

@@ -325,6 +325,45 @@ export type Database = {
         }
         Relationships: []
       }
+      place_duplicate_pairs: {
+        Row: {
+          a: string
+          b: string
+          distance_m: number
+          found_at: string
+          similarity: number
+        }
+        Insert: {
+          a: string
+          b: string
+          distance_m: number
+          found_at?: string
+          similarity: number
+        }
+        Update: {
+          a?: string
+          b?: string
+          distance_m?: number
+          found_at?: string
+          similarity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_duplicate_pairs_a_fkey"
+            columns: ["a"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_duplicate_pairs_b_fkey"
+            columns: ["b"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_embeddings: {
         Row: {
           embedded_at: string
@@ -346,6 +385,42 @@ export type Database = {
             foreignKeyName: "place_embeddings_place_id_fkey"
             columns: ["place_id"]
             isOneToOne: true
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      place_not_duplicates: {
+        Row: {
+          a: string
+          b: string
+          created_at: string
+          decided_by: string | null
+        }
+        Insert: {
+          a: string
+          b: string
+          created_at?: string
+          decided_by?: string | null
+        }
+        Update: {
+          a?: string
+          b?: string
+          created_at?: string
+          decided_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "place_not_duplicates_a_fkey"
+            columns: ["a"]
+            isOneToOne: false
+            referencedRelation: "places"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "place_not_duplicates_b_fkey"
+            columns: ["b"]
+            isOneToOne: false
             referencedRelation: "places"
             referencedColumns: ["id"]
           },
@@ -470,6 +545,7 @@ export type Database = {
           id: string
           locality_id: number | null
           location: unknown
+          merged_into: string | null
           name: string
           opening_hours: Json | null
           phone: string | null
@@ -497,6 +573,7 @@ export type Database = {
           id?: string
           locality_id?: number | null
           location: unknown
+          merged_into?: string | null
           name: string
           opening_hours?: Json | null
           phone?: string | null
@@ -524,6 +601,7 @@ export type Database = {
           id?: string
           locality_id?: number | null
           location?: unknown
+          merged_into?: string | null
           name?: string
           opening_hours?: Json | null
           phone?: string | null
@@ -557,6 +635,13 @@ export type Database = {
             columns: ["locality_id"]
             isOneToOne: false
             referencedRelation: "localities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "places_merged_into_fkey"
+            columns: ["merged_into"]
+            isOneToOne: false
+            referencedRelation: "places"
             referencedColumns: ["id"]
           },
           {
@@ -663,7 +748,9 @@ export type Database = {
           provider: string | null
           query: string
           result_count: number | null
+          review: Json | null
           session_id: string | null
+          timings: Json | null
           top_place_ids: string[] | null
           total_latency_ms: number | null
         }
@@ -681,7 +768,9 @@ export type Database = {
           provider?: string | null
           query: string
           result_count?: number | null
+          review?: Json | null
           session_id?: string | null
+          timings?: Json | null
           top_place_ids?: string[] | null
           total_latency_ms?: number | null
         }
@@ -699,7 +788,9 @@ export type Database = {
           provider?: string | null
           query?: string
           result_count?: number | null
+          review?: Json | null
           session_id?: string | null
+          timings?: Json | null
           top_place_ids?: string[] | null
           total_latency_ms?: number | null
         }
@@ -712,7 +803,16 @@ export type Database = {
     Functions: {
       acronym_variants: { Args: { p_words: string[] }; Returns: string[] }
       admin_data_quality: { Args: never; Returns: Json }
+      admin_id_for_email: { Args: { p_email: string }; Returns: string }
       admin_overview: { Args: never; Returns: Json }
+      admin_save_place: {
+        Args: { p: Json; p_admin: string; p_id: string }
+        Returns: Json
+      }
+      admin_search_events: {
+        Args: { p_days?: number; p_limit?: number }
+        Returns: Json
+      }
       apply_contribution: {
         Args: {
           p_approve: boolean
@@ -731,6 +831,15 @@ export type Database = {
           region_id: number
         }[]
       }
+      attach_place_photos: {
+        Args: {
+          p_contribution?: string
+          p_photos: Json
+          p_place: string
+          p_user: string
+        }
+        Returns: number
+      }
       embedding_queue: {
         Args: { p_limit?: number }
         Returns: {
@@ -738,17 +847,34 @@ export type Database = {
           input: string
         }[]
       }
+      forget_duplicate_pairs: { Args: { p_ids: string[] }; Returns: undefined }
       free_place_slug: {
         Args: { p_area: string; p_name: string }
         Returns: string
       }
       ingest_prune: { Args: { p_since: string }; Returns: Json }
       ingest_slugs: { Args: never; Returns: Json }
+      merge_places: { Args: { p_drop: string; p_keep: string }; Returns: Json }
+      move_place_photo: {
+        Args: { p_photo: string; p_to: string }
+        Returns: undefined
+      }
       normalize_text: { Args: { t: string }; Returns: string }
       ping: { Args: never; Returns: string }
       place_embedding_input: { Args: { p_id: string }; Returns: string }
+      place_lookalikes: {
+        Args: { p_place: string; p_radius?: number }
+        Returns: {
+          distance_m: number
+          id: string
+          similarity: number
+        }[]
+      }
       refresh_area_mentions: { Args: never; Returns: number }
+      refresh_duplicate_pairs: { Args: { p_slice: string }; Returns: number }
       refresh_place_acronyms: { Args: never; Returns: number }
+      refresh_place_photos: { Args: { p_place: string }; Returns: undefined }
+      remove_place_photo: { Args: { p_photo: string }; Returns: Json }
       search_context: { Args: never; Returns: Json }
       search_places: {
         Args: {
@@ -786,6 +912,7 @@ export type Database = {
         Args: { p_ids: string[]; p_vectors: string[] }
         Returns: number
       }
+      set_place_cover: { Args: { p_photo: string }; Returns: undefined }
       slugify: { Args: { t: string }; Returns: string }
     }
     Enums: {

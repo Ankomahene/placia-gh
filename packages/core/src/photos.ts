@@ -106,3 +106,33 @@ export function photoUrl(
   const base = opts.supabaseUrl ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
   return `${base}/storage/v1/object/public/${PHOTO_BUCKET}/${key}`;
 }
+
+/**
+ * Deletes a photo from Cloudinary (signed with the API secret, server only). Resolves true when
+ * it's gone, including when it was already gone.
+ */
+export async function destroyCloudinaryPhoto(
+  cfg: CloudinaryConfig,
+  publicId: string,
+  fetcher: typeof fetch = fetch,
+): Promise<boolean> {
+  if (!PUBLIC_ID.test(publicId)) return false;
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = createHash('sha1')
+    .update(`invalidate=true&public_id=${publicId}&timestamp=${timestamp}${cfg.apiSecret}`)
+    .digest('hex');
+  const body = new URLSearchParams({
+    public_id: publicId,
+    timestamp: String(timestamp),
+    invalidate: 'true',
+    api_key: cfg.apiKey,
+    signature,
+  });
+  const res = await fetcher(`https://api.cloudinary.com/v1_1/${cfg.cloudName}/image/destroy`, {
+    method: 'POST',
+    body,
+  });
+  if (!res.ok) return false;
+  const out = (await res.json().catch(() => null)) as { result?: string } | null;
+  return out?.result === 'ok' || out?.result === 'not found';
+}

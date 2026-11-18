@@ -9,7 +9,17 @@ import { useState } from 'react';
 import { addPlacePhotos, signPhotoUpload } from './photo-actions';
 
 /** Pick photos and they're live on the place: uploaded to Cloudinary (else Supabase), no review. */
-export function AddPhotos({ placeId, userId }: { placeId: string; userId: string }) {
+export function AddPhotos({
+  placeId,
+  userId,
+  label = 'Photos',
+  className,
+}: {
+  placeId: string;
+  userId: string;
+  label?: string;
+  className?: string;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -43,6 +53,7 @@ export function AddPhotos({ placeId, userId }: { placeId: string; userId: string
         'inline-flex h-7 cursor-pointer items-center gap-1 rounded-md px-2 font-medium text-muted-foreground text-xs hover:bg-surface-2 hover:text-foreground',
         failed && 'text-danger',
         busy && 'pointer-events-none opacity-60',
+        className,
       )}
     >
       {busy ? (
@@ -50,7 +61,7 @@ export function AddPhotos({ placeId, userId }: { placeId: string; userId: string
       ) : (
         <ImagePlus className="size-3.5" />
       )}
-      Photos
+      {label}
       <input
         type="file"
         accept="image/*"

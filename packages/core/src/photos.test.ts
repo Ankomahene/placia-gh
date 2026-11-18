@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
   cloudinaryFromEnv,
+  destroyCloudinaryPhoto,
   ownsPhoto,
   PhotoRef,
   photoKey,
@@ -63,5 +64,17 @@ describe('photos', () => {
     expect(photoUrl(`${U}/${ID}.webp`, { supabaseUrl: 'https://x.supabase.co' })).toBe(
       `https://x.supabase.co/storage/v1/object/public/place-photos/${U}/${ID}.webp`,
     );
+  });
+
+  it('signs a Cloudinary delete and accepts already-gone photos', async () => {
+    let sent: URLSearchParams | null = null;
+    const fake = (async (_url: string, init: { body: URLSearchParams }) => {
+      sent = init.body;
+      return new Response(JSON.stringify({ result: 'not found' }));
+    }) as unknown as typeof fetch;
+    const cfg = { cloudName: 'demo', apiKey: 'k', apiSecret: 's' };
+    expect(await destroyCloudinaryPhoto(cfg, `placia/${U}/${ID}`, fake)).toBe(true);
+    expect((sent as URLSearchParams | null)?.get('signature')).toMatch(/^[0-9a-f]{40}$/);
+    expect(await destroyCloudinaryPhoto(cfg, 'elsewhere/x', fake)).toBe(false);
   });
 });

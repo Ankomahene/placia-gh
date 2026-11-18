@@ -4,7 +4,7 @@ import { PhotoThumbs } from '@placia/ui/photo-viewer';
 import { Camera, Clock, Flag, Globe, MapPin, Navigation, Pencil, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { cache, Suspense } from 'react';
 import { BackLink } from '../../_components/back-link';
 import { MiniMap } from '../../_components/map/mini-map';
@@ -70,6 +70,23 @@ const getPlace = cache(async (slug: string) => {
   };
 });
 
+/** Where a merged duplicate went: the slug of the place it was folded into, if any. */
+const mergedInto = cache(async (slug: string) => {
+  const { data } = await db()
+    .from('places')
+    .select('merged_into')
+    .eq('slug', slug)
+    .not('merged_into', 'is', null)
+    .maybeSingle();
+  if (!data?.merged_into) return null;
+  const { data: keep } = await db()
+    .from('places')
+    .select('slug')
+    .eq('id', data.merged_into)
+    .maybeSingle();
+  return keep?.slug ?? null;
+});
+
 type Place = NonNullable<Awaited<ReturnType<typeof getPlace>>>;
 
 interface NearbyRow {
@@ -114,8 +131,14 @@ export async function generateMetadata({
 }
 
 export default async function PlacePage({ params }: { params: Promise<{ slug: string }> }) {
-  const p = await getPlace((await params).slug);
-  if (!p) notFound();
+  const { slug } = await params;
+  const p = await getPlace(slug);
+  if (!p) {
+    // Old links to a duplicate that was merged land on the place that was kept.
+    const keep = await mergedInto(slug);
+    if (keep) permanentRedirect(`/place/${keep}`);
+    notFound();
+  }
 
   const where = placeWhere(p.locality, p.district, p.region);
   const hours = formatHours(p.opening_hours);
