@@ -17,8 +17,8 @@ import {
   TriangleAlert,
 } from 'lucide-react';
 import type { Metadata } from 'next';
-import { BarList, Card, Stat } from '../_components/ui';
-import { type FlaggedSearch, getFlaggedSearches } from '../_lib/search-insights';
+import { BarList, Card, Stat } from '../../_components/ui';
+import { type FlaggedSearch, getFlaggedSearches } from '../../_lib/search-insights';
 import { reviewSearches } from './actions';
 import { ReviewButton } from './submit';
 

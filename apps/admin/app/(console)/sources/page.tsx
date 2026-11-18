@@ -11,8 +11,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { Metadata } from 'next';
-import { BarList, Card, Stat, StatusDot } from '../_components/ui';
-import { getDataQuality } from '../_lib/quality';
+import { BarList, Card, Stat, StatusDot } from '../../_components/ui';
+import { getDataQuality } from '../../_lib/quality';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Data sources' };

@@ -3,13 +3,16 @@
 import { aiConfigFromEnv, createReviewLLM } from '@placia/core/ai';
 import { nextSearch, reviewSearch } from '@placia/core/search/insights';
 import { revalidatePath } from 'next/cache';
-import { getFlaggedSearches, service } from '../_lib/search-insights';
+import { requireAdmin } from '../../_lib/auth';
+import { getFlaggedSearches, service } from '../../_lib/search-insights';
 
 /** At most this many model calls per click, so one click can't run up a bill. */
 const MAX_PER_RUN = 20;
 
 /** AI-review searches that have no review yet: one by id, or every flagged one in the period. */
 export async function reviewSearches(form: FormData) {
+  // Server actions are public endpoints: check the caller, not just the page that shows the button.
+  await requireAdmin();
   const id = Number(form.get('id')) || null;
   const days = Number(form.get('days')) || 30;
   const cfg = aiConfigFromEnv();

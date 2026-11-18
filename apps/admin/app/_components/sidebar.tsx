@@ -8,11 +8,12 @@ import {
   FlaskConical,
   Inbox,
   LayoutDashboard,
+  LogOut,
   MapPin,
-  Settings,
 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
+import { signOut } from '../signin/actions';
 
 const NAV = [
   { href: '/', label: 'Overview', icon: LayoutDashboard },
@@ -26,7 +27,7 @@ const NAV = [
 const isActive = (path: string, href: string) =>
   href === '/' ? path === '/' : path.startsWith(href);
 
-export function Sidebar() {
+export function Sidebar({ email }: { email: string | null }) {
   const path = usePathname();
   return (
     <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-surface px-3 py-4 md:flex">
@@ -57,13 +58,20 @@ export function Sidebar() {
           })}
         </ul>
       </nav>
-      <a
-        href="/settings"
-        className="flex h-9 items-center gap-3 rounded-md px-2.5 font-medium text-muted-foreground text-sm hover:bg-surface-2 hover:text-foreground"
-      >
-        <Settings className="size-4" />
-        Settings
-      </a>
+      <form action={signOut} className="border-t pt-3">
+        {email ? (
+          <p className="truncate px-2.5 pb-1 text-muted-foreground text-xs" title={email}>
+            {email}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          className="flex h-9 w-full items-center gap-3 rounded-md px-2.5 font-medium text-muted-foreground text-sm hover:bg-surface-2 hover:text-foreground"
+        >
+          <LogOut className="size-4" />
+          Sign out
+        </button>
+      </form>
     </aside>
   );
 }
@@ -80,8 +88,17 @@ export function MobileNav() {
   }, [path]);
   return (
     <header className="sticky top-0 z-20 border-b bg-surface/95 backdrop-blur md:hidden">
-      <div className="flex h-12 items-center px-4">
+      <div className="flex h-12 items-center justify-between px-4">
         <Logo suffix="Admin" />
+        <form action={signOut}>
+          <button
+            type="submit"
+            aria-label="Sign out"
+            className="grid size-9 place-items-center rounded-md text-muted-foreground hover:text-foreground"
+          >
+            <LogOut className="size-4" />
+          </button>
+        </form>
       </div>
       <nav
         ref={nav}

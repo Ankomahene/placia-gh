@@ -1,7 +1,7 @@
 import { aiStatus } from '@placia/core/ai';
 import { Bot, Database, Inbox, MapPin, Search } from 'lucide-react';
-import { Card, Stat, StatusDot } from './_components/ui';
-import { getOverviewCounts } from './_lib/overview';
+import { Card, Stat, StatusDot } from '../_components/ui';
+import { getOverviewCounts } from '../_lib/overview';
 
 export const dynamic = 'force-dynamic';
 

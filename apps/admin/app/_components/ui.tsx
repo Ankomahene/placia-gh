@@ -20,11 +20,11 @@ export function Stat({
         <Icon className="size-4" />
         {label}
       </div>
-      <div className="mt-2 flex items-baseline gap-2">
-        <span className="font-semibold text-2xl tabular-nums tracking-tight">
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-2">
+        <span className="whitespace-nowrap font-semibold text-2xl tabular-nums tracking-tight">
           {value == null ? '—' : typeof value === 'number' ? value.toLocaleString() : value}
         </span>
-        {hint ? <span className="text-muted-foreground text-xs tabular-nums">{hint}</span> : null}
+        {hint ? <span className="whitespace-nowrap text-muted-foreground text-xs tabular-nums">{hint}</span> : null}
       </div>
     </div>
   );
