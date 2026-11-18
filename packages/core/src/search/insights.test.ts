@@ -66,6 +66,12 @@ describe('flagSearches', () => {
     expect(kinds([a, b])[0]).not.toContain('retried');
     expect(
       isRephrase(
+        'I am looking for a stanbic bank around my current location',
+        'is there any mall around my current location',
+      ),
+    ).toBe(false);
+    expect(
+      isRephrase(
         'what are some bus and restaurants around my area',
         'what are some bars and restaurants around my area',
       ),
@@ -104,6 +110,15 @@ describe('flagSearches', () => {
     );
     expect(kinds([ev({ result_count: 0 })])[0]).toContain('no_results');
     expect(kinds([ev({ total_latency_ms: 9820 })])[0]).toContain('slow');
+    const [slow] = flagSearches([
+      ev({
+        total_latency_ms: 6100,
+        timings: { parseMs: 2500, anchorMs: 0, embedMs: 120, dbMs: 3400, totalMs: 6100 },
+      }),
+    ]);
+    expect(slow?.find((f) => f.kind === 'slow')?.detail).toBe(
+      '6.1 s (understanding 2.5 s, database 3.4 s)',
+    );
   });
 });
 

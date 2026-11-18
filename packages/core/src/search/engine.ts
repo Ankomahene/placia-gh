@@ -431,7 +431,12 @@ export async function search(req: SearchRequest, deps: SearchDeps): Promise<Sear
     } else needsLocation = true;
   }
   // No place named at all: still prefer what's close to the user, without excluding anything.
-  if (!centre && !districtId && !regionId && user) centre = { ...user, from: 'user' };
+  if (!centre && !districtId && !regionId && user) {
+    centre = { ...user, from: 'user' };
+    // "hospital" with the location on means the nearest ones, as "hospital near me" does (real
+    // searches: people retried with "near me"). The circle widens when there are too few.
+    if (intent.categories.length && onlyCategoryWords(deps.context, text)) radius = NEAR_ME_RADIUS;
+  }
 
   const { vector, ms: embedMs } = await embedding;
 
@@ -527,6 +532,7 @@ export function toSearchEvent(res: SearchResponse, req: SearchRequest, sessionId
     output_tokens: res.meta.parse.outputTokens ?? null,
     ai_latency_ms: res.meta.parse.path === 'ai' ? res.meta.parse.latencyMs : null,
     total_latency_ms: res.meta.timings.totalMs,
+    timings: res.meta.timings,
     result_count: res.results.length,
     top_place_ids: res.results.slice(0, 10).map((r) => r.id),
     coarse_location: coarse,

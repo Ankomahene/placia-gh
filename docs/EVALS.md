@@ -607,3 +607,29 @@ Three settings were added to `search_places`, through `p_weights` (migration `20
 Adopted: fuzzy matching needs 4+ letters always. Prefix matching needs 4+ letters only when a kind of place was asked for, because then "cat" is a whole word rather than a half-typed one. The category penalty is left off.
 
 Result on all sets: named place MRR **0.900 → 0.943**, Hit@1 86% → 90%, Hit@10 96% → 99%. Browse is unchanged (P@10 86%, nDCG 0.880). "pet" in shops near Accra now returns Village Pets and Garden, Precious Pet Shop, Pet Mart, Pet Land and Sweet Pet Grooming. "cat" returns ordinary shops, because there are no cat sellers in the data. Report: `packages/evals/reports/2026-11-16-02-01-all-rules-sem.json`.
+
+## Choosing the parse model
+
+Adding a Claude key made Claude the first choice for search understanding. Before keeping that, every model parsed all 198 cases with the AI step forced on and the production budget of 2.5 s (`pnpm eval --set all --ai always`).
+
+| Parser             | Named place MRR | Browse nDCG@10 | Category parse | Parse p50 / p95 | Over budget |
+| ------------------ | --------------- | -------------- | -------------- | --------------- | ----------- |
+| gpt-6-luna         | 0.919           | 0.884          | 96%            | 1.38 / 1.79 s   | 4           |
+| Claude Haiku 5.5   | 0.925–0.938     | 0.82–0.84      | 41–56%         | 0.96–1.44 / 1.7–2.0 s | 1–5   |
+| Claude Sonnet 5.5  | 0.932           | 0.887          | 95%            | 1.67 / 2.10 s   | 2           |
+| Claude Opus 5.5    | 0.919           | 0.893          | 94%            | 1.68 / 2.33 s   | 7           |
+
+Haiku picks the whole group ("health", "food") where one kind was meant ("lab", "pizza"). A prompt line and a rule that drops a group sent next to one of its kinds did not fix it, because Haiku usually sends the group alone. Sonnet and Opus match gpt-6-luna on accuracy but are slower, and Opus runs close to the budget. Claude also reads about twice the input tokens for the same prompt.
+
+Adopted: gpt-6-luna leads (`AI_PRIMARY=openai`, the default), Sonnet 5.5 is the fallback (`AI_CLAUDE_MODEL`), so an OpenAI outage is covered. The admin's search reviews use Opus 5.5 (`AI_REVIEW_MODEL`): a few calls at a time, where the write-up matters more than speed.
+
+## Searches from 16–17 November
+
+21 searches. What went wrong and what changed:
+
+- **"filling station"** was read as a bus station near a landmark called "Filling". A word that is part of a kind of place ("filling station") can no longer be read as a place name. "Petrol station" and "parking lot" were added to the vocabulary.
+- **"around my current location"**, **"this area"** (and the voice slip "aroundthis area") now mean near me, instead of a place to look up.
+- **"hospital"** with the location on came back spread over 10 km, and the person retried with "near me". A bare kind of place with the location on is now searched nearby, widening when there are too few. These searches were also the slowest (4–6 s) because nothing bounded them.
+- **Slow searches** now log time per stage (understanding, place lookup, meaning, database), and the Slow flag in the admin says which one was slow.
+
+Rules eval on all sets after the change: named place MRR 0.943 (unchanged), browse P@10 86% → 87%, nDCG 0.880 → 0.884, no case worse. Report: `packages/evals/reports/2026-11-18-04-02-all-rules-sem.json`.

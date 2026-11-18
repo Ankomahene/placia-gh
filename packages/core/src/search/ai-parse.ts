@@ -67,7 +67,13 @@ export function resolveAIIntent(
   ctx: SearchContext,
   user?: { lat: number; lon: number } | null,
 ): Intent {
-  const categories = [...new Set(ai.categories.flatMap((s) => expandCategory(ctx, s.trim())))];
+  // A whole group next to one of its kinds ("health" + "lab") is the model hedging: the kind is
+  // what was meant. A group on its own ("food") still means all of it.
+  const slugs = ai.categories.map((s) => s.trim());
+  const isGroup = (s: string) => ctx.bySlug.get(s)?.parentId == null;
+  const leaves = slugs.filter((s) => ctx.bySlug.has(s) && !isGroup(s));
+  const picked = leaves.length ? leaves : slugs;
+  const categories = [...new Set(picked.flatMap((s) => expandCategory(ctx, s)))];
   let text = normalize(ai.what);
   // The model sometimes leaves "what" empty when only a category was asked for.
   if (!text && !categories.length && !ai.location && !ai.near_me) text = normalize(query);

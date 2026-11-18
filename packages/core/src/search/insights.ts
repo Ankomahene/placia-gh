@@ -34,6 +34,16 @@ export interface LoggedSearch {
   error: string | null;
   result_count: number | null;
   total_latency_ms: number | null;
+  /** Per stage, logged since 2026-11-18 (absent before). */
+  timings?: {
+    parseMs: number;
+    anchorMs: number;
+    embedMs: number;
+    dbMs: number;
+    totalMs: number;
+  } | null;
+  /** The model that parsed the query, when the AI ran. */
+  model?: string | null;
   lat: number | null;
   lon: number | null;
   top: LoggedResult[];
@@ -106,7 +116,7 @@ function countBy<T>(xs: T[], key: (x: T) => string) {
 }
 
 const FILLER = new Set(
-  'the and for are any some what where can there want looking near around in at to of my me is a an i im it that place places'.split(
+  'the and for are any some what where can there want looking near around in at to of my me is a an i im it that place places this current location area close closest nearest nearby here find need am'.split(
     ' ',
   ),
 );
@@ -194,9 +204,21 @@ export function flagSearches(events: LoggedSearch[]): Flag[][] {
     }
 
     if ((e.total_latency_ms ?? 0) > SLOW_MS) {
+      const t = e.timings;
+      const s = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
+      const parts = t
+        ? [
+            ['understanding', t.parseMs],
+            ['place lookup', t.anchorMs],
+            ['meaning', t.embedMs],
+            ['database', t.dbMs],
+          ]
+            .filter(([, ms]) => (ms as number) >= 300)
+            .map(([k, ms]) => `${k} ${s(ms as number)}`)
+        : [];
       flags.push({
         kind: 'slow',
-        detail: `${((e.total_latency_ms ?? 0) / 1000).toFixed(1)} s`,
+        detail: `${s(e.total_latency_ms ?? 0)}${parts.length ? ` (${parts.join(', ')})` : ''}`,
       });
     }
     return flags;

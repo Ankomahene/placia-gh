@@ -65,6 +65,8 @@ const raw: RawContext = {
     [18, 'Koforidua', [], 'city', null, 6.09, -0.26, 800],
     // One letter off a landmark that is not in the gazetteer (Kotoka airport).
     [19, 'Kotoko', [], 'suburb', null, 6.7, -1.6, 20],
+    // A landmark named like the first word of a kind of place (real search, 16 Nov).
+    [20, 'Filling', [], 'landmark', null, 5.768, -0.18, 0],
   ],
   mentions: [
     // The Kumasi Atonsu, which the gazetteer lacks.
@@ -240,6 +242,18 @@ describe('rule parser', () => {
       text: 'filling station',
     });
     expect(parseRules('university of ghana', ctx).area).toBeNull();
+    // "Filling" is a landmark too; here it is half of "filling station".
+    expect(parseRules('filling station', ctx)).toMatchObject({ categories: ['fuel'], area: null });
+  });
+
+  it('reads "my current location" and "this area" as near me', () => {
+    for (const q of [
+      'pharmacy around my current location',
+      'filling stations aroundthis area',
+      'hotel in my area',
+    ]) {
+      expect(parseRules(q, ctx)).toMatchObject({ nearMe: true, anchor: null, area: null });
+    }
   });
 
   it('lets a second name say which town is meant', () => {

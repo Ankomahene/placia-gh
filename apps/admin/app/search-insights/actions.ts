@@ -1,6 +1,6 @@
 'use server';
 
-import { aiConfigFromEnv, createLLM } from '@placia/core/ai';
+import { aiConfigFromEnv, createReviewLLM } from '@placia/core/ai';
 import { nextSearch, reviewSearch } from '@placia/core/search/insights';
 import { revalidatePath } from 'next/cache';
 import { getFlaggedSearches, service } from '../_lib/search-insights';
@@ -16,7 +16,7 @@ export async function reviewSearches(form: FormData) {
   const db = service();
   const events = await getFlaggedSearches(days);
   if (!db || !events || !(cfg.openaiApiKey || cfg.anthropicApiKey)) return;
-  const llm = createLLM(cfg);
+  const llm = createReviewLLM(cfg);
 
   const todo = events
     .map((e, i) => ({ e, i }))

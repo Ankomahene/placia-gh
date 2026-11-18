@@ -9,7 +9,7 @@ import { jaroWinkler, normalize, words } from './text';
  */
 
 const NEAR_ME =
-  /\b(near me|around me|close to me|closer to me|close by|closeby|nearby|near here|around here|closest|nearest)\b/g;
+  /\b(near me|around me|close to me|closer to me|close by|closeby|nearby|near here|around here|in here|closest|nearest|(?:my )?current location|my location|where i am|(?:around ?)?this area|my area)\b/g;
 const OPEN_NOW =
   /\b(open now|opened now|open right now|still open|open late|open 24 ?(hours|hrs|7)|24 ?hours|24 ?hrs|24 7|open)\b/g;
 const CHEAP = /\b(cheap|cheapest|affordable|budget|inexpensive|low cost)\b/g;
@@ -452,7 +452,7 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
     ) {
       const hit = areaAt(ctx, toks, start, last + 1);
       const picked = hit?.end === last + 1 ? pickArea(ctx.areas.get(hit.key), opts.user) : null;
-      if (hit && picked)
+      if (hit && picked && !inCategoryPhrase(ctx, toks, start, last + 1))
         span = { start, end: last + 1, area: picked, trailing: true, key: hit.key };
     }
     // A misspelt town after a kind of place ("supermarket abelemkpe"). Only with a category in
@@ -488,7 +488,8 @@ export function parseRules(query: string, ctx: SearchContext, opts: RulesOptions
     if (!span && last > first) {
       const hit = areaAt(ctx, toks, first, last);
       const picked = hit ? pickArea(ctx.areas.get(hit.key), opts.user) : null;
-      if (hit && picked) {
+      // "filling station": "Filling" is a landmark too, but here it is half of a kind of place.
+      if (hit && picked && !inCategoryPhrase(ctx, toks, first, hit.end)) {
         span = { start: first, end: hit.end, area: picked, trailing: false, key: hit.key };
       }
     }
