@@ -2,13 +2,16 @@ import { photoKey, photoUrl } from '@placia/core/photos';
 import { cn } from '@placia/ui/cn';
 import { PhotoThumbs, type ViewerPhoto } from '@placia/ui/photo-viewer';
 import {
+  Ban,
   ChevronLeft,
   ChevronRight,
   Copy,
   ExternalLink,
   EyeOff,
   MapPinned,
+  Pencil,
   Plus,
+  RotateCcw,
   Search,
   Store,
 } from 'lucide-react';
@@ -20,6 +23,7 @@ import { requireAdmin, serviceDb } from '../../_lib/auth';
 import { WEB_URL } from '../../_lib/web';
 import { setPlaceStatus } from './actions';
 import { AddPhotos } from './add-photos';
+import { DeletePlace } from './delete-place';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Places' };
@@ -72,26 +76,58 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-/** Restore when it's out of search, otherwise hide or mark closed. */
-function StatusActions({ id, status }: { id: string; status: string }) {
+const ICON = 'size-7 px-0';
+
+/** Edit, photos, hide/close or restore, delete: icons, so the row never overflows. */
+function RowActions({ r, userId, area }: { r: Row; userId: string; area: string }) {
   return (
-    <form action={setPlaceStatus} className="flex gap-1">
-      <input type="hidden" name="id" value={id} />
-      {status === 'active' ? (
-        <>
-          <PendingButton name="status" value="hidden" variant="ghost" className="h-7 px-2">
-            Hide
+    <div className="flex items-center justify-end">
+      <Link
+        href={`/places/${r.id}`}
+        title="Edit"
+        aria-label={`Edit ${r.name}`}
+        className="grid size-7 place-items-center rounded-md text-muted-foreground hover:bg-surface-2 hover:text-foreground"
+      >
+        <Pencil className="size-3.5" />
+      </Link>
+      <AddPhotos placeId={r.id} userId={userId} label="" className={cn(ICON, 'justify-center')} />
+      <form action={setPlaceStatus} className="flex">
+        <input type="hidden" name="id" value={r.id} />
+        {r.status === 'active' ? (
+          <>
+            <PendingButton
+              name="status"
+              value="hidden"
+              variant="ghost"
+              title="Hide"
+              className={ICON}
+            >
+              <EyeOff className="size-3.5" />
+            </PendingButton>
+            <PendingButton
+              name="status"
+              value="closed"
+              variant="ghost"
+              title="Mark closed"
+              className={ICON}
+            >
+              <Ban className="size-3.5" />
+            </PendingButton>
+          </>
+        ) : (
+          <PendingButton
+            name="status"
+            value="active"
+            variant="ghost"
+            title="Restore"
+            className={ICON}
+          >
+            <RotateCcw className="size-3.5" />
           </PendingButton>
-          <PendingButton name="status" value="closed" variant="ghost" className="h-7 px-2">
-            Closed
-          </PendingButton>
-        </>
-      ) : (
-        <PendingButton name="status" value="active" variant="ghost" className="h-7 px-2">
-          Restore
-        </PendingButton>
-      )}
-    </form>
+        )}
+      </form>
+      <DeletePlace placeId={r.id} name={r.name} area={area} icon />
+    </div>
   );
 }
 
@@ -264,17 +300,25 @@ export default async function PlacesPage({
                   <span className="text-muted-foreground text-xs tabular-nums">
                     {sources(r)} src · {r.photo_count} photos · {r.confidence.toFixed(2)}
                   </span>
-                  <div className="flex items-center">
-                    <AddPhotos placeId={r.id} userId={admin.id} />
-                    <StatusActions id={r.id} status={r.status} />
-                  </div>
+                  <RowActions r={r} userId={admin.id} area={area(r)} />
                 </div>
               </li>
             ))}
           </ul>
 
-          <div className="hidden overflow-hidden rounded-lg border bg-surface shadow-card md:block">
-            <table className="w-full text-sm">
+          <div className="hidden overflow-x-auto rounded-lg border bg-surface shadow-card md:block">
+            <table className="w-full min-w-[56rem] table-fixed text-sm">
+              {/* Fixed widths: long names truncate instead of pushing the actions off the edge. */}
+              <colgroup>
+                <col />
+                <col className="w-36" />
+                <col className="w-44" />
+                <col className="w-20" />
+                <col className="w-32" />
+                <col className="w-24" />
+                <col className="w-20" />
+                <col className="w-40" />
+              </colgroup>
               <thead className="border-b bg-surface-2/50 text-left text-muted-foreground text-xs">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">Name</th>
@@ -290,8 +334,8 @@ export default async function PlacesPage({
               <tbody className="divide-y">
                 {rows.map((r) => (
                   <tr key={r.id} className="hover:bg-surface-2/40">
-                    <td className="max-w-64 px-4 py-2">
-                      <div className="group flex max-w-full items-center gap-1.5">
+                    <td className="px-4 py-2">
+                      <div className="group flex min-w-0 items-center gap-1.5">
                         <Link
                           href={`/places/${r.id}`}
                           className="truncate font-medium hover:underline"
@@ -309,10 +353,12 @@ export default async function PlacesPage({
                         </a>
                       </div>
                     </td>
-                    <td className="max-w-40 truncate px-4 py-2 text-muted-foreground">
+                    <td className="truncate px-4 py-2 text-muted-foreground">
                       {r.categories?.name ?? '—'}
                     </td>
-                    <td className="max-w-48 truncate px-4 py-2 text-muted-foreground">{area(r)}</td>
+                    <td className="truncate px-4 py-2 text-muted-foreground" title={area(r)}>
+                      {area(r)}
+                    </td>
                     <td className="px-4 py-2 text-right tabular-nums">{sources(r)}</td>
                     <td className="px-4 py-2">
                       {r.photo_count ? (
@@ -334,10 +380,7 @@ export default async function PlacesPage({
                       <StatusBadge status={r.status} />
                     </td>
                     <td className="px-2 py-2">
-                      <div className="flex items-center">
-                        <AddPhotos placeId={r.id} userId={admin.id} />
-                        <StatusActions id={r.id} status={r.status} />
-                      </div>
+                      <RowActions r={r} userId={admin.id} area={area(r)} />
                     </td>
                   </tr>
                 ))}

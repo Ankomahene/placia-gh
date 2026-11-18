@@ -17,7 +17,7 @@ export async function setPlaceStatus(form: FormData) {
   if (!parsed.success || !db) return;
   await db
     .from('places')
-    .update({ status: parsed.data.status, updated_at: new Date().toISOString() })
+    .update({ status: parsed.data.status, admin_edited_at: new Date().toISOString() })
     .eq('id', parsed.data.id);
   revalidatePath('/places');
 }

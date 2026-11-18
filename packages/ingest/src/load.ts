@@ -332,8 +332,24 @@ export async function load(db: Duck, stats: ResolveStats | null) {
     const existing = must(await sb.rpc('ingest_slugs'), 'ingest_slugs') as Record<string, string>;
     const slugs = assignSlugs(places, existing);
 
+    // Admin decisions win over the sources: deleted places stay deleted, merged copies stay
+    // folded into their keeper, and places an admin corrected keep the admin's version.
+    const overrides = must(await sb.rpc('ingest_overrides'), 'ingest_overrides') as {
+      removed: string[];
+      merged: Record<string, string>;
+      edited: string[];
+    };
+    const removed = new Set(overrides.removed);
+    const merged = new Map(Object.entries(overrides.merged));
+    const keep = new Set([...removed, ...merged.keys(), ...overrides.edited]);
+    const toLoad = places.filter((p) => !keep.has(p.id));
+    log(
+      'load',
+      `admin overrides: ${removed.size} removed, ${merged.size} merged, ${overrides.edited.length} edited`,
+    );
+
     await inBatches(
-      places,
+      toLoad,
       500,
       async (b) => {
         must(
@@ -388,7 +404,8 @@ export async function load(db: Duck, stats: ResolveStats | null) {
         must(
           await sb.from('place_sources').upsert(
             b.map((s) => ({
-              place_id: s.place_id,
+              // A removed place's sources stay unlinked; a merged copy's go to its keeper.
+              place_id: removed.has(s.place_id) ? null : (merged.get(s.place_id) ?? s.place_id),
               source: s.source,
               source_id: s.source_id,
               name: s.name,

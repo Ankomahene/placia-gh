@@ -11,6 +11,7 @@ import { requireAdmin, serviceDb } from '../../../_lib/auth';
 import { categoryOptions, hoursText, parsePoint } from '../../../_lib/places';
 import { WEB_URL } from '../../../_lib/web';
 import { AddPhotos } from '../add-photos';
+import { DeletePlace } from '../delete-place';
 import { markNotDuplicates, mergePlaces } from '../edit-actions';
 import { PhotoManager } from '../photo-manager';
 import { PlaceEditor, type PlaceValues } from '../place-editor';
@@ -146,35 +147,38 @@ export default async function EditPlacePage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8">
-      <div>
-        <Link
-          href="/places"
-          className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
-        >
-          <ChevronLeft className="size-4" /> Places
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-          <h1 className="font-semibold text-2xl tracking-tight">{p.name}</h1>
-          <span
-            className={cn(
-              'inline-flex rounded-full px-2 py-0.5 font-medium text-[11px] capitalize',
-              STATUS_STYLE[p.status] ?? 'bg-surface-2',
-            )}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <Link
+            href="/places"
+            className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground"
           >
-            {p.status}
-          </span>
+            <ChevronLeft className="size-4" /> Places
+          </Link>
+          <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="font-semibold text-2xl tracking-tight">{p.name}</h1>
+            <span
+              className={cn(
+                'inline-flex rounded-full px-2 py-0.5 font-medium text-[11px] capitalize',
+                STATUS_STYLE[p.status] ?? 'bg-surface-2',
+              )}
+            >
+              {p.status}
+            </span>
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
+            <span>{area || '—'}</span>
+            <a
+              href={`${WEB_URL}/place/${p.slug}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 hover:text-foreground"
+            >
+              View on site <ExternalLink className="size-3.5" />
+            </a>
+          </div>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-muted-foreground text-sm">
-          <span>{area || '—'}</span>
-          <a
-            href={`${WEB_URL}/place/${p.slug}`}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-1 hover:text-foreground"
-          >
-            View on site <ExternalLink className="size-3.5" />
-          </a>
-        </div>
+        <DeletePlace placeId={p.id} name={p.name} area={area} goTo="/places" />
       </div>
 
       {keeperRes.data ? (

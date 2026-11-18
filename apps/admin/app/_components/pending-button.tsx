@@ -10,6 +10,7 @@ export function PendingButton({
   pendingText,
   name,
   value,
+  title,
   variant = 'outline',
   className,
 }: {
@@ -17,6 +18,7 @@ export function PendingButton({
   pendingText?: string;
   name?: string;
   value?: string;
+  title?: string;
   variant?: 'primary' | 'outline' | 'ghost';
   className?: string;
 }) {
@@ -26,6 +28,8 @@ export function PendingButton({
       type="submit"
       name={name}
       value={value}
+      title={title}
+      aria-label={title}
       disabled={pending}
       className={cn(
         'inline-flex h-8 items-center justify-center gap-1.5 rounded-md px-3 font-medium text-xs transition-colors disabled:opacity-60',

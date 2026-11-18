@@ -480,6 +480,33 @@ export type Database = {
           },
         ]
       }
+      place_removals: {
+        Row: {
+          location: unknown
+          name: string
+          place_id: string
+          reason: string | null
+          removed_at: string
+          removed_by: string | null
+        }
+        Insert: {
+          location?: unknown
+          name: string
+          place_id: string
+          reason?: string | null
+          removed_at?: string
+          removed_by?: string | null
+        }
+        Update: {
+          location?: unknown
+          name?: string
+          place_id?: string
+          reason?: string | null
+          removed_at?: string
+          removed_by?: string | null
+        }
+        Relationships: []
+      }
       place_sources: {
         Row: {
           category_raw: string | null
@@ -533,6 +560,7 @@ export type Database = {
       places: {
         Row: {
           address: string | null
+          admin_edited_at: string | null
           alt_names: string[]
           attributes: Json
           category_id: number | null
@@ -561,6 +589,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          admin_edited_at?: string | null
           alt_names?: string[]
           attributes?: Json
           category_id?: number | null
@@ -589,6 +618,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          admin_edited_at?: string | null
           alt_names?: string[]
           attributes?: Json
           category_id?: number | null
@@ -840,6 +870,10 @@ export type Database = {
         }
         Returns: number
       }
+      delete_place: {
+        Args: { p_admin: string; p_id: string; p_reason?: string }
+        Returns: Json
+      }
       embedding_queue: {
         Args: { p_limit?: number }
         Returns: {
@@ -852,6 +886,7 @@ export type Database = {
         Args: { p_area: string; p_name: string }
         Returns: string
       }
+      ingest_overrides: { Args: never; Returns: Json }
       ingest_prune: { Args: { p_since: string }; Returns: Json }
       ingest_slugs: { Args: never; Returns: Json }
       merge_places: { Args: { p_drop: string; p_keep: string }; Returns: Json }

@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { requireAdmin, serviceDb } from '../../_lib/auth';
 import { reembedLater } from '../../_lib/embed';
+import { deletePhotoFiles, markAdminEdited, type StoredPhoto } from '../../_lib/photo-files';
 
 const text = (max: number) => z.string().trim().max(max);
 
@@ -57,6 +58,7 @@ export async function savePlace(
     return { error: "Couldn't save" };
   }
   const out = data as { id: string; slug: string };
+  await markAdminEdited(db, [out.id]);
   reembedLater(db, [out.id]);
   revalidatePath('/places');
   revalidatePath('/duplicates');
@@ -83,10 +85,35 @@ export async function mergePlaces(form: FormData): Promise<void> {
     return;
   }
   await db.rpc('forget_duplicate_pairs', { p_ids: [drop] });
+  await markAdminEdited(db, [keep]);
   reembedLater(db, [keep]);
   revalidatePath('/places');
   revalidatePath('/duplicates');
   if (back === 'keep') redirect(`/places/${keep}?merged=1`);
+}
+
+/**
+ * Deletes a wrong place for good: its photos (files too), saves and duplicate pairs go; its
+ * contributions stay, unlinked. The next data import won't bring it back.
+ */
+export async function deletePlace(placeId: string, reason?: string): Promise<boolean> {
+  const admin = await requireAdmin();
+  const db = serviceDb();
+  const id = z.uuid().safeParse(placeId);
+  if (!db || !id.success) return false;
+  const { data, error } = await db.rpc('delete_place', {
+    p_id: id.data,
+    p_admin: admin.id,
+    p_reason: reason?.trim().slice(0, 300) || undefined,
+  });
+  if (error) {
+    console.error('delete_place failed', error.message);
+    return false;
+  }
+  await deletePhotoFiles(db, (data as unknown as { photos: StoredPhoto[] }).photos ?? []);
+  revalidatePath('/places');
+  revalidatePath('/duplicates');
+  return true;
 }
 
 /** Two look-alikes that are really different places: stop suggesting them. */

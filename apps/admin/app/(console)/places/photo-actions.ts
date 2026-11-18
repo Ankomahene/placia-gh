@@ -2,9 +2,7 @@
 
 import {
   cloudinaryFromEnv,
-  destroyCloudinaryPhoto,
   ownsPhoto,
-  PHOTO_BUCKET,
   PhotoRef,
   type SignedUpload,
   signCloudinaryUpload,
@@ -12,6 +10,7 @@ import {
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin, serviceDb } from '../../_lib/auth';
+import { deletePhotoFiles, type StoredPhoto } from '../../_lib/photo-files';
 
 /** A signed Cloudinary upload into the admin's own folder; null when Cloudinary isn't set up. */
 export async function signPhotoUpload(): Promise<SignedUpload | null> {
@@ -58,16 +57,8 @@ export async function removePlacePhoto(photoId: string): Promise<boolean> {
     console.error('remove_place_photo failed', error.message);
     return false;
   }
-  const gone = data as { cloudinary_public_id: string | null; storage_path: string | null } | null;
-  // The row is gone either way; a file left behind only costs storage, so log and carry on.
-  if (gone?.cloudinary_public_id) {
-    const cfg = cloudinaryFromEnv();
-    const ok = cfg ? await destroyCloudinaryPhoto(cfg, gone.cloudinary_public_id) : false;
-    if (!ok) console.error('cloudinary delete failed', gone.cloudinary_public_id);
-  } else if (gone?.storage_path) {
-    const { error: e } = await db.storage.from(PHOTO_BUCKET).remove([gone.storage_path]);
-    if (e) console.error('storage delete failed', e.message);
-  }
+  const gone = data as StoredPhoto | null;
+  if (gone) await deletePhotoFiles(db, [gone]);
   revalidatePath('/places');
   return true;
 }
