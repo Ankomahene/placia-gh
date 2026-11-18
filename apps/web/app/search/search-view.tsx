@@ -3,6 +3,7 @@
 import type { SearchResponse, SearchResult } from '@placia/core/search';
 import { Button } from '@placia/ui/button';
 import { cn } from '@placia/ui/cn';
+import { PhotoThumbs } from '@placia/ui/photo-viewer';
 import { List, LocateFixed, Map as MapIcon, MapPin, RotateCw } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -358,8 +359,9 @@ function ResultRow({
   onHover?: () => void;
 }) {
   const distance = formatDistance(r.distanceM);
+  const photos = r.photos ?? [];
   return (
-    <li id={`r-${r.id}`}>
+    <li id={`r-${r.id}`} className="relative">
       <Link
         href={`/place/${r.slug}`}
         onMouseEnter={onHover}
@@ -367,6 +369,7 @@ function ResultRow({
         className={cn(
           'flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-surface-2 md:px-5',
           selected && 'bg-surface-2',
+          photos.length && 'pb-[5.25rem]',
         )}
       >
         <span
@@ -391,6 +394,17 @@ function ResultRow({
           </span>
         ) : null}
       </Link>
+      {photos.length ? (
+        // Outside the link: a thumbnail opens the photo viewer, the rest of the row the place.
+        <PhotoThumbs
+          photos={photos.map((p) => ({ ...p, alt: r.name }))}
+          title={r.name}
+          max={4}
+          extra={Math.max(0, (r.photoCount ?? photos.length) - photos.length)}
+          className="absolute bottom-3.5 left-13 md:left-14"
+          thumbClassName="size-16 rounded-lg"
+        />
+      ) : null}
     </li>
   );
 }

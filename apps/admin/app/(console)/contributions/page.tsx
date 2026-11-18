@@ -1,5 +1,6 @@
 import { photoKey, photoUrl as url } from '@placia/core/photos';
 import { cn } from '@placia/ui/cn';
+import { PhotoThumbs } from '@placia/ui/photo-viewer';
 import { Check, ClipboardCheck, ExternalLink, MapPin, Sparkles, X } from 'lucide-react';
 import type { Metadata } from 'next';
 import { PendingButton } from '../../_components/pending-button';
@@ -175,26 +176,17 @@ export default async function ContributionsPage({
                   // biome-ignore lint/performance/noImgElement: a contributed photo, shown as uploaded.
                   <img src={photo} alt="" className="aspect-[16/9] w-full object-cover" />
                 ) : null}
-                {Array.isArray(pay.photos) && pay.photos.length ? (
-                  <div className="grid grid-cols-4 gap-1 p-1">
-                    {(pay.photos as PhotoLike[]).map((ph) => (
-                      <a
-                        key={photoKey(ph)}
-                        href={photoUrl(photoKey(ph), 1600)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="aspect-square overflow-hidden rounded-md bg-surface-2"
-                      >
-                        {/* biome-ignore lint/performance/noImgElement: a pending photo, shown as uploaded. */}
-                        <img
-                          src={photoUrl(photoKey(ph), 300)}
-                          alt=""
-                          className="size-full object-cover"
-                        />
-                      </a>
-                    ))}
-                  </div>
-                ) : null}
+                <PhotoThumbs
+                  photos={(Array.isArray(pay.photos) ? (pay.photos as PhotoLike[]) : []).map(
+                    (ph) => ({
+                      src: photoUrl(photoKey(ph), 1600),
+                      thumb: photoUrl(photoKey(ph), 300),
+                    }),
+                  )}
+                  max={4}
+                  className="grid grid-cols-4 gap-1 p-1"
+                  thumbClassName="aspect-square w-full rounded-md"
+                />
                 <div className="space-y-3 p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="rounded-full bg-surface-2 px-2.5 py-0.5 font-medium text-xs">

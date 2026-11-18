@@ -1,5 +1,6 @@
 import { buttonVariants } from '@placia/ui/button';
 import { cn } from '@placia/ui/cn';
+import { PhotoThumbs } from '@placia/ui/photo-viewer';
 import { Camera, Clock, Flag, Globe, MapPin, Navigation, Pencil, Phone } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -10,7 +11,7 @@ import { MiniMap } from '../../_components/map/mini-map';
 import { BottomNav, SiteHeader } from '../../_components/nav';
 import { db } from '../../_lib/db';
 import { formatDistance, formatHours, parsePoint, placeWhere } from '../../_lib/format';
-import { photoKey, photoUrl } from '../../_lib/photos';
+import { photoKey, toPlacePhoto } from '../../_lib/photos';
 import { SaveButton } from './save-button';
 import { ShareButton } from './share-button';
 
@@ -59,7 +60,8 @@ const getPlace = cache(async (slug: string) => {
       }[]) ?? []
     )
       .filter((f) => f.status === 'approved' && photoKey(f))
-      .sort((a, b) => b.created_at.localeCompare(a.created_at)),
+      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+      .map((f) => toPlacePhoto(f, 480)),
     sources: [
       ...new Set(
         ((data.place_sources as unknown as { source: string }[]) ?? []).map((s) => s.source),
@@ -122,6 +124,7 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
       ? p.website
       : `https://${p.website}`
     : null;
+  const photos = p.photos.map((f) => ({ ...f, alt: p.name }));
   const directions = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`;
 
   return (
@@ -134,13 +137,28 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
         <div className="md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-10">
           {/* Map: full-bleed header on phones, a card on the right on wide screens */}
           <div className="relative md:order-2">
-            <div className="h-56 overflow-hidden md:sticky md:top-24 md:h-[28rem] md:rounded-xl md:border md:shadow-card">
-              {/* Tiles are in the first HTML; the nearby dots stream in once their query lands. */}
-              <Suspense
-                fallback={<MiniMap id={p.id} name={p.name} lat={p.lat} lon={p.lon} dots={[]} />}
+            <div className="md:sticky md:top-24 md:space-y-3">
+              <div
+                className={cn(
+                  'h-56 overflow-hidden md:rounded-xl md:border md:shadow-card',
+                  p.photos.length ? 'md:h-[22rem]' : 'md:h-[28rem]',
+                )}
               >
-                <PlaceAreaMap p={p} />
-              </Suspense>
+                {/* Tiles are in the first HTML; the nearby dots stream in once their query lands. */}
+                <Suspense
+                  fallback={<MiniMap id={p.id} name={p.name} lat={p.lat} lon={p.lon} dots={[]} />}
+                >
+                  <PlaceAreaMap p={p} />
+                </Suspense>
+              </div>
+              {/* Wide screens: photos under the map. */}
+              <PhotoThumbs
+                photos={photos}
+                title={p.name}
+                max={6}
+                className="hidden md:grid md:grid-cols-3 md:gap-2"
+                thumbClassName="aspect-[4/3] w-full rounded-lg border"
+              />
             </div>
             <BackButton className="absolute top-3 left-3 md:hidden" />
           </div>
@@ -191,24 +209,14 @@ export default async function PlacePage({ params }: { params: Promise<{ slug: st
               <ShareButton title={p.name} />
             </div>
 
-            {p.photos.length ? (
-              <ul className="no-scrollbar -mx-4 mt-6 flex gap-2 overflow-x-auto px-4 md:mx-0 md:px-0">
-                {p.photos.map((f) => (
-                  <li key={photoKey(f)} className="shrink-0">
-                    {/* biome-ignore lint/performance/noImgElement: already resized on upload. */}
-                    <img
-                      src={photoUrl(photoKey(f), 800)}
-                      alt={p.name}
-                      width={f.width ?? 400}
-                      height={f.height ?? 300}
-                      loading="lazy"
-                      decoding="async"
-                      className="h-40 w-auto rounded-xl border object-cover"
-                    />
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            {/* Phones: a row of small thumbnails; each opens the viewer. */}
+            <PhotoThumbs
+              photos={photos}
+              title={p.name}
+              max={photos.length}
+              className="no-scrollbar -mx-4 mt-5 overflow-x-auto px-4 md:hidden"
+              thumbClassName="size-20 rounded-lg border"
+            />
 
             {p.description ? <p className="mt-6 leading-relaxed">{p.description}</p> : null}
 

@@ -9,6 +9,7 @@ import { loadSearchContext, search, toSearchEvent } from '@placia/core/search';
 import { createServiceClient } from '@placia/db';
 import { after, type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { photosFor } from '../../_lib/photos';
 
 /**
  * GET /api/search?q=pharmacy+near+madina[&lat=5.6&lon=-0.17][&limit=20][&offset=0]
@@ -77,6 +78,20 @@ export async function GET(req: NextRequest) {
       embedder: d.embedder,
       aiBudgetMs: 2500,
     });
+    // Photos ride along so people can recognise the place before opening it.
+    // Up to 10 each: four show as thumbnails, the viewer can page through all of them.
+    const photos = await photosFor(
+      d.db,
+      res.results.map((r) => r.id),
+      10,
+    ).catch(() => new Map());
+    for (const r of res.results) {
+      const ph = photos.get(r.id);
+      if (ph) {
+        r.photos = ph.photos;
+        r.photoCount = ph.count;
+      }
+    }
     if (p.offset === 0) {
       after(async () => {
         await d.db.from('search_events').insert(toSearchEvent(res, request) as never);

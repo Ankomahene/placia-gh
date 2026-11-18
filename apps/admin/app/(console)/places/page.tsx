@@ -1,4 +1,6 @@
+import { photoKey, photoUrl } from '@placia/core/photos';
 import { cn } from '@placia/ui/cn';
+import { PhotoThumbs, type ViewerPhoto } from '@placia/ui/photo-viewer';
 import {
   ChevronLeft,
   ChevronRight,
@@ -135,6 +137,30 @@ export default async function PlacesPage({
     [r.localities?.name, r.districts?.name].filter(Boolean).join(', ') || '—';
   const sources = (r: Row) => r.place_sources[0]?.count ?? 0;
 
+  // Approved photos for the rows on this page, oldest (the cover) first.
+  const withPhotos = rows.filter((r) => r.photo_count > 0).map((r) => r.id);
+  const { data: photoRows } = withPhotos.length
+    ? await db
+        .from('place_photos')
+        .select('place_id, storage_path, cloudinary_public_id, width, height')
+        .in('place_id', withPhotos)
+        .eq('status', 'approved')
+        .order('created_at')
+    : { data: [] };
+  const photos = new Map<string, ViewerPhoto[]>();
+  for (const f of photoRows ?? []) {
+    const key = photoKey(f);
+    if (!key) continue;
+    const list = photos.get(f.place_id) ?? [];
+    list.push({
+      src: photoUrl(key, { width: 1600 }),
+      thumb: photoUrl(key, { width: 200 }),
+      width: f.width,
+      height: f.height,
+    });
+    photos.set(f.place_id, list);
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 md:px-8 md:py-8">
       <h1 className="font-semibold text-2xl tracking-tight">Places</h1>
@@ -204,6 +230,13 @@ export default async function PlacesPage({
                 <p className="mt-1 truncate text-muted-foreground text-xs">
                   {r.categories?.name ?? 'Uncategorised'} · {area(r)}
                 </p>
+                <PhotoThumbs
+                  photos={photos.get(r.id) ?? []}
+                  title={r.name}
+                  max={5}
+                  className="mt-2"
+                  thumbClassName="size-12 rounded-md"
+                />
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <span className="text-muted-foreground text-xs tabular-nums">
                     {sources(r)} src · {r.photo_count} photos · {r.confidence.toFixed(2)}
@@ -250,7 +283,21 @@ export default async function PlacesPage({
                     </td>
                     <td className="max-w-48 truncate px-4 py-2 text-muted-foreground">{area(r)}</td>
                     <td className="px-4 py-2 text-right tabular-nums">{sources(r)}</td>
-                    <td className="px-4 py-2 text-right tabular-nums">{r.photo_count}</td>
+                    <td className="px-4 py-2">
+                      {r.photo_count ? (
+                        <PhotoThumbs
+                          photos={photos.get(r.id) ?? []}
+                          title={r.name}
+                          max={3}
+                          className="justify-end"
+                          thumbClassName="size-9 rounded-md"
+                        />
+                      ) : (
+                        <span className="block text-right text-muted-foreground tabular-nums">
+                          0
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-2 text-right tabular-nums">{r.confidence.toFixed(2)}</td>
                     <td className="px-4 py-2">
                       <StatusBadge status={r.status} />

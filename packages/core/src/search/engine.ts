@@ -122,6 +122,10 @@ export interface SearchResult {
   score: number;
   /** Rank of this place in each retrieval arm that found it: why it is in the results. */
   arms: Record<string, number>;
+  /** Approved photos, cover first; added by the web API after ranking (not by search itself). */
+  photos?: { src: string; thumb: string; width: number | null; height: number | null }[];
+  /** All approved photos, when there are more than `photos` carries. */
+  photoCount?: number;
 }
 
 export interface SearchResponse {
