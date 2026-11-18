@@ -3,6 +3,7 @@
 import { cn } from '@placia/ui/cn';
 import { Logo } from '@placia/ui/logo';
 import {
+  BookOpen,
   ChartNoAxesCombined,
   Copy,
   Database,
@@ -24,6 +25,7 @@ const NAV = [
   { href: '/sources', label: 'Data sources', icon: Database },
   { href: '/search-insights', label: 'Search insights', icon: ChartNoAxesCombined },
   { href: '/evals', label: 'Evals', icon: FlaskConical },
+  { href: '/how-it-works', label: 'How it works', icon: BookOpen },
 ];
 
 const isActive = (path: string, href: string) =>
@@ -32,7 +34,7 @@ const isActive = (path: string, href: string) =>
 export function Sidebar({ email }: { email: string | null }) {
   const path = usePathname();
   return (
-    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col border-r bg-surface px-3 py-4 md:flex">
+    <aside className="sticky top-0 hidden h-dvh print:hidden w-60 shrink-0 flex-col border-r bg-surface px-3 py-4 md:flex">
       <div className="px-2 pb-6">
         <Logo suffix="Admin" />
       </div>
@@ -89,7 +91,7 @@ export function MobileNav() {
       ?.scrollIntoView({ inline: 'center', block: 'nearest' });
   }, [path]);
   return (
-    <header className="sticky top-0 z-20 border-b bg-surface/95 backdrop-blur md:hidden">
+    <header className="sticky top-0 z-20 border-b bg-surface/95 backdrop-blur md:hidden print:hidden">
       <div className="flex h-12 items-center justify-between px-4">
         <Logo suffix="Admin" />
         <form action={signOut}>
