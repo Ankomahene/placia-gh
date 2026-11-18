@@ -146,6 +146,26 @@ export default async function ReviewPage() {
                   ) : point ? (
                     <StaticMap lat={point.lat} lon={point.lon} zoom={16} className="h-40" />
                   ) : null}
+                  {Array.isArray(pay.photos) && pay.photos.length ? (
+                    <div className="grid grid-cols-4 gap-1 p-1">
+                      {(pay.photos as { storage_path: string }[]).map((ph) => (
+                        <a
+                          key={ph.storage_path}
+                          href={photoUrl(ph.storage_path)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="aspect-square overflow-hidden rounded-md bg-surface-2"
+                        >
+                          {/* biome-ignore lint/performance/noImgElement: a pending photo, shown as uploaded. */}
+                          <img
+                            src={photoUrl(ph.storage_path)}
+                            alt=""
+                            className="size-full object-cover"
+                          />
+                        </a>
+                      ))}
+                    </div>
+                  ) : null}
                   <div className="space-y-3 p-4">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="rounded-full bg-surface-2 px-2.5 py-1 font-medium text-xs">
@@ -186,7 +206,8 @@ export default async function ReviewPage() {
                       <dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1 text-sm">
                         {Object.entries(changes ?? {})
                           .filter(
-                            ([k, val]) => val !== '' && val != null && k !== 'lat' && k !== 'lon',
+                            ([k, val]) =>
+                              val !== '' && val != null && !['lat', 'lon', 'photos'].includes(k),
                           )
                           .map(([k, val]) => {
                             const before =

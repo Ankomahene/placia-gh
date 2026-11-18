@@ -56,6 +56,9 @@ interface Place {
   [k: string]: unknown;
 }
 
+const photoUrl = (path: string) =>
+  `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/place-photos/${path}`;
+
 function ago(iso: string) {
   const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
   if (m < 60) return `${m} min ago`;
@@ -163,13 +166,33 @@ export default async function ContributionsPage({
             const d = ai?.duplicate_of ? dup.get(ai.duplicate_of) : null;
             const photo =
               c.kind === 'photo' && typeof pay.storage_path === 'string'
-                ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/place-photos/${pay.storage_path}`
+                ? photoUrl(pay.storage_path)
                 : null;
             return (
               <li key={c.id} className="overflow-hidden rounded-lg border bg-surface shadow-card">
                 {photo ? (
                   // biome-ignore lint/performance/noImgElement: a contributed photo, shown as uploaded.
                   <img src={photo} alt="" className="aspect-[16/9] w-full object-cover" />
+                ) : null}
+                {Array.isArray(pay.photos) && pay.photos.length ? (
+                  <div className="grid grid-cols-4 gap-1 p-1">
+                    {(pay.photos as { storage_path: string }[]).map((ph) => (
+                      <a
+                        key={ph.storage_path}
+                        href={photoUrl(ph.storage_path)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="aspect-square overflow-hidden rounded-md bg-surface-2"
+                      >
+                        {/* biome-ignore lint/performance/noImgElement: a pending photo, shown as uploaded. */}
+                        <img
+                          src={photoUrl(ph.storage_path)}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                      </a>
+                    ))}
+                  </div>
                 ) : null}
                 <div className="space-y-3 p-4">
                   <div className="flex flex-wrap items-center gap-2">
@@ -220,7 +243,8 @@ export default async function ContributionsPage({
                     <dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1 text-sm">
                       {Object.entries(changes ?? {})
                         .filter(
-                          ([k, val]) => val !== '' && val != null && k !== 'lat' && k !== 'lon',
+                          ([k, val]) =>
+                            val !== '' && val != null && !['lat', 'lon', 'photos'].includes(k),
                         )
                         .map(([k, val]) => {
                           const before =

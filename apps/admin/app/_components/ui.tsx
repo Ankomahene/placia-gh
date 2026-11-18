@@ -24,7 +24,11 @@ export function Stat({
         <span className="whitespace-nowrap font-semibold text-2xl tabular-nums tracking-tight">
           {value == null ? '—' : typeof value === 'number' ? value.toLocaleString() : value}
         </span>
-        {hint ? <span className="whitespace-nowrap text-muted-foreground text-xs tabular-nums">{hint}</span> : null}
+        {hint ? (
+          <span className="whitespace-nowrap text-muted-foreground text-xs tabular-nums">
+            {hint}
+          </span>
+        ) : null}
       </div>
     </div>
   );

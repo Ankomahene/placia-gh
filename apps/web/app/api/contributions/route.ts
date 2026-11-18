@@ -17,6 +17,12 @@ const text = (max: number) => z.string().trim().max(max);
 const lat = z.number().min(4.5).max(11.3); // Ghana, with a margin
 const lon = z.number().min(-3.4).max(1.3);
 
+const Photo = z.object({
+  storage_path: z.string().regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(webp|jpg)$/),
+  width: z.number().int().positive().max(4000),
+  height: z.number().int().positive().max(4000),
+});
+
 const Fields = z.object({
   name: text(120).min(2),
   category_id: z.number().int().positive(),
@@ -29,7 +35,13 @@ const Fields = z.object({
 const Body = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('new_place'),
-    payload: Fields.extend({ lat, lon, note: text(500).optional() }),
+    payload: Fields.extend({
+      lat,
+      lon,
+      note: text(500).optional(),
+      // Photos sent with the place; approved together with it (see apply_contribution).
+      photos: z.array(Photo).max(4).optional(),
+    }),
   }),
   z.object({
     kind: z.literal('edit'),
@@ -50,11 +62,7 @@ const Body = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('photo'),
     place_id: z.uuid(),
-    payload: z.object({
-      storage_path: z.string().regex(/^[0-9a-f-]{36}\/[0-9a-f-]{36}\.(webp|jpg)$/),
-      width: z.number().int().positive().max(4000),
-      height: z.number().int().positive().max(4000),
-    }),
+    payload: Photo,
   }),
 ]);
 
@@ -75,7 +83,12 @@ export async function POST(req: Request) {
   if (b.kind === 'edit' && Object.keys(b.payload.changes).length === 0) {
     return Response.json({ error: 'no_changes' }, { status: 400 });
   }
-  if (b.kind === 'photo' && !b.payload.storage_path.startsWith(`${viewer.id}/`)) {
+  // Photos must be files this user uploaded into their own folder.
+  const own = (p: { storage_path: string }) => p.storage_path.startsWith(`${viewer.id}/`);
+  if (
+    (b.kind === 'photo' && !own(b.payload)) ||
+    (b.kind === 'new_place' && !(b.payload.photos ?? []).every(own))
+  ) {
     return Response.json({ error: 'invalid_request' }, { status: 400 });
   }
 
@@ -122,7 +135,12 @@ export async function POST(req: Request) {
   after(async () => {
     const { llm } = ai();
     if (!llm) return;
-    const input: PrecheckInput = { kind: b.kind, submitted: b.payload, current };
+    // File paths mean nothing to the text pre-check; it only hears how many photos came along.
+    const submitted =
+      b.kind === 'new_place' && b.payload.photos
+        ? { ...b.payload, photos: b.payload.photos.length }
+        : b.payload;
+    const input: PrecheckInput = { kind: b.kind, submitted, current };
     const point =
       b.kind === 'new_place'
         ? { lat: b.payload.lat, lon: b.payload.lon, name: b.payload.name }

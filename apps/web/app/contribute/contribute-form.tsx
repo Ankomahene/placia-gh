@@ -2,7 +2,7 @@
 
 import { Button } from '@placia/ui/button';
 import { cn } from '@placia/ui/cn';
-import { Camera, Check, Crosshair, Sparkles } from 'lucide-react';
+import { Camera, Check, Crosshair, ImagePlus, Sparkles, X } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { LocationPicker } from '../_components/map';
@@ -108,21 +108,28 @@ export function ContributeForm({
     );
   }
 
-  const footer = (
+  const footer = (pending?: string | null) => (
     <>
       {error ? <p className="text-danger text-sm">{error}</p> : null}
-      <Button type="submit" className="h-12 w-full" disabled={busy}>
-        {busy ? 'Sending…' : 'Send for review'}
+      <Button type="submit" className="h-12 w-full" disabled={busy || !!pending}>
+        {pending ?? (busy ? 'Sending…' : 'Send for review')}
       </Button>
     </>
   );
 
   if (kind === 'report' && place)
-    return <ReportForm place={place} submit={submit} footer={footer} />;
+    return <ReportForm place={place} submit={submit} footer={footer()} />;
   if (kind === 'photo' && place)
     return <PhotoForm place={place} userId={userId} submit={submit} busy={busy} error={error} />;
   return (
-    <PlaceForm kind={kind} place={place} categories={categories} submit={submit} footer={footer} />
+    <PlaceForm
+      kind={kind}
+      place={place}
+      categories={categories}
+      userId={userId}
+      submit={submit}
+      footer={footer}
+    />
   );
 }
 
@@ -130,14 +137,16 @@ function PlaceForm({
   kind,
   place,
   categories,
+  userId,
   submit,
   footer,
 }: {
   kind: Kind;
   place: PlaceDraft | null;
   categories: Category[];
+  userId: string;
   submit: (body: unknown) => Promise<void>;
-  footer: React.ReactNode;
+  footer: (pending?: string | null) => React.ReactNode;
 }) {
   const [describe, setDescribe] = useState('');
   const [filling, setFilling] = useState(false);
@@ -151,6 +160,9 @@ function PlaceForm({
   const [note, setNote] = useState('');
   const [point, setPoint] = useState(place ? { lat: place.lat, lon: place.lon } : ACCRA);
   const [locating, setLocating] = useState(false);
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   // A new place starts where the user is, when we already know.
   useEffect(() => {
@@ -206,7 +218,7 @@ function PlaceForm({
     }
   };
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const fields = {
       name: name.trim(),
@@ -217,9 +229,27 @@ function PlaceForm({
       hours: hours.trim(),
     };
     if (kind === 'new_place' || !place) {
+      setUploadError(null);
+      let uploaded: Awaited<ReturnType<typeof uploadPhoto>>[] = [];
+      if (photos.length) {
+        setUploading(true);
+        try {
+          uploaded = await Promise.all(photos.map((f) => uploadPhoto(f, userId)));
+        } catch {
+          setUploadError("Couldn't upload the photos");
+          return;
+        } finally {
+          setUploading(false);
+        }
+      }
       void submit({
         kind: 'new_place',
-        payload: { ...fields, ...point, note: note.trim() || undefined },
+        payload: {
+          ...fields,
+          ...point,
+          note: note.trim() || undefined,
+          photos: uploaded.length ? uploaded : undefined,
+        },
       });
       return;
     }
@@ -245,7 +275,7 @@ function PlaceForm({
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
       {kind === 'new_place' ? (
         <div className="space-y-2 rounded-2xl border border-dashed p-3">
           <textarea
@@ -363,6 +393,7 @@ function PlaceForm({
           className={field}
         />
       </Label>
+      {kind === 'new_place' ? <PhotoPicker files={photos} onChange={setPhotos} /> : null}
       <Label text="Note for the reviewer">
         <textarea
           maxLength={500}
@@ -372,7 +403,8 @@ function PlaceForm({
           className={cn(field, 'h-auto py-3')}
         />
       </Label>
-      {footer}
+      {uploadError ? <p className="text-danger text-sm">{uploadError}</p> : null}
+      {footer(uploading ? 'Uploading photos…' : null)}
     </form>
   );
 }
@@ -457,6 +489,79 @@ async function shrink(file: File, max = 1600) {
   return { blob: jpeg, w, h, ext: 'jpg' as const };
 }
 
+/** Shrinks and uploads one photo into the user's own folder; returns what the API expects. */
+async function uploadPhoto(file: File, userId: string) {
+  const { blob, w, h, ext } = await shrink(file);
+  const path = `${userId}/${crypto.randomUUID()}.${ext}`;
+  const { error } = await supabaseBrowser()
+    .storage.from('place-photos')
+    .upload(path, blob, { contentType: blob.type, upsert: false });
+  if (error) throw error;
+  return { storage_path: path, width: w, height: h };
+}
+
+const MAX_PHOTOS = 4;
+
+/** Up to four photos for a new place: thumbnails with remove, plus an add tile. */
+function PhotoPicker({ files, onChange }: { files: File[]; onChange: (f: File[]) => void }) {
+  const [urls, setUrls] = useState<string[]>([]);
+  useEffect(() => {
+    const u = files.map((f) => URL.createObjectURL(f));
+    setUrls(u);
+    return () => {
+      for (const x of u) URL.revokeObjectURL(x);
+    };
+  }, [files]);
+  return (
+    <div className="space-y-1.5">
+      <span className="font-medium text-sm">
+        Photos{' '}
+        <span className="text-muted-foreground tabular-nums">
+          {files.length}/{MAX_PHOTOS}
+        </span>
+      </span>
+      <div className="grid grid-cols-4 gap-2">
+        {urls.map((u, i) => (
+          <div
+            key={u}
+            className="relative aspect-square overflow-hidden rounded-xl border bg-surface-2"
+          >
+            {/* biome-ignore lint/performance/noImgElement: a local preview, not a served image. */}
+            <img src={u} alt="" className="size-full object-cover" />
+            <button
+              type="button"
+              aria-label="Remove photo"
+              onClick={() => onChange(files.filter((_, j) => j !== i))}
+              className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-black/60 text-white"
+            >
+              <X className="size-3.5" />
+            </button>
+          </div>
+        ))}
+        {files.length < MAX_PHOTOS ? (
+          <label className="grid aspect-square cursor-pointer place-items-center rounded-xl border border-dashed bg-surface text-muted-foreground hover:border-primary hover:text-primary">
+            <ImagePlus className="size-6" />
+            <span className="sr-only">Add photos</span>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="sr-only"
+              onChange={(e) => {
+                const picked = [...(e.target.files ?? [])].filter((f) =>
+                  f.type.startsWith('image/'),
+                );
+                onChange([...files, ...picked].slice(0, MAX_PHOTOS));
+                e.target.value = '';
+              }}
+            />
+          </label>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function PhotoForm({
   place,
   userId,
@@ -487,17 +592,7 @@ function PhotoForm({
     setUploading(true);
     setUploadError(null);
     try {
-      const { blob, w, h, ext } = await shrink(file);
-      const path = `${userId}/${crypto.randomUUID()}.${ext}`;
-      const { error: upErr } = await supabaseBrowser()
-        .storage.from('place-photos')
-        .upload(path, blob, { contentType: blob.type, upsert: false });
-      if (upErr) throw upErr;
-      await submit({
-        kind: 'photo',
-        place_id: place.id,
-        payload: { storage_path: path, width: w, height: h },
-      });
+      await submit({ kind: 'photo', place_id: place.id, payload: await uploadPhoto(file, userId) });
     } catch {
       setUploadError("Couldn't upload");
     } finally {
